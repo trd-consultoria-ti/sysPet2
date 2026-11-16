@@ -125,3 +125,26 @@
 .btn-primary:hover {
   background-color: var(--primary-dark);
 }
+.stock-flag {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.4rem;
+}
+
+.stock-flag.stock-out {
+  background: #fff5f5;
+  color: #e53e3e;
+}
+
+.stock-flag.stock-low {
+  background: #fff8e1;
+  color: #8d6e00;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

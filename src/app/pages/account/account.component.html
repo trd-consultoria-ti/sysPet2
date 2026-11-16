@@ -1,0 +1,148 @@
+<div class="account-container">
+  <h1 class="account-title">Minha Conta</h1>
+
+  <!-- Dados cadastrais -->
+  <section class="account-section account-profile" *ngIf="user">
+    <h2>Dados cadastrais</h2>
+    <div class="profile-card">
+      <div class="profile-field">
+        <span class="profile-label">Nome</span>
+        <span class="profile-value">{{ user.name }}</span>
+      </div>
+      <div class="profile-field">
+        <span class="profile-label">E-mail</span>
+        <span class="profile-value">{{ user.email }}</span>
+      </div>
+      <div class="profile-field">
+        <span class="profile-label">Perfil</span>
+        <span class="profile-value">{{ roleLabels[user.role] }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Meus pets -->
+  <section class="account-section">
+    <div class="section-header">
+      <h2>Meus Pets</h2>
+      <button type="button" class="btn btn-primary btn-sm" (click)="startAddPet()" *ngIf="!showPetForm">
+        <i class="fas fa-plus" aria-hidden="true"></i> Adicionar Pet
+      </button>
+    </div>
+
+    <div class="pet-form-card" *ngIf="showPetForm">
+      <h3>{{ editingPetId ? 'Editar Pet' : 'Novo Pet' }}</h3>
+      <form [formGroup]="petForm" (ngSubmit)="savePet()">
+        <div class="form-group">
+          <label for="pet-name">Nome</label>
+          <input type="text" id="pet-name" class="form-control" formControlName="name" placeholder="Nome do pet">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pet-type">Tipo</label>
+            <select id="pet-type" class="form-control" formControlName="type">
+              <option *ngFor="let t of petTypes" [value]="t">{{ t }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="pet-breed">Raça</label>
+            <input type="text" id="pet-breed" class="form-control" formControlName="breed" placeholder="Opcional">
+          </div>
+          <div class="form-group form-group--age">
+            <label for="pet-age">Idade</label>
+            <input type="number" id="pet-age" class="form-control" formControlName="age" min="0" placeholder="Anos">
+          </div>
+        </div>
+        <p class="form-error" *ngIf="petError" role="alert">{{ petError }}</p>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="petForm.invalid || savingPet">
+            <i *ngIf="savingPet" class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+            {{ savingPet ? 'Salvando...' : 'Salvar' }}
+          </button>
+          <button type="button" class="btn btn-outline-secondary" (click)="cancelPetForm()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="pets-empty" *ngIf="pets.length === 0 && !showPetForm">
+      <i class="fas fa-paw" aria-hidden="true"></i>
+      <p>Você ainda não cadastrou nenhum pet.</p>
+    </div>
+
+    <ul class="pets-list" *ngIf="pets.length > 0">
+      <li class="pet-card" *ngFor="let pet of pets">
+        <div class="pet-info">
+          <span class="pet-name">{{ pet.name }}</span>
+          <span class="pet-meta">{{ pet.type }}<span *ngIf="pet.breed"> · {{ pet.breed }}</span><span *ngIf="pet.age !== undefined && pet.age !== null"> · {{ pet.age }} {{ pet.age === 1 ? 'ano' : 'anos' }}</span></span>
+        </div>
+        <div class="pet-actions">
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="startEditPet(pet)">
+            <i class="fas fa-edit" aria-hidden="true"></i> Editar
+          </button>
+          <button type="button" class="btn btn-outline-danger btn-sm" (click)="deletePet(pet)">
+            <i class="fas fa-trash" aria-hidden="true"></i> Excluir
+          </button>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Meus pedidos -->
+  <section class="account-section">
+    <h2>Meus Pedidos</h2>
+
+    <div class="orders-empty" *ngIf="orders.length === 0">
+      <i class="fas fa-box-open" aria-hidden="true"></i>
+      <p>Você ainda não fez nenhum pedido.</p>
+      <a routerLink="/products" class="btn btn-primary">Ver Produtos</a>
+    </div>
+
+    <div class="orders-list" *ngIf="orders.length !== 0">
+      <div class="order-card" *ngFor="let order of orders">
+        <div class="order-header">
+          <div class="order-id">
+            <strong>{{ order.orderNumber }}</strong>
+            <span class="order-date">{{ formatDateTime(order.createdAt) }}</span>
+          </div>
+          <span class="order-status" [ngClass]="order.status">{{ orderStatusLabels[order.status] }}</span>
+        </div>
+
+        <div class="order-items">
+          <div class="order-item" *ngFor="let item of order.items">
+            <span>{{ item.name }} × {{ item.quantity }}</span>
+            <span>R$ {{ formatPrice(item.price * item.quantity) }}</span>
+          </div>
+        </div>
+
+        <div class="order-footer">
+          <span class="order-items-count">{{ itemCount(order) }} {{ itemCount(order) === 1 ? 'item' : 'itens' }}</span>
+          <span class="order-total">Total: R$ {{ formatPrice(order.total) }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Meus agendamentos -->
+  <section class="account-section">
+    <h2>Meus Agendamentos</h2>
+
+    <div class="appointments-empty" *ngIf="myAppointments.length === 0">
+      <i class="fas fa-calendar" aria-hidden="true"></i>
+      <p>Você ainda não tem agendamentos.</p>
+      <a routerLink="/appointments" class="btn btn-primary">Agendar</a>
+    </div>
+
+    <ul class="appointments-list" *ngIf="myAppointments.length > 0">
+      <li class="appointment-card" *ngFor="let appointment of myAppointments">
+        <div class="appointment-info">
+          <span class="appointment-pet">{{ appointment.petName }}</span>
+          <span class="appointment-service">{{ appointment.serviceName || 'Serviço' }}</span>
+          <span class="appointment-when">{{ formatDate(appointment.date) }} às {{ appointment.time }}</span>
+          <span class="appointment-notes" *ngIf="appointment.notes">{{ appointment.notes }}</span>
+        </div>
+        <span class="appointment-status" [ngClass]="appointment.status">
+          {{ appointmentStatusLabels[appointment.status] }}
+        </span>
+      </li>
+    </ul>
+  </section>
+</div>

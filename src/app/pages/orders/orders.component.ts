@@ -13,6 +13,7 @@ import { takeUntil } from 'rxjs/operators';
 export class OrdersComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   orders: Order[] = [];
+  isStaff = false;
 
   statusLabels: Record<OrderStatus, string> = {
     pendente: 'Pendente',
@@ -20,6 +21,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
     entregue: 'Entregue',
     cancelado: 'Cancelado'
   };
+
+  statusOptions: OrderStatus[] = ['pendente', 'pago', 'entregue', 'cancelado'];
 
   constructor(
     private orderService: OrderService,
@@ -29,11 +32,19 @@ export class OrdersComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const user = this.authService.getCurrentUser();
     const isCustomer = user?.role === 'customer';
+    this.isStaff = !!user && !isCustomer;
 
     this.orderService.getOrders().pipe(takeUntil(this.destroy$)).subscribe(orders => {
       const visible = isCustomer ? orders.filter(o => o.userId === user?.id) : orders;
       this.orders = [...visible].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     });
+  }
+
+  setStatus(order: Order, event: Event): void {
+    const status = (event.target as HTMLSelectElement).value as OrderStatus;
+    if (order.id && status !== order.status) {
+      this.orderService.updateStatus(order.id, status).pipe(takeUntil(this.destroy$)).subscribe();
+    }
   }
 
   formatPrice(value: number): string {

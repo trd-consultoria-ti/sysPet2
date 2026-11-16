@@ -32,6 +32,15 @@
         <span class="order-items-count">{{ itemCount(order) }} {{ itemCount(order) === 1 ? 'item' : 'itens' }}</span>
         <span class="order-total">Total: R$ {{ formatPrice(order.total) }}</span>
       </div>
+
+      <div class="order-status-control" *ngIf="isStaff">
+        <label [attr.for]="'status-' + order.id">Alterar status:</label>
+        <select class="order-status-select" [id]="'status-' + order.id" [value]="order.status" (change)="setStatus(order, $event)">
+          <option *ngFor="let s of statusOptions" [value]="s" [selected]="s === order.status">
+            {{ statusLabels[s] }}
+          </option>
+        </select>
+      </div>
     </div>
   </div>
 </div>

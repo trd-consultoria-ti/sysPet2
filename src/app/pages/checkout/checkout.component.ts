@@ -17,6 +17,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   checkoutForm: FormGroup;
   completedOrder: Order | null = null;
+  submitError = '';
 
   constructor(
     private fb: FormBuilder,
@@ -71,9 +72,15 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         paymentMethod: formValues.paymentMethod,
         items: this.cartItems,
         userId: user?.id
-      }).pipe(takeUntil(this.destroy$)).subscribe(order => {
-        this.completedOrder = order;
-        this.cartService.clear();
+      }).pipe(takeUntil(this.destroy$)).subscribe({
+        next: order => {
+          this.submitError = '';
+          this.completedOrder = order;
+          this.cartService.clear();
+        },
+        error: err => {
+          this.submitError = err?.error?.error || 'Não foi possível concluir o pedido. Tente novamente.';
+        }
       });
     }
   }

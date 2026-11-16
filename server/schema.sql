@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS products (
   reviews INTEGER NOT NULL DEFAULT 0,
   image TEXT NOT NULL DEFAULT '',
   category TEXT NOT NULL DEFAULT '',
-  description TEXT NOT NULL DEFAULT ''
+  description TEXT NOT NULL DEFAULT '',
+  -- NULL = sem controle de estoque; inteiro >= 0 = quantidade disponível
+  stock INTEGER CHECK (stock IS NULL OR stock >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS catalog_services (

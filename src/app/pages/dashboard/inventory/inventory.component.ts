@@ -35,7 +35,8 @@ export class InventoryComponent implements OnInit, OnDestroy {
       name: ['', Validators.required],
       price: [0, [Validators.required, Validators.min(0)]],
       category: ['', Validators.required],
-      description: ['']
+      description: [''],
+      stock: [null, [Validators.min(0)]]
     });
   }
 
@@ -51,7 +52,8 @@ export class InventoryComponent implements OnInit, OnDestroy {
     this.editForms[product.id] = this.fb.group({
       name: [product.name, [Validators.required]],
       price: [product.price, [Validators.required, Validators.min(0)]],
-      category: [product.category, [Validators.required]]
+      category: [product.category, [Validators.required]],
+      stock: [product.stock ?? null, [Validators.min(0)]]
     });
   }
 
@@ -69,11 +71,13 @@ export class InventoryComponent implements OnInit, OnDestroy {
       if (isNaN(price) || price < 0) {
         return;
       }
+      const stock = values.stock === null || values.stock === '' ? null : Math.max(0, Math.floor(+values.stock));
       this.productService.update({
         ...product,
         name: values.name,
         price,
-        category: values.category
+        category: values.category,
+        stock: isNaN(stock as number) ? null : stock
       }).pipe(takeUntil(this.destroy$)).subscribe();
       this.editingId = null;
       this.editForms = {};
@@ -84,7 +88,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
 
   openCreate(): void {
     if (!this.canManage) return;
-    this.createForm.reset({ name: '', price: 0, category: '', description: '' });
+    this.createForm.reset({ name: '', price: 0, category: '', description: '', stock: null });
     this.showCreateForm = true;
   }
 
@@ -95,6 +99,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
   saveCreate(): void {
     if (this.createForm.invalid || !this.canManage) return;
     const values = this.createForm.value;
+    const stock = values.stock === null || values.stock === '' ? null : Math.max(0, Math.floor(+values.stock));
     this.productService.create({
       name: values.name,
       price: Number(values.price),
@@ -102,7 +107,8 @@ export class InventoryComponent implements OnInit, OnDestroy {
       reviews: 0,
       image: '',
       category: values.category,
-      description: values.description || ''
+      description: values.description || '',
+      stock: isNaN(stock as number) ? null : stock
     }).pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.showCreateForm = false;
     });

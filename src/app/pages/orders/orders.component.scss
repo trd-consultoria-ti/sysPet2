@@ -113,3 +113,26 @@
   font-weight: 700;
   font-size: 1.05rem;
 }
+
+.order-status-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+
+  label {
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+  }
+}
+
+.order-status-select {
+  width: auto;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--input);
+  font-size: 0.875rem;
+}

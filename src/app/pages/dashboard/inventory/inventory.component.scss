@@ -153,3 +153,25 @@
   font-size: 0.8rem;
   font-weight: 600;
 }
+
+.stock-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.stock-unlimited {
+  color: var(--muted);
+}
+
+.stock-low {
+  background: #fff8e1;
+  color: #8d6e00;
+}
+
+.stock-out {
+  background: #fff5f5;
+  color: #e53e3e;
+}

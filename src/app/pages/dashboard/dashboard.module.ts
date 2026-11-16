@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
-import { ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { DashboardComponent } from './dashboard.component';
 import { DashboardHomeComponent } from './dashboard-home/dashboard-home.component';
 import { AdminAppointmentsComponent } from './admin-appointments/admin-appointments.component';
@@ -9,6 +9,7 @@ import { InventoryComponent } from './inventory/inventory.component';
 import { AdminServicesComponent } from './admin-services/admin-services.component';
 import { AdminUsersComponent } from './admin-users/admin-users.component';
 import { AdminCashComponent } from './admin-cash/admin-cash.component';
+import { AdminReportsComponent } from './admin-reports/admin-reports.component';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 
 const routes: Routes = [
@@ -23,7 +24,8 @@ const routes: Routes = [
       { path: 'inventory', component: InventoryComponent },
       { path: 'services', component: AdminServicesComponent, canActivate: [AdminGuard] },
       { path: 'users', component: AdminUsersComponent, canActivate: [AdminGuard] },
-      { path: 'cash', component: AdminCashComponent, canActivate: [AdminGuard] }
+      { path: 'cash', component: AdminCashComponent, canActivate: [AdminGuard] },
+      { path: 'reports', component: AdminReportsComponent, canActivate: [AdminGuard] }
     ]
   }
 ];
@@ -36,10 +38,12 @@ const routes: Routes = [
     InventoryComponent,
     AdminServicesComponent,
     AdminUsersComponent,
-    AdminCashComponent
+    AdminCashComponent,
+    AdminReportsComponent
   ],
   imports: [
     CommonModule,
+    FormsModule,
     ReactiveFormsModule,
     RouterModule.forChild(routes)
   ]

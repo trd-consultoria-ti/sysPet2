@@ -49,6 +49,8 @@
           </select>
         </div>
 
+        <p class="error-message" *ngIf="submitError" role="alert">{{ submitError }}</p>
+
         <button type="submit" class="btn btn-primary btn-block" [disabled]="checkoutForm.invalid">
           Confirmar Pedido — R$ {{ formatPrice(cartTotal) }}
         </button>

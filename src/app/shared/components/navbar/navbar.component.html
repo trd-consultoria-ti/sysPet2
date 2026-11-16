@@ -42,6 +42,7 @@
             </ng-container>
           </a>
           <ng-container *ngIf="currentUser$ | async as user; else loginButton">
+            <a routerLink="/account" class="btn btn-outline-secondary" (click)="closeMenu()">Minha conta</a>
             <span class="nav-user">{{ user.name }}</span>
             <button class="btn btn-outline-secondary" (click)="logout(); closeMenu()">Sair</button>
           </ng-container>

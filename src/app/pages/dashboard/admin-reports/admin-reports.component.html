@@ -1,0 +1,140 @@
+<div class="admin-page">
+  <div class="page-header">
+    <h1>Balanço</h1>
+  </div>
+
+  <form class="report-filters" (ngSubmit)="load()">
+    <div class="form-group">
+      <label for="report-from">De</label>
+      <input type="date" id="report-from" name="from" [(ngModel)]="from" required>
+    </div>
+    <div class="form-group">
+      <label for="report-to">Até</label>
+      <input type="date" id="report-to" name="to" [(ngModel)]="to" required>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        {{ loading ? 'Carregando...' : 'Filtrar' }}
+      </button>
+    </div>
+  </form>
+
+  <p class="error-message" *ngIf="error" role="alert">{{ error }}</p>
+
+  <ng-container *ngIf="report">
+    <p class="period-label">Período: {{ report.from }} a {{ report.to }}</p>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Faturamento</span>
+        <span class="stat-value">R$ {{ formatPrice(report.revenue) }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Pedidos</span>
+        <span class="stat-value">{{ report.ordersCount }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Ticket médio</span>
+        <span class="stat-value">R$ {{ formatPrice(ticketMedio) }}</span>
+      </div>
+    </div>
+
+    <div class="report-tables">
+      <section class="report-section">
+        <h2>Por método de pagamento</h2>
+        <div class="empty-state" *ngIf="report.byPaymentMethod.length === 0">
+          <p>Sem pedidos no período.</p>
+        </div>
+        <div class="table-container" *ngIf="report.byPaymentMethod.length > 0">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Pagamento</th>
+                <th>Pedidos</th>
+                <th>Receita</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of report.byPaymentMethod">
+                <td>{{ paymentLabel(row.payment_method) }}</td>
+                <td>{{ row.orders_count }}</td>
+                <td>R$ {{ formatPrice(row.revenue) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="report-section">
+        <h2>Pedidos por status</h2>
+        <div class="empty-state" *ngIf="report.ordersByStatus.length === 0">
+          <p>Sem pedidos no período.</p>
+        </div>
+        <div class="table-container" *ngIf="report.ordersByStatus.length > 0">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of report.ordersByStatus">
+                <td>{{ statusLabel(orderStatusLabels, row.status) }}</td>
+                <td>{{ row.count }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="report-section">
+        <h2>Agendamentos por status</h2>
+        <div class="empty-state" *ngIf="report.appointmentsByStatus.length === 0">
+          <p>Sem agendamentos no período.</p>
+        </div>
+        <div class="table-container" *ngIf="report.appointmentsByStatus.length > 0">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of report.appointmentsByStatus">
+                <td>{{ statusLabel(appointmentStatusLabels, row.status) }}</td>
+                <td>{{ row.count }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="report-section">
+        <h2>Top 10 produtos</h2>
+        <div class="empty-state" *ngIf="report.topProducts.length === 0">
+          <p>Sem vendas no período.</p>
+        </div>
+        <div class="table-container" *ngIf="report.topProducts.length > 0">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Qtd. vendida</th>
+                <th>Receita</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of report.topProducts | slice:0:10">
+                <td>{{ row.name }}</td>
+                <td>{{ row.quantity }}</td>
+                <td>R$ {{ formatPrice(row.revenue) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </ng-container>
+</div>

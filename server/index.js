@@ -8,6 +8,19 @@ const { Pool } = require('pg');
 const app = express();
 const PORT = process.env.PORT || 3100;
 
+// Express 4 não encaminha rejeição de handler/middleware async para o error handler —
+// sem isso qualquer exceção assíncrona vira unhandledRejection e pode derrubar o processo.
+// Wrapper centralizado: todo handler async ganha .catch(next).
+for (const m of ['get', 'post', 'put', 'patch', 'delete']) {
+  const orig = app[m].bind(app);
+  app[m] = (path, ...handlers) => orig(path, ...handlers.map(h =>
+    typeof h === 'function' && h.constructor.name === 'AsyncFunction'
+      ? (req, res, next) => h(req, res, next).catch(next)
+      : h
+  ));
+}
+process.on('unhandledRejection', err => console.error('unhandledRejection:', err));
+
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5433', 10),
@@ -382,24 +395,77 @@ app.get('/api/products', async (req, res) => {
   res.json(rows.map(p => ({ ...p, price: num(p.price), rating: num(p.rating) })));
 });
 
+// Relatório de balanço (admin): faturamento, por pagamento, top produtos, funil de status
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+app.get('/api/reports', requireAuth, requireAdmin, async (req, res) => {
+  const from = req.query.from || '1970-01-01';
+  const to = req.query.to || '2999-12-31';
+  if (!DATE_RE.test(from) || !DATE_RE.test(to)) {
+    return res.status(400).json({ error: 'Datas no formato AAAA-MM-DD' });
+  }
+  try {
+  const [totals, byPayment, byStatus, topProducts, appointmentsByStatus] = await Promise.all([
+    pool.query(
+      `SELECT COUNT(*)::int AS orders_count, COALESCE(SUM(total),0)::float AS revenue
+       FROM orders WHERE status <> 'cancelado' AND created_at::date BETWEEN $1::date AND $2::date`,
+      [from, to]),
+    pool.query(
+      `SELECT COALESCE(payment_method,'não informado') AS payment_method,
+              COUNT(*)::int AS orders_count, COALESCE(SUM(total),0)::float AS revenue
+       FROM orders WHERE status <> 'cancelado' AND created_at::date BETWEEN $1::date AND $2::date
+       GROUP BY payment_method ORDER BY revenue DESC`,
+      [from, to]),
+    pool.query(
+      `SELECT status, COUNT(*)::int AS count FROM orders
+       WHERE created_at::date BETWEEN $1::date AND $2::date GROUP BY status`,
+      [from, to]),
+    pool.query(
+      `SELECT (item->>'name') AS name, SUM((item->>'quantity')::int)::int AS quantity,
+              SUM((item->>'price')::numeric * (item->>'quantity')::int)::float AS revenue
+       FROM orders o, jsonb_array_elements(o.items) item
+       WHERE o.status <> 'cancelado' AND o.created_at::date BETWEEN $1::date AND $2::date
+       GROUP BY item->>'name' ORDER BY revenue DESC LIMIT 10`,
+      [from, to]),
+    pool.query(
+      `SELECT status, COUNT(*)::int AS count FROM appointments
+       WHERE date BETWEEN $1::date AND $2::date GROUP BY status`,
+      [from, to])
+  ]);
+  res.json({
+    from, to,
+    ordersCount: totals.rows[0].orders_count,
+    revenue: totals.rows[0].revenue,
+    byPaymentMethod: byPayment.rows,
+    ordersByStatus: byStatus.rows,
+    topProducts: topProducts.rows,
+    appointmentsByStatus: appointmentsByStatus.rows
+  });
+  } catch (e) {
+    console.error('reports:', e);
+    res.status(500).json({ error: 'Erro ao gerar relatório' });
+  }
+});
+
 app.put('/api/products/:id', requireAuth, requireProductManager, async (req, res) => {
-  const { name, price, rating, reviews, image, category, description } = req.body;
+  const { name, price, rating, reviews, image, category, description, stock } = req.body;
+  const stockVal = stock === null || stock === undefined || stock === '' ? null : Math.max(0, Math.floor(Number(stock)) || 0);
   const { rows } = await pool.query(
-    `UPDATE products SET name=$2, price=$3, rating=$4, reviews=$5, image=$6, category=$7, description=$8
+    `UPDATE products SET name=$2, price=$3, rating=$4, reviews=$5, image=$6, category=$7, description=$8, stock=$9
      WHERE id=$1 RETURNING *`,
-    [req.params.id, name, price, rating, reviews, image, category, description]
+    [req.params.id, name, price, rating, reviews, image, category, description, stockVal]
   );
   if (!rows.length) return res.status(404).json({ error: 'Produto não encontrado' });
   res.json({ ...rows[0], price: num(rows[0].price), rating: num(rows[0].rating) });
 });
 
 app.post('/api/products', requireAuth, requireProductManager, async (req, res) => {
-  const { name, price, rating, reviews, image, category, description } = req.body;
+  const { name, price, rating, reviews, image, category, description, stock } = req.body;
   if (!name || price === undefined) return res.status(400).json({ error: 'Nome e preço são obrigatórios' });
+  const stockVal = stock === null || stock === undefined || stock === '' ? null : Math.max(0, Math.floor(Number(stock)) || 0);
   const { rows } = await pool.query(
-    `INSERT INTO products (name, price, rating, reviews, image, category, description)
-     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-    [name, price, rating || 0, reviews || 0, image || '', category || '', description || '']
+    `INSERT INTO products (name, price, rating, reviews, image, category, description, stock)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+    [name, price, rating || 0, reviews || 0, image || '', category || '', description || '', stockVal]
   );
   res.status(201).json({ ...rows[0], price: num(rows[0].price), rating: num(rows[0].rating) });
 });
@@ -487,7 +553,21 @@ app.post('/api/pets', requireAuth, async (req, res) => {
   });
 });
 
-app.put('/api/pets/:id', requireAuth, requireStaff, async (req, res) => {
+// Dono do pet = cliente cujo customer pertence ao usuário da sessão (staff passa direto)
+async function ownsPet(req, petId) {
+  if (isStaff(req.user)) return true;
+  const { rows } = await pool.query(
+    `SELECT 1 FROM pets p JOIN customers c ON c.id = p.customer_id
+     WHERE p.id=$1 AND c.user_id=$2`,
+    [petId, req.user.id]
+  );
+  return rows.length > 0;
+}
+
+app.put('/api/pets/:id', requireAuth, async (req, res) => {
+  if (!(await ownsPet(req, req.params.id))) {
+    return res.status(403).json({ error: 'Pet não pertence ao seu cadastro' });
+  }
   const { name, type, breed, age } = req.body;
   const { rows } = await pool.query(
     'UPDATE pets SET name=$2, type=$3, breed=$4, age=$5 WHERE id=$1 RETURNING *',
@@ -497,7 +577,10 @@ app.put('/api/pets/:id', requireAuth, requireStaff, async (req, res) => {
   res.json(rows[0]);
 });
 
-app.delete('/api/pets/:id', requireAuth, requireStaff, async (req, res) => {
+app.delete('/api/pets/:id', requireAuth, async (req, res) => {
+  if (!(await ownsPet(req, req.params.id))) {
+    return res.status(403).json({ error: 'Pet não pertence ao seu cadastro' });
+  }
   const { rowCount } = await pool.query('DELETE FROM pets WHERE id=$1', [req.params.id]);
   if (!rowCount) return res.status(404).json({ error: 'Pet não encontrado' });
   res.status(204).end();
@@ -585,7 +668,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
 
   // Preço e nome vêm do banco — nunca do body do cliente
   const ids = requested.map(i => Number(i && i.id)).filter(Number.isInteger);
-  const { rows: prods } = await pool.query('SELECT id, name, price FROM products WHERE id = ANY($1)', [ids]);
+  const { rows: prods } = await pool.query('SELECT id, name, price, stock FROM products WHERE id = ANY($1)', [ids]);
   const byId = new Map(prods.map(p => [p.id, p]));
   const serverItems = [];
   for (const i of requested) {
@@ -593,6 +676,9 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     const qty = Math.floor(Number(i && i.quantity));
     if (!p || !qty || qty < 1 || qty > 999) {
       return res.status(400).json({ error: `Item inválido: ${(i && i.name) || (i && i.id)}` });
+    }
+    if (p.stock !== null && p.stock !== undefined && qty > Number(p.stock)) {
+      return res.status(400).json({ error: `Estoque insuficiente: ${p.name} (disponível: ${p.stock})` });
     }
     serverItems.push({ id: p.id, name: p.name, price: num(p.price), quantity: qty });
   }
@@ -622,6 +708,20 @@ app.post('/api/orders', requireAuth, async (req, res) => {
        VALUES ($1, 'entrada', $2, $3, $4)`,
       [rows[0].id, `Pedido ${seq[0].order_number}`, total, paymentMethod || null]
     );
+    // Baixa de estoque atômica: só decrementa onde há saldo suficiente (NULL = sem controle)
+    for (const item of serverItems) {
+      const dec = await client.query(
+        'UPDATE products SET stock = stock - $2 WHERE id = $1 AND stock IS NOT NULL AND stock >= $2',
+        [item.id, item.quantity]
+      );
+      if (dec.rowCount === 0) {
+        const chk = await client.query('SELECT stock FROM products WHERE id=$1', [item.id]);
+        if (chk.rows.length && chk.rows[0].stock !== null && Number(chk.rows[0].stock) < item.quantity) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: `Estoque insuficiente: ${item.name}` });
+        }
+      }
+    }
     await client.query('COMMIT');
     const o = rows[0];
     res.status(201).json({
@@ -645,6 +745,23 @@ app.get('/api/cash', requireAuth, requireAdmin, async (req, res) => {
     id: m.id, orderId: m.order_id, type: m.type, description: m.description,
     amount: num(m.amount), paymentMethod: m.payment_method, createdAt: m.created_at
   })));
+});
+
+// Export CSV do extrato de caixa (admin) — pro contador
+app.get('/api/cash/export.csv', requireAuth, requireAdmin, async (req, res) => {
+  const { rows } = await pool.query('SELECT * FROM cash_movements ORDER BY created_at, id');
+  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const lines = ['id;tipo;descricao;valor;pagamento;pedido;data'];
+  for (const m of rows) {
+    lines.push([
+      m.id, m.type, esc(m.description), Number(m.amount).toFixed(2),
+      esc(m.payment_method || ''), m.order_id || '',
+      m.created_at ? new Date(m.created_at).toISOString() : ''
+    ].join(';'));
+  }
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="caixa-animal-world.csv"');
+  res.send('﻿' + lines.join('\r\n'));
 });
 
 app.post('/api/cash', requireAuth, requireAdmin, async (req, res) => {
