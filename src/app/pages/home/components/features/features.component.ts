@@ -9,22 +9,22 @@ export class FeaturesComponent implements OnInit {
 
   features = [
     {
-      icon: 'shield',
+      icon: 'fas fa-shield-alt',
       title: 'Cuidado Premium',
       description: 'Nossos especialistas em estética e veterinários fornecem cuidados de alta qualidade para seus amados pets.'
     },
     {
-      icon: 'clock',
+      icon: 'fas fa-clock',
       title: 'Agendamento Conveniente',
       description: 'Agende compromissos facilmente com nosso sistema de reservas online intuitivo.'
     },
     {
-      icon: 'thumbs-up',
+      icon: 'fas fa-thumbs-up',
       title: 'Satisfação Garantida',
       description: 'Estamos comprometidos em garantir que você e seu pet tenham a melhor experiência possível.'
     },
     {
-      icon: 'heart',
+      icon: 'fas fa-heart',
       title: 'Cuidado Personalizado',
       description: 'Serviços personalizados para atender às necessidades e preferências únicas do seu pet.'
     }

@@ -14,13 +14,12 @@ export class GlobalNavMenuComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   private subs = new Subscription();
 
-  // Controle de expansão/colapso dos setores com setas (inicia com todos recolhidos)
+  // Controle de expansão/colapso dos setores por prioridade (inicia com todos recolhidos)
   sections: Record<string, boolean> = {
-    visaoGeral: false,
-    banhoTosa: false,
+    atendimento: false,
     clinica: false,
-    cadastros: false,
-    financeiro: false,
+    estoqueLoja: false,
+    gestao: false,
     loja: false,
     acesso: false
   };

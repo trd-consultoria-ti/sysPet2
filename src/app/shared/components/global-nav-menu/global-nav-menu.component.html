@@ -1,7 +1,7 @@
 <!-- Backdrop com clique para fechar -->
 <div class="sidebar-backdrop" [class.open]="isOpen" (click)="close()" aria-hidden="true"></div>
 
-<!-- Coluna Deslizante Lateral dividida por setores (Design System Animal World) -->
+<!-- Coluna Deslizante Lateral dividida por prioridade operacional (Design System Animal World) -->
 <aside class="dashboard-sidebar-drawer" [class.open]="isOpen" role="dialog" aria-modal="true" aria-label="Navegação Geral Animal World">
 
   <!-- Header: somente o logo e o botão de fechar X -->
@@ -14,44 +14,21 @@
     </button>
   </div>
 
-  <!-- Menu de Itens com o exato estilo da coluna do sistema, separado por setores -->
+  <!-- Menu de Itens organizado em ordem estrita de prioridade e atendimento rápido ao cliente -->
   <div class="sidebar-scrollable">
     <ul class="sidebar-menu">
 
-      <!-- SETOR 1: VISÃO GERAL -->
+      <!-- SETOR 1: ATENDIMENTO RÁPIDO & BALCÃO (PRIORIDADE MÁXIMA NA ROTINA) -->
       <li class="sidebar-section-header"
-          (click)="toggleSection('visaoGeral')"
-          [class.collapsed]="!isSectionOpen('visaoGeral')"
+          (click)="toggleSection('atendimento')"
+          [class.collapsed]="!isSectionOpen('atendimento')"
           role="button"
           tabindex="0"
-          [attr.aria-expanded]="isSectionOpen('visaoGeral')">
-        <span>Visão Geral</span>
+          [attr.aria-expanded]="isSectionOpen('atendimento')">
+        <span>Atendimento Rápido & Balcão</span>
         <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
       </li>
-      <ng-container *ngIf="isSectionOpen('visaoGeral')">
-        <li class="sidebar-item">
-          <a (click)="navigate('/dashboard')">
-            <i class="fas fa-home" aria-hidden="true"></i> Painel
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a (click)="navigate('/dashboard/rotas')">
-            <i class="fas fa-sitemap" aria-hidden="true"></i> Mapa do Sistema
-          </a>
-        </li>
-      </ng-container>
-
-      <!-- SETOR 2: BANHO, TOSA & ATENDIMENTO -->
-      <li class="sidebar-section-header"
-          (click)="toggleSection('banhoTosa')"
-          [class.collapsed]="!isSectionOpen('banhoTosa')"
-          role="button"
-          tabindex="0"
-          [attr.aria-expanded]="isSectionOpen('banhoTosa')">
-        <span>Banho, Tosa & Atendimento</span>
-        <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
-      </li>
-      <ng-container *ngIf="isSectionOpen('banhoTosa')">
+      <ng-container *ngIf="isSectionOpen('atendimento')">
         <li class="sidebar-item">
           <a (click)="navigate('/dashboard/daily-queue')">
             <i class="fas fa-columns" aria-hidden="true"></i> Esteira Delivery (Kanban)
@@ -62,9 +39,19 @@
             <i class="fas fa-calendar-alt" aria-hidden="true"></i> Agendamentos
           </a>
         </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/customers')">
+            <i class="fas fa-users" aria-hidden="true"></i> Clientes & Pets
+          </a>
+        </li>
+        <li class="sidebar-item" *ngIf="isAdmin || isStaff">
+          <a (click)="navigate('/dashboard/cash')">
+            <i class="fas fa-cash-register" aria-hidden="true"></i> Caixa (PDV)
+          </a>
+        </li>
       </ng-container>
 
-      <!-- SETOR 3: CLÍNICA VETERINÁRIA -->
+      <!-- SETOR 2: CLÍNICA VETERINÁRIA (CUIDADOS MÉDICOS) -->
       <li class="sidebar-section-header"
           (click)="toggleSection('clinica')"
           [class.collapsed]="!isSectionOpen('clinica')"
@@ -81,69 +68,59 @@
           </a>
         </li>
         <li class="sidebar-item">
-          <a (click)="navigate('/dashboard/vets')">
-            <i class="fas fa-user-md" aria-hidden="true"></i> Médicos Veterinários
-          </a>
-        </li>
-        <li class="sidebar-item">
           <a (click)="navigate('/dashboard/medications')">
             <i class="fas fa-pills" aria-hidden="true"></i> Farmácia & Medicamentos
           </a>
         </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/vets')">
+            <i class="fas fa-user-md" aria-hidden="true"></i> Médicos Veterinários
+          </a>
+        </li>
       </ng-container>
 
-      <!-- SETOR 4: CADASTROS & ESTOQUE -->
+      <!-- SETOR 3: PRODUTOS & ESTOQUE -->
       <li class="sidebar-section-header"
-          (click)="toggleSection('cadastros')"
-          [class.collapsed]="!isSectionOpen('cadastros')"
+          (click)="toggleSection('estoqueLoja')"
+          [class.collapsed]="!isSectionOpen('estoqueLoja')"
           role="button"
           tabindex="0"
-          [attr.aria-expanded]="isSectionOpen('cadastros')">
-        <span>Cadastros & Estoque</span>
+          [attr.aria-expanded]="isSectionOpen('estoqueLoja')">
+        <span>Produtos & Estoque</span>
         <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
       </li>
-      <ng-container *ngIf="isSectionOpen('cadastros')">
+      <ng-container *ngIf="isSectionOpen('estoqueLoja')">
         <li class="sidebar-item">
-          <a (click)="navigate('/dashboard/customers')">
-            <i class="fas fa-users" aria-hidden="true"></i> Clientes & Pets
+          <a (click)="navigate('/dashboard/orders')">
+            <i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos da Loja
           </a>
         </li>
         <li class="sidebar-item">
           <a (click)="navigate('/dashboard/inventory')">
-            <i class="fas fa-box" aria-hidden="true"></i> Produtos & Estoque
+            <i class="fas fa-box" aria-hidden="true"></i> Estoque de Produtos
           </a>
         </li>
         <li class="sidebar-item" *ngIf="isAdmin">
           <a (click)="navigate('/dashboard/services')">
-            <i class="fas fa-concierge-bell" aria-hidden="true"></i> Serviços & Preços
-          </a>
-        </li>
-        <li class="sidebar-item" *ngIf="isAdmin">
-          <a (click)="navigate('/dashboard/users')">
-            <i class="fas fa-user-tie" aria-hidden="true"></i> Funcionários & Equipe
+            <i class="fas fa-concierge-bell" aria-hidden="true"></i> Tabela de Serviços & Preços
           </a>
         </li>
       </ng-container>
 
-      <!-- SETOR 5: FINANCEIRO & GESTÃO -->
+      <!-- SETOR 4: GESTÃO & ADMINISTRATIVO -->
       <li class="sidebar-section-header"
-          (click)="toggleSection('financeiro')"
-          [class.collapsed]="!isSectionOpen('financeiro')"
+          (click)="toggleSection('gestao')"
+          [class.collapsed]="!isSectionOpen('gestao')"
           role="button"
           tabindex="0"
-          [attr.aria-expanded]="isSectionOpen('financeiro')">
-        <span>Financeiro & Gestão</span>
+          [attr.aria-expanded]="isSectionOpen('gestao')">
+        <span>Gestão & Administrativo</span>
         <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
       </li>
-      <ng-container *ngIf="isSectionOpen('financeiro')">
-        <li class="sidebar-item" *ngIf="isAdmin">
-          <a (click)="navigate('/dashboard/cash')">
-            <i class="fas fa-cash-register" aria-hidden="true"></i> Caixa (PDV)
-          </a>
-        </li>
+      <ng-container *ngIf="isSectionOpen('gestao')">
         <li class="sidebar-item">
-          <a (click)="navigate('/dashboard/orders')">
-            <i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos da Loja
+          <a (click)="navigate('/dashboard')">
+            <i class="fas fa-chart-pie" aria-hidden="true"></i> Painel Geral (Dashboard)
           </a>
         </li>
         <li class="sidebar-item" *ngIf="isAdmin">
@@ -151,9 +128,19 @@
             <i class="fas fa-chart-line" aria-hidden="true"></i> Balanço & Faturamento
           </a>
         </li>
+        <li class="sidebar-item" *ngIf="isAdmin">
+          <a (click)="navigate('/dashboard/users')">
+            <i class="fas fa-user-tie" aria-hidden="true"></i> Funcionários & Equipe
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/rotas')">
+            <i class="fas fa-sitemap" aria-hidden="true"></i> Mapa do Sistema
+          </a>
+        </li>
       </ng-container>
 
-      <!-- SETOR 6: LOJA & TUTOR (PÚBLICO) -->
+      <!-- SETOR 5: ÁREA DA LOJA & TUTOR (PORTAL PÚBLICO) -->
       <li class="sidebar-section-header"
           (click)="toggleSection('loja')"
           [class.collapsed]="!isSectionOpen('loja')"
@@ -206,7 +193,7 @@
         </li>
       </ng-container>
 
-      <!-- SETOR 7: CONTA & ACESSO -->
+      <!-- SETOR 6: ACESSO & SESSÃO -->
       <li class="sidebar-section-header"
           (click)="toggleSection('acesso')"
           [class.collapsed]="!isSectionOpen('acesso')"

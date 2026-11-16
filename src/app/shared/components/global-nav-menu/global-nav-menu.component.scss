@@ -165,7 +165,16 @@
 
   &:first-of-type {
     border-top: none;
-    padding-top: 0.5rem;
+    padding-top: 0.75rem;
+
+    span {
+      color: #0d9488;
+      font-weight: 800;
+    }
+
+    .section-arrow {
+      color: #0d9488;
+    }
   }
 
   &:hover {
