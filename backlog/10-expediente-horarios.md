@@ -4,7 +4,7 @@
 
 ## Contexto e Motivação
 
-Confirmado: **seg–sex 9h–18h · sáb 8h–16h · dom fechado** (ela respondeu "recepcionista 9 às 18 seg a sexta, sábado 8 às 16" — domingo inferido fechado, tabela diz "segunda a sábado").
+Confirmado: **seg–sex 9h–18h · sáb 8h–16h · dom fechado** — domingo confirmado explicitamente por Thaina (~16:33, "domingo loja fechada").
 
 ## Narrativa
 
@@ -21,4 +21,4 @@ O sistema precisa saber o expediente pra: limitar o dia de atendimento, calcular
 
 - Tabela/config `business_hours` (day_of_week, open_time, close_time, daily_capacity).
 - Capacidade já está no card 01 — aqui é só o horário; podem ser o mesmo card de configuração.
-- Domingo: confirmar explicitamente com Thaina (nunca respondeu direto).
+- Domingo: **confirmado fechado** por Thaina (~16:33).

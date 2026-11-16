@@ -45,5 +45,9 @@ Auth/papéis · clientes+pets (falta `weight`) · produtos+estoque (baixa autom�
 - Táxi dog **exclusivo** de quem faz banho/tosa
 - Medicamentos = **venda livre** (sem receita)
 - Comissão tosador = **15% do serviço**, rateio em dupla
-- Horários: seg–sex 9–18 · sáb 8–16 · dom fechado
+- Horários: seg–sex 9–18 · sáb 8–16 · **dom fechado (confirmado)**
+- Pacotes: **por pet**, ~4 semanas/mês, tutor marca **dia(s) recorrente(s)** de atendimento
+- Recepcionista: **funcionária contratada** (não é a Thaina — ela é dona + financeiro)
+- Produtos (ração/medicamentos/acessórios): **preço fixo por item**, tabela a receber dela
+- **BANHO/TOSA: bloco de requisitos COMPLETO** (16/11) — zero dúvidas; consultório é o próximo bloco
 - Clientes mandam **muito áudio** no WhatsApp

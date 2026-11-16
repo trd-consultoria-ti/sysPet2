@@ -168,7 +168,7 @@
   overflow-y: auto;
 }
 
-/* Header with user info */
+/* Header with user info and actions */
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -208,6 +208,21 @@
         font-size: 0.85rem;
       }
     }
+
+    .btn-back-site {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 0.5rem;
+    }
+  }
+
+  .header-right-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 }
 

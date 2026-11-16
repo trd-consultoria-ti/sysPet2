@@ -17,6 +17,7 @@ import { DailyQueueHeaderComponent } from './admin-daily-queue/daily-queue-heade
 import { AdminMedicationsComponent } from './admin-medications/admin-medications.component';
 import { AdminSystemMapComponent } from './admin-system-map/admin-system-map.component';
 import { AdminGuard } from '../../shared/guards/admin.guard';
+import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [
   {
@@ -62,7 +63,8 @@ const routes: Routes = [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
+    SharedModule
   ]
 })
 export class DashboardModule { }

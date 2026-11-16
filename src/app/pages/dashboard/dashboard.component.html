@@ -154,25 +154,20 @@
 
     <!-- Conteúdo principal -->
     <div class="dashboard-main">
-      <!-- Cabeçalho com informações do usuário -->
+      <!-- Cabeçalho com ações e menu de perfil unificado -->
       <div class="dashboard-header">
         <div class="header-left-actions">
           <button type="button" class="btn-global-menu-trigger" (click)="openGlobalMenu()" title="Abrir Menu Geral de Telas (Ctrl+K)">
             <i class="fas fa-bars"></i>
             <span>Menu do Sistema</span>
           </button>
+          <a routerLink="/" class="btn btn-outline-secondary btn-sm btn-back-site">
+            <i class="fas fa-arrow-left"></i> Voltar à Loja
+          </a>
         </div>
-        <div class="user-info">
-          <span class="welcome-text">Olá, {{ user?.name || 'Visitante' }}</span>
-          <span class="user-role">{{ user?.role === 'admin' ? 'Administrador' : (user?.role === 'collaborator' ? 'Colaborador' : 'Cliente') }}</span>
+        <div class="header-right-actions">
+          <app-nav-actions></app-nav-actions>
         </div>
-      </div>
-
-      <!-- Voltar link -->
-      <div class="back-link">
-        <a routerLink="/" class="btn btn-outline-secondary btn-sm">
-          <i class="fas fa-arrow-left"></i> Voltar ao site
-        </a>
       </div>
 
       <router-outlet></router-outlet>
