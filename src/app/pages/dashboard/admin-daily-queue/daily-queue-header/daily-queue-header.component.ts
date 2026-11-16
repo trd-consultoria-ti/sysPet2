@@ -7,7 +7,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 })
 export class DailyQueueHeaderComponent {
   @Input() title: string = 'Esteira de Produção — Banho & Tosa';
-  @Input() subtitle: string = 'Quadro Kanban de produção: clique para avançar o pet de estágio ou arraste entre colunas';
+  @Input() subtitle: string = 'Quadro Delivery de produção: clique para avançar o pet de estágio ou arraste entre colunas';
+  @Input() kanbanLabel: string = 'Delivery';
   @Input() viewMode: 'kanban' | 'list' = 'kanban';
   @Input() currentDate: string = '';
   @Input() isFull: boolean = false;
