@@ -3,21 +3,26 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
 
   .header-left {
-    h1 {
+    .page-title {
       margin: 0;
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: var(--foreground, #1e293b);
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .subtitle {
-      margin: 0.25rem 0 0;
-      font-size: 0.9rem;
-      color: var(--muted-foreground, #64748b);
+      margin: 0.35rem 0 0;
+      font-size: 0.875rem;
+      color: #64748b;
+      line-height: 1.4;
     }
   }
 
@@ -29,23 +34,174 @@
   }
 }
 
-.view-mode-toggle,
-.date-navigator {
+/* Segmented Control - Modern Switcher */
+.view-mode-toggle {
   display: inline-flex;
-  gap: 0.25rem;
-  background: white;
+  align-items: center;
+  background-color: #f1f5f9;
   padding: 0.25rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 0.625rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
 
-  .btn {
-    border-radius: 0.35rem;
-    font-size: 0.85rem;
+  .toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.45rem 1rem;
+    font-size: 0.84rem;
     font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    border-radius: 0.45rem;
+    cursor: pointer;
+    transition: all 0.18s ease-in-out;
+    white-space: nowrap;
+
+    .toggle-icon {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      transition: color 0.18s ease-in-out;
+    }
+
+    &:hover:not(.active) {
+      color: #1e293b;
+      background-color: rgba(255, 255, 255, 0.6);
+
+      .toggle-icon {
+        color: #475569;
+      }
+    }
+
+    &.active {
+      background-color: #ffffff;
+      color: #0f766e;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+
+      .toggle-icon {
+        color: #0d9488;
+      }
+    }
   }
 }
 
+/* Date Navigator */
+.date-navigator {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.625rem;
+  padding: 0.2rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  .nav-arrow-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    border-radius: 0.45rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+  }
+
+  .nav-today-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #0f766e;
+    background: #f0fdfa;
+    border: 1px solid #ccfbf1;
+    border-radius: 0.45rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    i {
+      font-size: 0.8rem;
+      color: #0d9488;
+    }
+
+    &:hover {
+      background: #ccfbf1;
+      color: #115e59;
+    }
+  }
+}
+
+/* Check-in Button */
 .checkin-btn {
-  font-weight: 600;
-  padding: 0.55rem 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.52rem 1.15rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  border: none;
+  border-radius: 0.625rem;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25), 0 1px 2px rgba(13, 148, 136, 0.15);
+  transition: all 0.18s ease-in-out;
+  white-space: nowrap;
+
+  .checkin-icon {
+    font-size: 0.82rem;
+  }
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+    box-shadow: 0 4px 8px rgba(13, 148, 136, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(13, 148, 136, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+
+    .header-right {
+      width: 100%;
+      justify-content: flex-start;
+      gap: 0.5rem;
+    }
+  }
+
+  .view-mode-toggle,
+  .date-navigator {
+    flex: 1 1 auto;
+  }
+
+  .checkin-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }

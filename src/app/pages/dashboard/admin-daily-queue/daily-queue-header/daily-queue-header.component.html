@@ -1,39 +1,43 @@
 <div class="page-header">
   <div class="header-left">
-    <h1>{{ title }}</h1>
+    <h1 class="page-title">{{ title }}</h1>
     <p class="subtitle" *ngIf="subtitle">{{ subtitle }}</p>
   </div>
 
   <div class="header-right">
-    <!-- Toggle de Visualização Kanban / Lista -->
-    <div class="view-mode-toggle" role="group" aria-label="Visualização" *ngIf="showViewToggle">
-      <button type="button" class="btn btn-sm" [class.btn-primary]="viewMode === 'kanban'"
-              [class.btn-outline-secondary]="viewMode !== 'kanban'" (click)="onViewModeSelect('kanban')">
-        <i class="fas fa-columns"></i> Esteira Kanban
+    <!-- Toggle de Visualização (Segmented Control moderno) -->
+    <div class="view-mode-toggle" role="group" aria-label="Modo de Visualização" *ngIf="showViewToggle">
+      <button type="button" class="toggle-btn" [class.active]="viewMode === 'kanban'"
+              (click)="onViewModeSelect('kanban')">
+        <i class="fas fa-columns toggle-icon"></i>
+        <span>Esteira Kanban</span>
       </button>
-      <button type="button" class="btn btn-sm" [class.btn-primary]="viewMode === 'list'"
-              [class.btn-outline-secondary]="viewMode !== 'list'" (click)="onViewModeSelect('list')">
-        <i class="fas fa-list"></i> Lista
+      <button type="button" class="toggle-btn" [class.active]="viewMode === 'list'"
+              (click)="onViewModeSelect('list')">
+        <i class="fas fa-list toggle-icon"></i>
+        <span>Lista</span>
       </button>
     </div>
 
     <!-- Navegador de Datas -->
     <div class="date-navigator" *ngIf="showDateNavigator">
-      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="onChangeDate(-1)" title="Dia anterior">
+      <button type="button" class="nav-arrow-btn" (click)="onChangeDate(-1)" title="Dia anterior">
         <i class="fas fa-chevron-left"></i>
       </button>
-      <button type="button" class="btn btn-outline-primary btn-sm" (click)="onTodayClick()">
-        Hoje ({{ currentDate | date:'dd/MM/yyyy' }})
+      <button type="button" class="nav-today-btn" (click)="onTodayClick()">
+        <i class="fas fa-calendar-day"></i>
+        <span>Hoje ({{ currentDate | date:'dd/MM/yyyy' }})</span>
       </button>
-      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="onChangeDate(1)" title="Próximo dia">
+      <button type="button" class="nav-arrow-btn" (click)="onChangeDate(1)" title="Próximo dia">
         <i class="fas fa-chevron-right"></i>
       </button>
     </div>
 
     <!-- Botão de Check-in -->
-    <button type="button" class="btn btn-primary checkin-btn" *ngIf="showCheckinBtn"
+    <button type="button" class="checkin-btn" *ngIf="showCheckinBtn"
             (click)="onCheckinClick()" [disabled]="isFull">
-      <i class="fas fa-plus"></i> {{ checkinBtnText }}
+      <i class="fas fa-plus checkin-icon"></i>
+      <span>{{ checkinBtnText }}</span>
     </button>
 
     <!-- Slot opcional para ações adicionais -->

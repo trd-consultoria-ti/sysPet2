@@ -22,7 +22,8 @@ A recepção faz **check-in** do pet (não agendamento): identifica tutor+pet, p
 - Fila visível em tempo real: posição, pets à frente/atrás, status (aguardando → em atendimento → pronto → entregue)
 - ETA de saída por pet — **tempo é variável** (confirmado por Thaina: depende de procedimento + temperamento + tamanho/palagem; banho varia 30min–2h). Estimativa configurável por serviço+porte, com ajuste manual/média histórica
 - Limite diário de vagas configurável; ao atingir, sistema indica "encerrar" e WhatsApp pode responder "vagas encerradas"
-- Status "pronto" dispara notificação WhatsApp pro tutor (ver card 05)
+- Status "pronto" dispara notificação WhatsApp pro tutor — **canal principal**: o tutor deixa o pet e volta depois (confirmado), não espera na loja (ver card 05)
+- Entrega/retirada registra quem buscou o pet + baixa no atendimento (o tutor não está presente durante o serviço)
 - Check-in inclui **checklist de saúde**: lesão de pele, parasitas, diarreia, vômito, mal-estar, lesão em pata → tutor informado + registro no histórico do pet
 - **Tosas NUNCA fecham sozinhas**: orçamento fica "pendente de confirmação" até humano validar o serviço com o tutor
 - Ao entregar: gera venda/orçamento (card 03) e registra quem executou (alimenta comissão — card 06)
