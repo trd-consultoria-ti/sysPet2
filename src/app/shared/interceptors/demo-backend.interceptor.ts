@@ -19,6 +19,7 @@ interface DbState {
   coupons: any[];
   cash: any[];
   audit: any[];
+  dailyServices: any[];
 }
 
 function getInitialDbState(): DbState {
@@ -322,6 +323,89 @@ function getInitialDbState(): DbState {
     ],
     audit: [
       { id: 1, entity: 'orders', entityId: 1, action: 'create', userName: 'Admin Animal World', userEmail: 'admin@animalworld.com', createdAt: new Date().toISOString() }
+    ],
+    dailyServices: [
+      {
+        id: 1,
+        appointmentId: null,
+        customerId: 1,
+        customerName: 'Maria Silva',
+        phone: '+55 11 98765-4321',
+        petId: 1,
+        petName: 'Rex',
+        petBreed: 'Labrador',
+        serviceId: 1,
+        serviceName: 'Banho Completo',
+        date: new Date().toISOString().split('T')[0],
+        queueOrder: 1,
+        status: 'em_atendimento',
+        healthChecklist: { skin_lesion: false, parasites: false, paw_lesion: false },
+        notes: 'Pet dócil, usar shampoo neutro',
+        estimatedPrice: 79.9,
+        finalPrice: null,
+        cageNumber: 'Box 02',
+        groomerName: 'Carlos Tosador',
+        requiresValidation: false,
+        validationConfirmed: true,
+        checkinAt: new Date(Date.now() - 3600000).toISOString(),
+        startedAt: new Date(Date.now() - 1800000).toISOString(),
+        readyAt: null,
+        deliveredAt: null
+      },
+      {
+        id: 2,
+        appointmentId: null,
+        customerId: 2,
+        customerName: 'João Santos',
+        phone: '+55 11 91234-5678',
+        petId: 3,
+        petName: 'Mia',
+        petBreed: 'Siamês',
+        serviceId: 2,
+        serviceName: 'Tosa Higiênica',
+        date: new Date().toISOString().split('T')[0],
+        queueOrder: 2,
+        status: 'aguardando',
+        healthChecklist: { skin_lesion: false, parasites: false, paw_lesion: false },
+        notes: 'Atenção na patinha direita',
+        estimatedPrice: 59.9,
+        finalPrice: null,
+        cageNumber: 'Box 05',
+        groomerName: 'Mariana',
+        requiresValidation: true,
+        validationConfirmed: false,
+        checkinAt: new Date(Date.now() - 1800000).toISOString(),
+        startedAt: null,
+        readyAt: null,
+        deliveredAt: null
+      },
+      {
+        id: 3,
+        appointmentId: null,
+        customerId: 3,
+        customerName: 'Ana Oliveira',
+        phone: '+55 11 99876-5432',
+        petId: 4,
+        petName: 'Bob',
+        petBreed: 'Golden Retriever',
+        serviceId: 1,
+        serviceName: 'Banho Completo',
+        date: new Date().toISOString().split('T')[0],
+        queueOrder: 3,
+        status: 'pronto',
+        healthChecklist: { skin_lesion: false, parasites: false, paw_lesion: false },
+        notes: 'Pronto para retirada, tutor notificado',
+        estimatedPrice: 79.9,
+        finalPrice: 79.9,
+        cageNumber: 'Gaiola 01',
+        groomerName: 'Carlos Tosador',
+        requiresValidation: false,
+        validationConfirmed: true,
+        checkinAt: new Date(Date.now() - 7200000).toISOString(),
+        startedAt: new Date(Date.now() - 5400000).toISOString(),
+        readyAt: new Date(Date.now() - 900000).toISOString(),
+        deliveredAt: null
+      }
     ]
   };
 }
@@ -340,7 +424,12 @@ export class DemoBackendInterceptor implements HttpInterceptor {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (!parsed.dailyServices || !parsed.dailyServices.length) {
+          parsed.dailyServices = getInitialDbState().dailyServices;
+          this.saveDb(parsed);
+        }
+        return parsed;
       }
     } catch { }
     const initial = getInitialDbState();
@@ -539,6 +628,137 @@ export class DemoBackendInterceptor implements HttpInterceptor {
       db.appointments = db.appointments.map(a => a.id === id ? { ...a, status } : a);
       this.saveDb(db);
       return of(new HttpResponse({ status: 200, body: db.appointments.find(a => a.id === id) }));
+    }
+
+    // Check-in a partir de agendamento: POST /api/appointments/:id/checkin
+    if (path.includes('/checkin') && path.startsWith('/api/appointments/') && method === 'POST') {
+      const id = +path.split('/')[3];
+      const appt = db.appointments.find(a => a.id === id);
+      if (!appt) {
+        return of(new HttpResponse({ status: 404, body: { error: 'Agendamento não encontrado' } }));
+      }
+      const today = new Date().toISOString().split('T')[0];
+      const nextOrder = db.dailyServices.filter(d => d.date === today).length + 1;
+      const isTosa = String(appt.serviceName || '').toLowerCase().includes('tosa');
+      const newDs = {
+        id: db.dailyServices.length ? Math.max(...db.dailyServices.map(d => d.id)) + 1 : 1,
+        appointmentId: appt.id,
+        customerId: appt.customerId || null,
+        customerName: appt.customerName || appt.userName || 'Cliente',
+        phone: appt.phone || '',
+        petId: appt.petId || null,
+        petName: appt.petName,
+        petBreed: '',
+        serviceId: appt.serviceId || null,
+        serviceName: appt.serviceName || 'Serviço',
+        date: today,
+        queueOrder: nextOrder,
+        status: 'aguardando',
+        healthChecklist: {},
+        notes: appt.notes || '',
+        estimatedPrice: 79.9,
+        finalPrice: null,
+        cageNumber: '',
+        groomerName: '',
+        requiresValidation: isTosa,
+        validationConfirmed: !isTosa,
+        checkinAt: new Date().toISOString()
+      };
+      db.dailyServices.push(newDs);
+      appt.status = 'confirmado';
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 201, body: newDs })).pipe(delay(30));
+    }
+
+    // Daily Services: GET /api/daily-services
+    if (path.startsWith('/api/daily-services') && method === 'GET') {
+      const targetDate = new Date().toISOString().split('T')[0];
+      const items = (db.dailyServices || []).filter(d => d.date === targetDate);
+      const waiting = items.filter(i => i.status === 'aguardando').length;
+      const inProgress = items.filter(i => i.status === 'em_atendimento').length;
+      const ready = items.filter(i => i.status === 'pronto').length;
+      const delivered = items.filter(i => i.status === 'entregue').length;
+      const canceled = items.filter(i => i.status === 'cancelado').length;
+      const capacity = 50;
+
+      return of(new HttpResponse({
+        status: 200,
+        body: {
+          items,
+          stats: {
+            date: targetDate,
+            capacity,
+            totalToday: items.length,
+            waiting,
+            inProgress,
+            ready,
+            delivered,
+            canceled,
+            remainingSpots: Math.max(0, capacity - (items.length - canceled)),
+            isFull: (items.length - canceled) >= capacity
+          }
+        }
+      })).pipe(delay(30));
+    }
+
+    // Daily Services: POST /api/daily-services
+    if (path === '/api/daily-services' && method === 'POST') {
+      const today = new Date().toISOString().split('T')[0];
+      const nextOrder = (db.dailyServices || []).filter(d => d.date === today).length + 1;
+      const isTosa = String(req.body.serviceName || '').toLowerCase().includes('tosa');
+      const newDs = {
+        ...req.body,
+        id: db.dailyServices.length ? Math.max(...db.dailyServices.map(d => d.id)) + 1 : 1,
+        date: today,
+        queueOrder: nextOrder,
+        status: 'aguardando',
+        requiresValidation: req.body.requiresValidation !== undefined ? req.body.requiresValidation : isTosa,
+        validationConfirmed: req.body.validationConfirmed !== undefined ? req.body.validationConfirmed : !isTosa,
+        checkinAt: new Date().toISOString()
+      };
+      db.dailyServices.push(newDs);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 201, body: newDs })).pipe(delay(30));
+    }
+
+    // Daily Services: PATCH /api/daily-services/:id/status
+    if (path.includes('/status') && path.startsWith('/api/daily-services/') && method === 'PATCH') {
+      const id = +path.split('/')[3];
+      const status = req.body?.status;
+      const ds = (db.dailyServices || []).find(d => d.id === id);
+      if (ds) {
+        ds.status = status;
+        if (status === 'em_atendimento' && !ds.startedAt) ds.startedAt = new Date().toISOString();
+        if (status === 'pronto' && !ds.readyAt) ds.readyAt = new Date().toISOString();
+        if (status === 'entregue' && !ds.deliveredAt) ds.deliveredAt = new Date().toISOString();
+        if (status === 'entregue' && ds.appointmentId) {
+          const appt = db.appointments.find(a => a.id === ds.appointmentId);
+          if (appt) appt.status = 'concluido';
+        }
+        this.saveDb(db);
+        return of(new HttpResponse({ status: 200, body: ds }));
+      }
+      return of(new HttpResponse({ status: 404, body: { error: 'Não encontrado' } }));
+    }
+
+    // Daily Services: PUT /api/daily-services/:id
+    if (path.startsWith('/api/daily-services/') && method === 'PUT') {
+      const id = +path.split('/')[3];
+      const ds = (db.dailyServices || []).find(d => d.id === id);
+      if (ds) {
+        Object.assign(ds, req.body);
+        this.saveDb(db);
+        return of(new HttpResponse({ status: 200, body: ds }));
+      }
+      return of(new HttpResponse({ status: 404, body: { error: 'Não encontrado' } }));
+    }
+
+    // Daily Services: DELETE /api/daily-services/:id
+    if (path.startsWith('/api/daily-services/') && method === 'DELETE') {
+      const id = +path.split('/')[3];
+      db.dailyServices = (db.dailyServices || []).filter(d => d.id !== id);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 204, body: null }));
     }
 
     // 9. Orders: /api/orders

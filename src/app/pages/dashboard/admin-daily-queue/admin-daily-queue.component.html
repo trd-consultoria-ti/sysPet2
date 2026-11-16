@@ -1,0 +1,330 @@
+<div class="daily-queue-page">
+  <!-- Toast Notification -->
+  <div class="toast-notification" *ngIf="toastMessage" [ngClass]="toastType">
+    <span>{{ toastMessage }}</span>
+  </div>
+
+  <!-- Header & Ações -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Fila do Dia — Banho & Tosa</h1>
+      <p class="subtitle">Atendimento por ordem de chegada com integração à agenda</p>
+    </div>
+
+    <div class="header-right">
+      <div class="date-navigator">
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="changeDate(-1)" title="Dia anterior">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <button type="button" class="btn btn-outline-primary btn-sm" (click)="setToday()">
+          Hoje ({{ currentDate | date:'dd/MM/yyyy' }})
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="changeDate(1)" title="Próximo dia">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <button type="button" class="btn btn-primary checkin-btn" (click)="openCheckinModal()" [disabled]="stats.isFull">
+        <i class="fas fa-plus"></i> Novo Check-in (Balcão)
+      </button>
+    </div>
+  </div>
+
+  <!-- Métricas de Capacidade e Vagas do Dia -->
+  <div class="capacity-banner" [class.banner-full]="stats.isFull">
+    <div class="capacity-info">
+      <div class="capacity-gauge">
+        <span class="gauge-label">Capacidade do Dia</span>
+        <div class="gauge-bar-wrapper">
+          <div class="gauge-bar" [style.width.%]="(stats.totalToday / stats.capacity) * 100"></div>
+        </div>
+        <span class="gauge-numbers">
+          <strong>{{ stats.totalToday }}</strong> de {{ stats.capacity }} vagas ocupadas
+          <span class="remaining-badge" [class.badge-warning]="stats.remainingSpots <= 5">
+            ({{ stats.remainingSpots }} vagas restantes)
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Mini-contadores de status -->
+    <div class="queue-status-cards">
+      <div class="status-stat-card waiting" (click)="setFilter('aguardando')" [class.active]="activeFilter === 'aguardando'">
+        <span class="stat-number">{{ stats.waiting }}</span>
+        <span class="stat-title"><i class="fas fa-clock"></i> Aguardando</span>
+      </div>
+      <div class="status-stat-card in-progress" (click)="setFilter('em_atendimento')" [class.active]="activeFilter === 'em_atendimento'">
+        <span class="stat-number">{{ stats.inProgress }}</span>
+        <span class="stat-title"><i class="fas fa-bath"></i> Em Atendimento</span>
+      </div>
+      <div class="status-stat-card ready" (click)="setFilter('pronto')" [class.active]="activeFilter === 'pronto'">
+        <span class="stat-number">{{ stats.ready }}</span>
+        <span class="stat-title"><i class="fas fa-check-circle"></i> Prontos</span>
+      </div>
+      <div class="status-stat-card delivered" (click)="setFilter('entregue')" [class.active]="activeFilter === 'entregue'">
+        <span class="stat-number">{{ stats.delivered }}</span>
+        <span class="stat-title"><i class="fas fa-paw"></i> Entregues</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Abas de Filtro -->
+  <div class="filter-tabs">
+    <button type="button" class="tab-btn" [class.active]="activeFilter === 'todos'" (click)="setFilter('todos')">
+      Todos ({{ queueItems.length }})
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeFilter === 'aguardando'" (click)="setFilter('aguardando')">
+      Aguardando ({{ stats.waiting }})
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeFilter === 'em_atendimento'" (click)="setFilter('em_atendimento')">
+      Em Banho / Tosa ({{ stats.inProgress }})
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeFilter === 'pronto'" (click)="setFilter('pronto')">
+      Pronto para Retirada ({{ stats.ready }})
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeFilter === 'entregue'" (click)="setFilter('entregue')">
+      Entregues ({{ stats.delivered }})
+    </button>
+  </div>
+
+  <!-- Lista de Atendimentos da Fila -->
+  <div class="queue-list" *ngIf="filteredItems.length > 0">
+    <div class="queue-card" *ngFor="let item of filteredItems" [ngClass]="'status-' + item.status">
+      <!-- Coluna da Ordem na Fila -->
+      <div class="queue-position">
+        <span class="pos-badge">#{{ item.queueOrder }}</span>
+        <span class="time-in"><i class="far fa-clock"></i> {{ formatTime(item.checkinAt) }}</span>
+      </div>
+
+      <!-- Informações do Pet e Tutor -->
+      <div class="pet-tutor-info">
+        <div class="pet-header">
+          <h3 class="pet-name">
+            {{ item.petName }}
+            <span class="pet-breed" *ngIf="item.petBreed">({{ item.petBreed }})</span>
+          </h3>
+          <span class="status-tag" [ngClass]="item.status">
+            {{ item.status === 'aguardando' ? 'Aguardando' : (item.status === 'em_atendimento' ? 'Em Banho/Tosa' : (item.status === 'pronto' ? 'Pronto para Retirada' : (item.status === 'entregue' ? 'Entregue' : item.status))) }}
+          </span>
+          <span class="appointment-origin" *ngIf="item.appointmentId" title="Veio de Agendamento Prévio">
+            <i class="fas fa-calendar-check"></i> Agendado
+          </span>
+        </div>
+
+        <div class="tutor-contact">
+          <span><i class="fas fa-user"></i> Tutor: <strong>{{ item.customerName }}</strong></span>
+          <span *ngIf="item.phone" class="phone-link">
+            <i class="fas fa-phone-alt"></i> {{ item.phone }}
+          </span>
+          <span *ngIf="item.cageNumber" class="box-tag">
+            <i class="fas fa-home"></i> {{ item.cageNumber }}
+          </span>
+          <span *ngIf="item.groomerName" class="groomer-tag">
+            <i class="fas fa-cut"></i> {{ item.groomerName }}
+          </span>
+        </div>
+
+        <!-- Alertas de Saúde / Triagem do Check-in -->
+        <div class="health-alert-banner" *ngIf="hasHealthAlerts(item.healthChecklist)">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span><strong>Triagem de Saúde:</strong> {{ getHealthSummary(item.healthChecklist) }}</span>
+          <span class="health-obs" *ngIf="item.healthChecklist.observations"> — {{ item.healthChecklist.observations }}</span>
+        </div>
+
+        <!-- Validação de Tosa Pendente -->
+        <div class="validation-banner" *ngIf="item.requiresValidation && !item.validationConfirmed">
+          <i class="fas fa-info-circle"></i>
+          <span><strong>Validação com o Tutor:</strong> Procedimento de tosa exige confirmação prévia com o tutor.</span>
+          <button type="button" class="btn btn-xs btn-outline-success" (click)="confirmValidation(item)">
+            Confirmar Validação
+          </button>
+        </div>
+
+        <!-- Notas Gerais -->
+        <div class="item-notes" *ngIf="item.notes">
+          <small><i class="far fa-comment-alt"></i> {{ item.notes }}</small>
+        </div>
+      </div>
+
+      <!-- Preço e Serviço -->
+      <div class="service-price-block">
+        <span class="service-title">{{ item.serviceName }}</span>
+        <span class="service-price">R$ {{ formatPrice(item.finalPrice || item.estimatedPrice) }}</span>
+      </div>
+
+      <!-- Botões de Ação Rápida de Status -->
+      <div class="queue-actions">
+        <!-- Se aguardando: Iniciar -->
+        <button
+          *ngIf="item.status === 'aguardando'"
+          type="button"
+          class="btn btn-sm btn-primary action-btn"
+          (click)="changeStatus(item, 'em_atendimento')">
+          <i class="fas fa-play"></i> Iniciar
+        </button>
+
+        <!-- Se em atendimento: Marcar Pronto -->
+        <button
+          *ngIf="item.status === 'em_atendimento'"
+          type="button"
+          class="btn btn-sm btn-success action-btn"
+          (click)="changeStatus(item, 'pronto')">
+          <i class="fas fa-check"></i> Pronto!
+        </button>
+
+        <!-- Se pronto: Entregar ou Notificar WhatsApp -->
+        <div class="ready-actions-group" *ngIf="item.status === 'pronto'">
+          <button
+            type="button"
+            class="btn btn-sm btn-success action-btn"
+            (click)="changeStatus(item, 'entregue')">
+            <i class="fas fa-paw"></i> Entregar Pet
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-whatsapp action-btn"
+            (click)="openWhatsAppNotification(item)"
+            title="Avisar tutor no WhatsApp que o pet está pronto">
+            <i class="fab fa-whatsapp"></i> Avisar Tutor
+          </button>
+        </div>
+
+        <!-- Se entregue: Concluído -->
+        <span class="delivered-label" *ngIf="item.status === 'entregue'">
+          <i class="fas fa-check-double"></i> Entregue às {{ formatTime(item.deliveredAt) }}
+        </span>
+
+        <!-- Botão excluir/cancelar -->
+        <button
+          *ngIf="item.status !== 'entregue'"
+          type="button"
+          class="btn btn-sm btn-link text-danger remove-btn"
+          (click)="deleteItem(item)"
+          title="Remover da fila">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="filteredItems.length === 0">
+    <i class="fas fa-clipboard-list empty-icon"></i>
+    <h3>Nenhum pet na fila do dia</h3>
+    <p>Clique em "+ Novo Check-in (Balcão)" ou envie um agendamento da agenda para dar entrada nos pets de hoje.</p>
+    <button type="button" class="btn btn-primary" (click)="openCheckinModal()" [disabled]="stats.isFull">
+      <i class="fas fa-plus"></i> Fazer Check-in Agora
+    </button>
+  </div>
+
+  <!-- Modal de Check-in de Balcão -->
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>{{ isEditing ? 'Editar Atendimento' : 'Novo Check-in de Balcão (Fila do Dia)' }}</h2>
+          <button type="button" class="close-btn" (click)="closeModal()">&times;</button>
+        </div>
+
+        <form [formGroup]="checkinForm" (ngSubmit)="saveCheckin()">
+          <div class="modal-body">
+            <!-- Dados do Pet e Tutor -->
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label>Nome do Pet *</label>
+                <input type="text" formControlName="petName" class="form-control" placeholder="Ex: Rex, Mel, Thor">
+              </div>
+              <div class="form-group col-6">
+                <label>Raça do Pet</label>
+                <input type="text" formControlName="petBreed" class="form-control" placeholder="Ex: Shih Tzu, Poodle, SRD">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label>Nome do Tutor *</label>
+                <input type="text" formControlName="customerName" class="form-control" placeholder="Ex: Maria Silva">
+              </div>
+              <div class="form-group col-6">
+                <label>Telefone / WhatsApp *</label>
+                <input type="text" formControlName="phone" class="form-control" placeholder="Ex: (11) 98765-4321">
+              </div>
+            </div>
+
+            <!-- Procedimento & Localização -->
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label>Procedimento / Serviço *</label>
+                <select class="form-control" (change)="onServiceSelected($event)" formControlName="serviceName">
+                  <option *ngFor="let srv of availableServices" [value]="srv.name">
+                    {{ srv.name }} — R$ {{ formatPrice(srv.price) }}
+                  </option>
+                  <option value="Banho Completo">Banho Completo</option>
+                  <option value="Tosa Higiênica">Tosa Higiênica</option>
+                  <option value="Tosa Geral">Tosa Geral</option>
+                  <option value="Tosa Baby">Tosa Baby</option>
+                </select>
+              </div>
+
+              <div class="form-group col-6">
+                <label>Preço Estimado (R$) *</label>
+                <input type="number" step="0.5" formControlName="estimatedPrice" class="form-control">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label>Gaiola / Box de Espera</label>
+                <input type="text" formControlName="cageNumber" class="form-control" placeholder="Ex: Box 02, Gaiola 05">
+              </div>
+              <div class="form-group col-6">
+                <label>Tosador / Banhista</label>
+                <input type="text" formControlName="groomerName" class="form-control" placeholder="Ex: Carlos, Mariana">
+              </div>
+            </div>
+
+            <!-- Checklist de Saúde na Triagem -->
+            <div class="checklist-section">
+              <label class="section-title"><i class="fas fa-notes-medical"></i> Checklist de Saúde (Triagem Inicial)</label>
+              <div class="checklist-grid">
+                <label class="check-item">
+                  <input type="checkbox" formControlName="health_skin">
+                  <span>Lesão de Pele</span>
+                </label>
+                <label class="check-item">
+                  <input type="checkbox" formControlName="health_parasites">
+                  <span>Parasitas (pulgas/carrapatos)</span>
+                </label>
+                <label class="check-item">
+                  <input type="checkbox" formControlName="health_paw">
+                  <span>Lesão em Patas / Unhas</span>
+                </label>
+                <label class="check-item">
+                  <input type="checkbox" formControlName="health_vomiting">
+                  <span>Vômito / Diarreia</span>
+                </label>
+                <label class="check-item">
+                  <input type="checkbox" formControlName="health_malaise">
+                  <span>Mal-estar Geral</span>
+                </label>
+              </div>
+              <input type="text" formControlName="health_obs" class="form-control obs-input" placeholder="Detalhes da triagem de saúde (se houver)">
+            </div>
+
+            <div class="form-group">
+              <label>Observações do Atendimento</label>
+              <textarea formControlName="notes" rows="2" class="form-control" placeholder="Ex: Usar shampoo hipoalergênico, cuidado com nó nas orelhas"></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="checkinForm.invalid">
+              <i class="fas fa-check"></i> {{ isEditing ? 'Salvar Alterações' : 'Confirmar Check-in na Fila' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

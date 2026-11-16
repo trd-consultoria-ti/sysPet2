@@ -69,6 +69,15 @@
             </td>
             <td class="actions-cell">
               <button
+                *ngIf="appointment.status !== 'cancelado' && appointment.status !== 'concluido'"
+                type="button"
+                class="btn btn-sm btn-success"
+                [attr.aria-label]="'Dar entrada de ' + (appointment.petName || 'pet') + ' na fila do dia'"
+                title="Dar entrada na Fila do Dia de hoje"
+                (click)="checkinToDailyQueue(appointment)">
+                <i class="fas fa-sign-in-alt"></i> Entrada na Fila
+              </button>
+              <button
                 *ngIf="appointment.status === 'solicitado'"
                 class="btn btn-sm btn-primary"
                 [attr.aria-label]="'Confirmar agendamento de ' + (appointment.petName || 'pet')"

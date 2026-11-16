@@ -12,6 +12,7 @@ import { AdminCashComponent } from './admin-cash/admin-cash.component';
 import { AdminReportsComponent } from './admin-reports/admin-reports.component';
 import { AdminConsultationsComponent } from './admin-consultations/admin-consultations.component';
 import { AdminVetsComponent } from './admin-vets/admin-vets.component';
+import { AdminDailyQueueComponent } from './admin-daily-queue/admin-daily-queue.component';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 
 const routes: Routes = [
@@ -21,6 +22,7 @@ const routes: Routes = [
     children: [
       { path: '', component: DashboardHomeComponent },
       { path: 'customers', loadChildren: () => import('../customers/customers.module').then(m => m.CustomersModule) },
+      { path: 'daily-queue', component: AdminDailyQueueComponent },
       { path: 'appointments', component: AdminAppointmentsComponent },
       { path: 'consultations', component: AdminConsultationsComponent },
       { path: 'vets', component: AdminVetsComponent },
@@ -38,6 +40,7 @@ const routes: Routes = [
   declarations: [
     DashboardComponent,
     DashboardHomeComponent,
+    AdminDailyQueueComponent,
     AdminAppointmentsComponent,
     InventoryComponent,
     AdminServicesComponent,

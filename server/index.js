@@ -743,6 +743,267 @@ app.patch('/api/appointments/:id/status', requireAuth, requireStaff, async (req,
   });
 });
 
+// ---------- daily services (Fila do Dia — Banho e Tosa por ordem de chegada) ----------
+
+function dailyServiceJson(r) {
+  let hl = r.health_checklist;
+  if (typeof hl === 'string') {
+    try { hl = JSON.parse(hl); } catch { hl = {}; }
+  }
+  return {
+    id: r.id,
+    appointmentId: r.appointment_id,
+    customerId: r.customer_id,
+    customerName: r.customer_name,
+    phone: r.phone || '',
+    petId: r.pet_id,
+    petName: r.pet_name,
+    petBreed: r.pet_breed || '',
+    petImage: r.pet_image || null,
+    serviceId: r.service_id,
+    serviceName: r.service_name,
+    date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : (typeof r.date === 'string' ? r.date.split('T')[0] : r.date),
+    queueOrder: Number(r.queue_order) || 1,
+    status: r.status,
+    healthChecklist: hl || {},
+    notes: r.notes || '',
+    estimatedPrice: Number(r.estimated_price) || 0,
+    finalPrice: r.final_price !== null && r.final_price !== undefined ? Number(r.final_price) : null,
+    cageNumber: r.cage_number || '',
+    groomerName: r.groomer_name || '',
+    requiresValidation: !!r.requires_validation,
+    validationConfirmed: !!r.validation_confirmed,
+    checkinAt: r.checkin_at,
+    startedAt: r.started_at,
+    readyAt: r.ready_at,
+    deliveredAt: r.delivered_at,
+    createdAt: r.created_at
+  };
+}
+
+// Atalho para check-in direto a partir de um agendamento existente
+app.post('/api/appointments/:id/checkin', requireAuth, requireStaff, async (req, res) => {
+  const { rows: appts } = await pool.query(
+    `SELECT a.*, c.phone as customer_phone, p.breed as pet_breed, p.id as pet_id, s.price as service_price
+     FROM appointments a
+     LEFT JOIN customers c ON c.id = a.customer_id
+     LEFT JOIN pets p ON p.customer_id = a.customer_id AND LOWER(p.name) = LOWER(a.pet_name)
+     LEFT JOIN catalog_services s ON s.id = a.service_id
+     WHERE a.id = $1`,
+    [req.params.id]
+  );
+  if (!appts.length) return res.status(404).json({ error: 'Agendamento não encontrado' });
+  const a = appts[0];
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const { rows: existing } = await pool.query(
+    'SELECT id FROM daily_services WHERE appointment_id = $1 AND date = $2',
+    [a.id, todayStr]
+  );
+  if (existing.length) {
+    return res.status(400).json({ error: 'Este agendamento já deu entrada na fila hoje', dailyServiceId: existing[0].id });
+  }
+
+  const { rows: maxOrder } = await pool.query(
+    'SELECT COALESCE(MAX(queue_order), 0) + 1 AS next_order FROM daily_services WHERE date = $1',
+    [todayStr]
+  );
+  const nextOrder = Number(maxOrder[0].next_order) || 1;
+
+  const isTosa = String(a.service_name || '').toLowerCase().includes('tosa');
+  const price = a.service_price ? Number(a.service_price) : 79.90;
+
+  const { rows: ds } = await pool.query(
+    `INSERT INTO daily_services (
+      appointment_id, customer_id, customer_name, phone,
+      pet_id, pet_name, pet_breed, service_id, service_name,
+      date, queue_order, status, health_checklist, notes,
+      estimated_price, requires_validation, validation_confirmed, checkin_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'aguardando', $12, $13, $14, $15, $16, now())
+    RETURNING *`,
+    [
+      a.id, a.customer_id, a.customer_name || 'Cliente', a.customer_phone || '',
+      a.pet_id || null, a.pet_name, a.pet_breed || '', a.service_id || null, a.service_name || 'Serviço',
+      todayStr, nextOrder, JSON.stringify({}), a.notes || '',
+      price, isTosa, !isTosa
+    ]
+  );
+
+  await pool.query("UPDATE appointments SET status = 'confirmado' WHERE id = $1", [a.id]);
+  audit('daily_services', ds[0].id, 'checkin_from_appointment', null, { appointmentId: a.id }, req.user.id);
+
+  res.status(201).json(dailyServiceJson(ds[0]));
+});
+
+// Listagem da fila do dia e métricas de capacidade
+app.get('/api/daily-services', requireAuth, requireStaff, async (req, res) => {
+  const targetDate = req.query.date || new Date().toISOString().split('T')[0];
+  const { rows } = await pool.query(
+    `SELECT ds.*, p.image_path as pet_image
+     FROM daily_services ds
+     LEFT JOIN pets p ON p.id = ds.pet_id
+     WHERE ds.date = $1
+     ORDER BY ds.queue_order ASC, ds.id ASC`,
+    [targetDate]
+  );
+
+  const d = new Date(targetDate + 'T12:00:00Z');
+  const isSaturday = d.getUTCDay() === 6;
+  const capacity = isSaturday ? 32 : 50;
+
+  const items = rows.map(dailyServiceJson);
+  const waiting = items.filter(i => i.status === 'aguardando').length;
+  const inProgress = items.filter(i => i.status === 'em_atendimento').length;
+  const ready = items.filter(i => i.status === 'pronto').length;
+  const delivered = items.filter(i => i.status === 'entregue').length;
+  const canceled = items.filter(i => i.status === 'cancelado').length;
+
+  res.json({
+    items,
+    stats: {
+      date: targetDate,
+      capacity,
+      totalToday: items.length,
+      waiting,
+      inProgress,
+      ready,
+      delivered,
+      canceled,
+      remainingSpots: Math.max(0, capacity - (items.length - canceled)),
+      isFull: (items.length - canceled) >= capacity
+    }
+  });
+});
+
+// Novo check-in de balcão (ordem de chegada)
+app.post('/api/daily-services', requireAuth, requireStaff, async (req, res) => {
+  const {
+    appointmentId, customerId, customerName, phone,
+    petId, petName, petBreed, serviceId, serviceName,
+    healthChecklist, notes, estimatedPrice, cageNumber, groomerName,
+    requiresValidation, validationConfirmed, date
+  } = req.body;
+
+  if (!customerName || !petName || !serviceName) {
+    return res.status(400).json({ error: 'Nome do cliente, nome do pet e serviço são obrigatórios' });
+  }
+
+  const targetDate = date || new Date().toISOString().split('T')[0];
+  const { rows: maxOrder } = await pool.query(
+    'SELECT COALESCE(MAX(queue_order), 0) + 1 AS next_order FROM daily_services WHERE date = $1',
+    [targetDate]
+  );
+  const nextOrder = Number(maxOrder[0].next_order) || 1;
+
+  const isTosa = String(serviceName).toLowerCase().includes('tosa');
+  const reqVal = requiresValidation !== undefined ? !!requiresValidation : isTosa;
+  const valConf = validationConfirmed !== undefined ? !!validationConfirmed : !reqVal;
+
+  const { rows } = await pool.query(
+    `INSERT INTO daily_services (
+      appointment_id, customer_id, customer_name, phone,
+      pet_id, pet_name, pet_breed, service_id, service_name,
+      date, queue_order, status, health_checklist, notes,
+      estimated_price, cage_number, groomer_name,
+      requires_validation, validation_confirmed, checkin_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'aguardando',$12,$13,$14,$15,$16,$17,$18,now())
+    RETURNING *`,
+    [
+      appointmentId || null, customerId || null, String(customerName).trim(), phone || '',
+      petId || null, String(petName).trim(), petBreed || '', serviceId || null, String(serviceName).trim(),
+      targetDate, nextOrder, JSON.stringify(healthChecklist || {}), notes || '',
+      Number(estimatedPrice) || 0, cageNumber || '', groomerName || '',
+      reqVal, valConf
+    ]
+  );
+
+  if (appointmentId) {
+    await pool.query("UPDATE appointments SET status = 'confirmado' WHERE id = $1", [appointmentId]);
+  }
+
+  audit('daily_services', rows[0].id, 'create_checkin', null, { pet: petName, service: serviceName }, req.user.id);
+  res.status(201).json(dailyServiceJson(rows[0]));
+});
+
+// Alteração de status da fila
+app.patch('/api/daily-services/:id/status', requireAuth, requireStaff, async (req, res) => {
+  const { status } = req.body;
+  const valid = ['aguardando', 'em_atendimento', 'pronto', 'entregue', 'cancelado'];
+  if (!valid.includes(status)) return res.status(400).json({ error: 'Status inválido' });
+
+  const { rows: oldRows } = await pool.query('SELECT * FROM daily_services WHERE id = $1', [req.params.id]);
+  if (!oldRows.length) return res.status(404).json({ error: 'Atendimento não encontrado' });
+  const old = oldRows[0];
+
+  let setClause = 'status = $2';
+  if (status === 'em_atendimento' && !old.started_at) {
+    setClause += ', started_at = now()';
+  } else if (status === 'pronto' && !old.ready_at) {
+    setClause += ', ready_at = now()';
+  } else if (status === 'entregue' && !old.delivered_at) {
+    setClause += ', delivered_at = now()';
+  }
+
+  const { rows } = await pool.query(
+    `UPDATE daily_services SET ${setClause} WHERE id = $1 RETURNING *`,
+    [req.params.id, status]
+  );
+
+  if (status === 'entregue' && old.appointment_id) {
+    await pool.query("UPDATE appointments SET status = 'concluido' WHERE id = $1", [old.appointment_id]);
+  }
+
+  audit('daily_services', rows[0].id, 'status', { status: old.status }, { status }, req.user.id);
+  res.json(dailyServiceJson(rows[0]));
+});
+
+// Atualização de detalhes do atendimento
+app.put('/api/daily-services/:id', requireAuth, requireStaff, async (req, res) => {
+  const {
+    cageNumber, groomerName, notes, finalPrice, estimatedPrice,
+    healthChecklist, validationConfirmed, queueOrder
+  } = req.body;
+
+  const { rows: oldRows } = await pool.query('SELECT * FROM daily_services WHERE id = $1', [req.params.id]);
+  if (!oldRows.length) return res.status(404).json({ error: 'Atendimento não encontrado' });
+  const old = oldRows[0];
+
+  const { rows } = await pool.query(
+    `UPDATE daily_services SET
+      cage_number = COALESCE($2, cage_number),
+      groomer_name = COALESCE($3, groomer_name),
+      notes = COALESCE($4, notes),
+      final_price = COALESCE($5, final_price),
+      estimated_price = COALESCE($6, estimated_price),
+      health_checklist = COALESCE($7, health_checklist),
+      validation_confirmed = COALESCE($8, validation_confirmed),
+      queue_order = COALESCE($9, queue_order)
+     WHERE id = $1 RETURNING *`,
+    [
+      req.params.id,
+      cageNumber !== undefined ? cageNumber : null,
+      groomerName !== undefined ? groomerName : null,
+      notes !== undefined ? notes : null,
+      finalPrice !== undefined ? Number(finalPrice) : null,
+      estimatedPrice !== undefined ? Number(estimatedPrice) : null,
+      healthChecklist !== undefined ? JSON.stringify(healthChecklist) : null,
+      validationConfirmed !== undefined ? !!validationConfirmed : null,
+      queueOrder !== undefined ? Number(queueOrder) : null
+    ]
+  );
+
+  audit('daily_services', rows[0].id, 'update', null, req.body, req.user.id);
+  res.json(dailyServiceJson(rows[0]));
+});
+
+// Cancelamento / remoção do atendimento
+app.delete('/api/daily-services/:id', requireAuth, requireStaff, async (req, res) => {
+  const { rows } = await pool.query('DELETE FROM daily_services WHERE id = $1 RETURNING *', [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'Atendimento não encontrado' });
+  audit('daily_services', req.params.id, 'delete', { pet: rows[0].pet_name }, null, req.user.id);
+  res.status(204).end();
+});
+
 // ---------- orders ----------
 
 app.get('/api/orders', requireAuth, async (req, res) => {

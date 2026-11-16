@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { Appointment, AppointmentStatus } from '../../../shared/models/appointment.model';
 import { AppointmentService } from '../../../shared/services/appointment.service';
+import { DailyServicesService } from '../../../shared/services/daily-services.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -30,7 +32,25 @@ export class AdminAppointmentsComponent implements OnInit, OnDestroy {
     cancelado: 'Cancelado'
   };
 
-  constructor(private appointmentService: AppointmentService) { }
+  constructor(
+    private appointmentService: AppointmentService,
+    private dailyServicesService: DailyServicesService,
+    private router: Router
+  ) { }
+
+  checkinToDailyQueue(appointment: Appointment): void {
+    if (!appointment.id) return;
+    this.dailyServicesService.checkinFromAppointment(appointment.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (ds) => {
+        alert(`Check-in de ${appointment.petName} realizado com sucesso na Fila do Dia! Posição: #${ds.queueOrder}`);
+        this.router.navigate(['/dashboard/daily-queue']);
+      },
+      error: (err) => {
+        const msg = err?.error?.error || 'Erro ao realizar check-in';
+        alert(msg);
+      }
+    });
+  }
 
   trackById(index: number, item: { id?: number }): number {
     return item.id ?? index;

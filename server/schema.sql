@@ -282,3 +282,42 @@ CREATE TABLE IF NOT EXISTS coupons (
   expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- M31 Fila do Dia (Banho e Tosa por ordem de chegada com convivência de agendamentos)
+ALTER TABLE pets ADD COLUMN IF NOT EXISTS weight_kg NUMERIC(5,2);
+ALTER TABLE pets ADD COLUMN IF NOT EXISTS size_tier TEXT DEFAULT 'pequeno';
+
+CREATE TABLE IF NOT EXISTS daily_services (
+  id SERIAL PRIMARY KEY,
+  appointment_id INTEGER REFERENCES appointments(id) ON DELETE SET NULL,
+  customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+  customer_name TEXT NOT NULL,
+  phone TEXT NOT NULL DEFAULT '',
+  pet_id INTEGER REFERENCES pets(id) ON DELETE SET NULL,
+  pet_name TEXT NOT NULL,
+  pet_breed TEXT DEFAULT '',
+  service_id INTEGER REFERENCES catalog_services(id) ON DELETE SET NULL,
+  service_name TEXT NOT NULL,
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  queue_order INTEGER NOT NULL DEFAULT 1,
+  status TEXT NOT NULL DEFAULT 'aguardando'
+    CHECK (status IN ('aguardando', 'em_atendimento', 'pronto', 'entregue', 'cancelado')),
+  health_checklist JSONB NOT NULL DEFAULT '{}',
+  notes TEXT DEFAULT '',
+  estimated_price NUMERIC(10,2) NOT NULL DEFAULT 0,
+  final_price NUMERIC(10,2) DEFAULT NULL,
+  cage_number TEXT DEFAULT '',
+  groomer_name TEXT DEFAULT '',
+  requires_validation BOOLEAN NOT NULL DEFAULT FALSE,
+  validation_confirmed BOOLEAN NOT NULL DEFAULT TRUE,
+  checkin_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  started_at TIMESTAMPTZ,
+  ready_at TIMESTAMPTZ,
+  delivered_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_daily_services_date_status ON daily_services(date, status);
+CREATE INDEX IF NOT EXISTS idx_daily_services_customer ON daily_services(customer_id);
+CREATE INDEX IF NOT EXISTS idx_daily_services_pet ON daily_services(pet_id);
+CREATE INDEX IF NOT EXISTS idx_daily_services_appointment ON daily_services(appointment_id);
