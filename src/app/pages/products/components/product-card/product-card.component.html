@@ -21,7 +21,7 @@
     
     <div class="product-footer">
       <span class="product-price">R$ {{ product.price.toFixed(2).replace('.', ',') }}</span>
-      <button class="btn btn-primary btn-sm">
+      <button class="btn btn-primary btn-sm" (click)="addToCart()">
         <i class="icon-shopping-cart"></i>
         Adicionar
       </button>

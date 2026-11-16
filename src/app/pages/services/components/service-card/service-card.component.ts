@@ -1,4 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { Service } from 'src/app/shared/models/service.model';
 
 @Component({
@@ -9,8 +10,12 @@ import { Service } from 'src/app/shared/models/service.model';
 export class ServiceCardComponent implements OnInit {
   @Input() service!: Service;
 
-  constructor() { }
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
+  }
+
+  bookService(): void {
+    this.router.navigate(['/appointments'], { queryParams: { serviceId: this.service.id } });
   }
 }

@@ -1,0 +1,152 @@
+<div>
+  <!-- Cards de estatísticas -->
+  <div class="dashboard-stats">
+    <div class="stat-card" *ngIf="isAdmin">
+      <div class="stat-header">
+        <span class="stat-title">Receita Total</span>
+        <i class="fas fa-dollar-sign stat-icon"></i>
+      </div>
+      <div class="stat-value">R$ {{ formatPrice(revenue) }}</div>
+      <div class="stat-footer">
+        <span class="stat-change">{{ totalOrders }} pedidos</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-title">Clientes Ativos</span>
+        <i class="fas fa-users stat-icon"></i>
+      </div>
+      <div class="stat-value">{{ totalCustomers }}</div>
+      <div class="stat-footer">
+        <span class="stat-change">clientes cadastrados</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-title">Agendamentos</span>
+        <i class="fas fa-calendar-check stat-icon"></i>
+      </div>
+      <div class="stat-value">{{ totalAppointments }}</div>
+      <div class="stat-footer">
+        <span class="stat-change">{{ todayAppointments.length }} para hoje</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-title">Pedidos</span>
+        <i class="fas fa-shopping-bag stat-icon"></i>
+      </div>
+      <div class="stat-value">{{ totalOrders }}</div>
+      <div class="stat-footer">
+        <span class="stat-change">total de pedidos</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Widgets -->
+  <div class="dashboard-widgets">
+    <!-- Widget de agendamentos do dia -->
+    <div class="widget appointments-widget">
+      <div class="widget-header">
+        <div class="widget-title">
+          <h3>Agendamentos de Hoje</h3>
+          <span class="widget-date"><i class="fas fa-calendar"></i> {{ todayAppointments.length }} agendamentos</span>
+        </div>
+      </div>
+      <div class="widget-content">
+        <div class="appointment-item" *ngFor="let appointment of todayAppointments">
+          <div class="appointment-details">
+            <div class="appointment-client">
+              <span class="client-name">{{ appointment.petName }}</span>
+              <span class="pet-info">{{ appointment.serviceName || 'Serviço' }}</span>
+            </div>
+            <div class="appointment-time">
+              <i class="fas fa-clock"></i> {{ appointment.time }} • {{ appointment.customerName || 'Cliente' }}
+            </div>
+          </div>
+          <div class="appointment-status" [ngClass]="appointment.status">
+            {{ appointmentStatusLabels[appointment.status] }}
+          </div>
+        </div>
+        <p *ngIf="todayAppointments.length === 0" class="empty-widget">
+          Nenhum agendamento para hoje.
+        </p>
+      </div>
+    </div>
+
+    <!-- Widget de vendas recentes -->
+    <div class="widget vendas-widget">
+      <div class="widget-header">
+        <div class="widget-title">
+          <h3>Vendas Recentes</h3>
+        </div>
+      </div>
+      <div class="widget-content">
+        <div class="vendas-total" *ngIf="isAdmin">
+          <span class="vendas-valor">R$ {{ formatPrice(revenue) }}</span>
+        </div>
+
+        <div class="vendas-recentes">
+          <div class="venda-item" *ngFor="let order of recentOrders">
+            <div class="venda-details">
+              <span class="venda-cliente">{{ order.customerName }}</span>
+              <span class="venda-produto">{{ order.orderNumber }} — {{ order.items.length }} {{ order.items.length === 1 ? 'item' : 'itens' }}</span>
+              <span class="venda-data">{{ formatDateTime(order.createdAt) }}</span>
+            </div>
+            <div class="venda-valor">R$ {{ formatPrice(order.total) }}</div>
+          </div>
+          <p *ngIf="recentOrders.length === 0" class="empty-widget">
+            Nenhum pedido ainda.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Módulos do Sistema -->
+  <h3 class="section-title">Módulos do Sistema</h3>
+  <div class="modulos-sistema">
+    <a class="modulo-card" routerLink="/dashboard/customers">
+      <div class="modulo-header">
+        <div class="modulo-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <h4 class="modulo-title">Gerenciamento de Clientes & Pets</h4>
+      </div>
+      <p class="modulo-description">Gerencie perfis de clientes e seus pets com rastreamento completo de histórico.</p>
+    </a>
+
+    <a class="modulo-card" routerLink="/dashboard/appointments">
+      <div class="modulo-header">
+        <div class="modulo-icon">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <h4 class="modulo-title">Agendamento de Serviços</h4>
+      </div>
+      <p class="modulo-description">Agende e gerencie compromissos para banho e tosa, serviços de beleza e mais.</p>
+    </a>
+
+    <a class="modulo-card" routerLink="/dashboard/orders">
+      <div class="modulo-header">
+        <div class="modulo-icon">
+          <i class="fas fa-shopping-cart"></i>
+        </div>
+        <h4 class="modulo-title">Pedidos</h4>
+      </div>
+      <p class="modulo-description">Acompanhe pedidos de produtos feitos pelos clientes.</p>
+    </a>
+
+    <a class="modulo-card" routerLink="/dashboard/inventory">
+      <div class="modulo-header">
+        <div class="modulo-icon">
+          <i class="fas fa-box"></i>
+        </div>
+        <h4 class="modulo-title">Gestão de Estoque</h4>
+      </div>
+      <p class="modulo-description">Acompanhe produtos, gerencie níveis de estoque e analise dados de vendas.</p>
+    </a>
+  </div>
+</div>

@@ -1,12 +1,16 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 export interface User {
   id: number;
   name: string;
   email: string;
   role: 'admin' | 'collaborator' | 'customer';
+  canManageProducts?: boolean;
+  token?: string;
 }
 
 @Injectable({
@@ -15,44 +19,72 @@ export interface User {
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
-  private isAuthenticated = false;
 
-  constructor() {
-    // Verificar se há um usuário no localStorage ao iniciar o serviço
+  constructor(private http: HttpClient) {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
-      this.currentUserSubject.next(JSON.parse(storedUser));
-      this.isAuthenticated = true;
+      try {
+        this.currentUserSubject.next(JSON.parse(storedUser));
+      } catch {
+        localStorage.removeItem('currentUser');
+      }
     }
   }
 
   login(email: string, password: string): Observable<User> {
-    // Simulação de autenticação - em um ambiente real, isso seria uma chamada API
-    // Aqui estamos apenas simulando um login bem-sucedido para um colaborador
-    const mockUser: User = {
-      id: 1,
-      name: 'Colaborador Teste',
-      email: email,
-      role: 'collaborator'
-    };
-
-    return of(mockUser).pipe(
-      tap(user => {
-        this.isAuthenticated = true;
-        this.currentUserSubject.next(user);
-        localStorage.setItem('currentUser', JSON.stringify(user));
+    return this.http.post<User>(`${environment.apiUrl}/auth/login`, { email, password }).pipe(
+      tap(user => this.setSession(user)),
+      catchError(err => {
+        this.clearSession();
+        return throwError(err);
       })
     );
   }
 
-  logout(): void {
-    this.isAuthenticated = false;
+  private setSession(user: User): void {
+    this.currentUserSubject.next(user);
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    if (user.token) localStorage.setItem('authToken', user.token);
+  }
+
+  private clearSession(): void {
     this.currentUserSubject.next(null);
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('authToken');
+  }
+
+  listUsers(): Observable<User[]> {
+    return this.http.get<User[]>(`${environment.apiUrl}/users`);
+  }
+
+  createUser(data: { name: string; email: string; password: string; role: User['role']; canManageProducts?: boolean }): Observable<User> {
+    return this.http.post<User>(`${environment.apiUrl}/users`, data);
+  }
+
+  updateUser(id: number, data: { name?: string; role?: User['role']; canManageProducts?: boolean }): Observable<User> {
+    return this.http.put<User>(`${environment.apiUrl}/users/${id}`, data);
+  }
+
+  changePassword(id: number, currentPassword: string, newPassword: string): Observable<{ ok: boolean }> {
+    return this.http.put<{ ok: boolean }>(`${environment.apiUrl}/users/${id}/password`, { currentPassword, newPassword });
+  }
+
+  register(name: string, email: string, password: string): Observable<User> {
+    return this.http.post<User>(`${environment.apiUrl}/auth/register`, { name, email, password }).pipe(
+      tap(user => this.setSession(user))
+    );
+  }
+
+  logout(): void {
+    this.clearSession();
   }
 
   isLoggedIn(): boolean {
-    return this.isAuthenticated;
+    return this.currentUserSubject.value !== null;
   }
 
   getCurrentUser(): User | null {
@@ -62,5 +94,14 @@ export class AuthService {
   isCollaborator(): boolean {
     const user = this.getCurrentUser();
     return !!user && (user.role === 'collaborator' || user.role === 'admin');
+  }
+
+  isAdmin(): boolean {
+    return this.getCurrentUser()?.role === 'admin';
+  }
+
+  canManageProducts(): boolean {
+    const user = this.getCurrentUser();
+    return !!user && (user.role === 'admin' || !!user.canManageProducts);
   }
 }

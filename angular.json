@@ -18,10 +18,6 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "options": {
-            "outputPath": "docs",
-            "baseHref": "/sysPet/"
-          },
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
             "outputPath": "docs",

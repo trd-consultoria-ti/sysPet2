@@ -4,10 +4,13 @@ import { RouterModule, Routes } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CustomersComponent } from './customers.component';
 import { CustomerDetailsComponent } from './customer-details/customer-details.component';
+import { CustomerFormComponent } from './customer-form/customer-form.component';
 import { PetFormComponent } from './pet-form/pet-form.component';
 
 const routes: Routes = [
   { path: '', component: CustomersComponent },
+  { path: 'new', component: CustomerFormComponent },
+  { path: ':id/edit', component: CustomerFormComponent },
   { path: ':id', component: CustomerDetailsComponent },
   { path: ':customerId/pets/new', component: PetFormComponent },
   { path: ':customerId/pets/:petId/edit', component: PetFormComponent }
@@ -17,6 +20,7 @@ const routes: Routes = [
   declarations: [
     CustomersComponent,
     CustomerDetailsComponent,
+    CustomerFormComponent,
     PetFormComponent
   ],
   imports: [

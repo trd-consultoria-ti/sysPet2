@@ -10,6 +10,8 @@ import { AuthService } from '../../shared/services/auth.service';
 export class LoginComponent implements OnInit {
   email: string = '';
   password: string = '';
+  name: string = '';
+  isRegisterMode = false;
   returnUrl: string = '/';
   loading: boolean = false;
   error: string = '';
@@ -30,22 +32,32 @@ export class LoginComponent implements OnInit {
     }
   }
 
+  toggleMode(): void {
+    this.isRegisterMode = !this.isRegisterMode;
+    this.error = '';
+  }
+
   onSubmit(): void {
     this.loading = true;
     this.error = '';
-    
-    this.authService.login(this.email, this.password)
-      .subscribe({
-        next: () => {
-          this.router.navigate([this.returnUrl]);
-        },
-        error: err => {
-          this.error = 'Falha na autenticação. Verifique suas credenciais.';
-          this.loading = false;
-        },
-        complete: () => {
-          this.loading = false;
-        }
-      });
+
+    const request$ = this.isRegisterMode
+      ? this.authService.register(this.name, this.email, this.password)
+      : this.authService.login(this.email, this.password);
+
+    request$.subscribe({
+      next: () => {
+        this.router.navigate([this.returnUrl]);
+      },
+      error: err => {
+        this.error = this.isRegisterMode
+          ? (err.error?.error || 'Não foi possível criar a conta. Verifique os dados.')
+          : 'Falha na autenticação. Verifique suas credenciais.';
+        this.loading = false;
+      },
+      complete: () => {
+        this.loading = false;
+      }
+    });
   }
 }

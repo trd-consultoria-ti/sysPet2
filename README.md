@@ -4,22 +4,47 @@ Este projeto é uma migração do sistema Pawtastic de React para Angular 12, ma
 
 ## Requisitos
 
-- Node.js 8.x
+- Node.js 18.x (recomendado; o `package.json` declara `engines: 18.x`)
+- Docker Desktop (para o Postgres local)
 - Angular CLI 12.x
-
-## Instalação
-
-```bash
-npm install
-```
 
 ## Executando o projeto
 
+**Jeito mais simples (Windows):** rode `start.bat` — ele sobe Postgres, API e front.
+
+**Manual:**
+
 ```bash
+# 1. Subir o Postgres (Docker, porta 5433)
+npm run db:up
+
+# 2. Subir a API Node/Express (porta 3100) — em outro terminal
+npm run api
+
+# 3. Subir o front Angular (porta 4200)
 npm start
 ```
 
 O aplicativo estará disponível em `http://localhost:4200/`.
+
+### Node 24+ e OpenSSL
+
+O webpack do Angular 12 usa hash md4, bloqueado pelo OpenSSL 3 do Node 17+. Com Node 24 é preciso:
+
+```bash
+NODE_OPTIONS=--openssl-legacy-provider npm start
+```
+
+O `start.bat` já aplica essa flag. Alternativa definitiva: usar Node 18.
+
+### Acesso
+
+Login seed (senha `animal123` para ambos):
+
+- `admin@animalworld.com` — role admin
+- `colaborador@animalworld.com` — role collaborator
+
+Rotas protegidas por login: `/customers`, `/dashboard`, `/appointments`, `/orders`.
 
 ## Estrutura do Projeto
 

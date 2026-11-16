@@ -1,0 +1,73 @@
+<div class="admin-page">
+  <div class="page-header">
+    <h1>Caixa</h1>
+    <button class="btn btn-primary" (click)="openCreate()">+ Lançamento manual</button>
+  </div>
+
+  <div class="balance-card">
+    <span class="balance-label">Saldo do caixa</span>
+    <span class="balance-value" [class.negative]="balance < 0">R$ {{ formatPrice(balance) }}</span>
+  </div>
+
+  <form class="movement-form" *ngIf="showForm" [formGroup]="movementForm" (ngSubmit)="save()">
+    <h2>Novo lançamento</h2>
+    <div class="form-row">
+      <div class="form-group form-group-sm">
+        <label>Tipo *</label>
+        <select formControlName="type">
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Descrição *</label>
+        <input type="text" formControlName="description" placeholder="Ex: Compra de ração">
+      </div>
+      <div class="form-group form-group-sm">
+        <label>Valor (R$) *</label>
+        <input type="number" formControlName="amount" min="0.01" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Forma de pagamento</label>
+        <input type="text" formControlName="paymentMethod" placeholder="Ex: dinheiro, pix">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="movementForm.invalid">Salvar</button>
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">Cancelar</button>
+    </div>
+  </form>
+
+  <div class="empty-state" *ngIf="movements.length === 0">
+    <p>Nenhum movimento no caixa ainda.</p>
+  </div>
+
+  <div class="table-container" *ngIf="movements.length > 0">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Descrição</th>
+          <th>Tipo</th>
+          <th>Pagamento</th>
+          <th>Valor</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of movements">
+          <td>{{ formatDate(m.createdAt) }}</td>
+          <td>{{ m.description }}</td>
+          <td>
+            <span class="type-badge" [class.entrada]="m.type === 'entrada'" [class.saida]="m.type === 'saida'">
+              {{ m.type === 'entrada' ? 'Entrada' : 'Saída' }}
+            </span>
+          </td>
+          <td>{{ m.paymentMethod || '—' }}</td>
+          <td [class.negative]="m.type === 'saida'">
+            {{ m.type === 'entrada' ? '+' : '-' }} R$ {{ formatPrice(m.amount) }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

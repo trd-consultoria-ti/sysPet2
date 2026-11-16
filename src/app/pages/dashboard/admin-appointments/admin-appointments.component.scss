@@ -1,0 +1,84 @@
+.admin-page {
+  padding: 1.5rem;
+
+  h1 {
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+  }
+}
+
+.empty-state {
+  padding: 3rem;
+  text-align: center;
+  color: var(--muted);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.table-container {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th, td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    background: var(--input);
+    font-weight: 600;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.status-badge {
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &.solicitado {
+    background-color: #feebc8;
+    color: #7b341e;
+  }
+
+  &.confirmado {
+    background-color: #c6f6d5;
+    color: #22543d;
+  }
+
+  &.concluido {
+    background-color: #bee3f8;
+    color: #2a4365;
+  }
+
+  &.cancelado {
+    background-color: #fed7d7;
+    color: #742a2a;
+  }
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.btn-sm {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+}

@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Product } from 'src/app/shared/models/product.model';
+import { CartService } from 'src/app/shared/services/cart.service';
 
 @Component({
   selector: 'app-quick-view-modal',
@@ -10,8 +11,10 @@ export class QuickViewModalComponent {
   @Input() product: Product | null = null;
   @Input() visible: boolean = false;
   @Output() close = new EventEmitter<void>();
-  
+
   quantity: number = 1;
+
+  constructor(private cartService: CartService) { }
 
   closeModal(): void {
     this.close.emit();
@@ -28,8 +31,9 @@ export class QuickViewModalComponent {
   }
 
   addToCart(): void {
-    // Implementação futura para adicionar ao carrinho
-    console.log('Adicionando ao carrinho:', this.product, 'Quantidade:', this.quantity);
+    if (this.product) {
+      this.cartService.add(this.product, this.quantity);
+    }
     this.closeModal();
   }
 }

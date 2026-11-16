@@ -1,40 +1,145 @@
 <div class="appointments-container">
   <app-section-heading title="Agendar uma Consulta" subtitle="Marque uma visita para seu pet"></app-section-heading>
-  
+
   <div class="appointment-form-container">
-    <form class="appointment-form">
-      <div class="form-group">
-        <label for="petName">Nome do Pet</label>
-        <input type="text" id="petName" class="form-control" placeholder="Digite o nome do seu pet">
+    <form class="appointment-form" [formGroup]="appointmentForm" (ngSubmit)="onSubmit()">
+      <div class="alert alert-success" *ngIf="confirmationMessage">
+        {{ confirmationMessage }}
       </div>
-      
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="customerId">Cliente</label>
+          <select id="customerId" class="form-control" formControlName="customerId" [disabled]="isCustomerRole">
+            <option [ngValue]="null" disabled>Selecione um cliente</option>
+            <option *ngFor="let customer of customers" [ngValue]="customer.id">
+              {{ customer.name }}
+            </option>
+          </select>
+          <div class="error-message" *ngIf="appointmentForm.get('customerId')?.invalid && appointmentForm.get('customerId')?.touched">
+            Selecione um cliente
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="petId">Pet</label>
+          <select id="petId" class="form-control" formControlName="petId" [disabled]="petsOfSelectedCustomer.length === 0">
+            <option [ngValue]="null" disabled>Selecione um pet</option>
+            <option *ngFor="let pet of petsOfSelectedCustomer" [ngValue]="pet.id">
+              {{ pet.name }} ({{ pet.type }})
+            </option>
+          </select>
+          <div class="error-message" *ngIf="appointmentForm.get('petId')?.invalid && appointmentForm.get('petId')?.touched">
+            Selecione um pet
+          </div>
+          <small class="text-muted" *ngIf="petsOfSelectedCustomer.length === 0 && appointmentForm.get('customerId')?.value">
+            Este cliente não tem pets cadastrados.
+          </small>
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="isCustomerRole && myCustomerId">
+        <button type="button" class="btn btn-outline-primary btn-sm" (click)="showPetForm = !showPetForm">
+          {{ showPetForm ? 'Cancelar cadastro de pet' : '+ Cadastrar pet' }}
+        </button>
+
+        <div class="pet-quick-form" *ngIf="showPetForm" [formGroup]="petForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nome do pet</label>
+              <input type="text" class="form-control" formControlName="name" placeholder="Nome">
+            </div>
+            <div class="form-group">
+              <label>Tipo</label>
+              <select class="form-control" formControlName="type">
+                <option value="Cachorro">Cachorro</option>
+                <option value="Gato">Gato</option>
+                <option value="Ave">Ave</option>
+                <option value="Roedor">Roedor</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Raça</label>
+              <input type="text" class="form-control" formControlName="breed" placeholder="Raça (opcional)">
+            </div>
+            <div class="form-group">
+              <label>Idade</label>
+              <input type="number" class="form-control" formControlName="age" placeholder="Anos" min="0">
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="petForm.invalid" (click)="savePet()">
+            Salvar pet
+          </button>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="serviceType">Tipo de Serviço</label>
-        <select id="serviceType" class="form-control">
-          <option value="" disabled selected>Selecione um serviço</option>
-          <option value="grooming">Banho e Tosa</option>
-          <option value="checkup">Consulta Veterinária</option>
-          <option value="boarding">Hospedagem</option>
-          <option value="training">Adestramento</option>
+        <select id="serviceType" class="form-control" formControlName="serviceId">
+          <option [ngValue]="null" disabled>Selecione um serviço</option>
+          <option *ngFor="let service of services" [ngValue]="service.id">
+            {{ service.name }} — R$ {{ service.price.toFixed(2).replace('.', ',') }}
+          </option>
         </select>
+        <div class="error-message" *ngIf="appointmentForm.get('serviceId')?.invalid && appointmentForm.get('serviceId')?.touched">
+          Selecione um serviço
+        </div>
       </div>
-      
-      <div class="form-group">
-        <label for="appointmentDate">Data do Agendamento</label>
-        <input type="date" id="appointmentDate" class="form-control">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="appointmentDate">Data do Agendamento</label>
+          <input type="date" id="appointmentDate" class="form-control" formControlName="date" [min]="minDate">
+          <div class="error-message" *ngIf="appointmentForm.get('date')?.invalid && appointmentForm.get('date')?.touched">
+            Data é obrigatória e deve ser futura
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="appointmentTime">Horário do Agendamento</label>
+          <input type="time" id="appointmentTime" class="form-control" formControlName="time">
+          <div class="error-message" *ngIf="appointmentForm.get('time')?.invalid && appointmentForm.get('time')?.touched">
+            Horário é obrigatório
+          </div>
+        </div>
       </div>
-      
-      <div class="form-group">
-        <label for="appointmentTime">Horário do Agendamento</label>
-        <input type="time" id="appointmentTime" class="form-control">
-      </div>
-      
+
       <div class="form-group">
         <label for="notes">Observações Especiais</label>
-        <textarea id="notes" class="form-control" rows="3" placeholder="Requisitos especiais ou observações"></textarea>
+        <textarea id="notes" class="form-control" rows="3" formControlName="notes" placeholder="Requisitos especiais ou observações"></textarea>
       </div>
-      
-      <button type="submit" class="btn btn-primary btn-block">Agendar Consulta</button>
+
+      <button type="submit" class="btn btn-primary btn-block" [disabled]="appointmentForm.invalid">
+        Agendar Consulta
+      </button>
     </form>
+  </div>
+
+  <div class="my-appointments" *ngIf="appointments.length > 0">
+    <h2>Meus Agendamentos</h2>
+    <div class="appointment-list">
+      <div class="appointment-item" *ngFor="let appointment of appointments">
+        <div class="appointment-info">
+          <div class="appointment-pet">{{ appointment.petName }}</div>
+          <div class="appointment-service">{{ appointment.serviceName || 'Serviço' }}</div>
+          <div class="appointment-datetime">
+            {{ formatDate(appointment.date) }} às {{ appointment.time }}
+          </div>
+          <div class="appointment-notes" *ngIf="appointment.notes">{{ appointment.notes }}</div>
+        </div>
+        <div class="appointment-status" [ngClass]="appointment.status">
+          {{ statusLabels[appointment.status] }}
+        </div>
+        <button
+          *ngIf="canCancel(appointment)"
+          class="btn btn-outline-danger btn-sm"
+          (click)="cancelAppointment(appointment)">
+          Cancelar
+        </button>
+      </div>
+    </div>
   </div>
 </div>

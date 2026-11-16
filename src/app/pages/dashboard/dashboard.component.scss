@@ -360,19 +360,31 @@
   text-transform: capitalize;
 }
 
-.appointment-status.scheduled {
-  background-color: #e3f2fd;
-  color: #2196f3;
+.appointment-status.solicitado {
+  background-color: #feebc8;
+  color: #7b341e;
 }
 
-.appointment-status.in-progress {
-  background-color: #fff8e1;
-  color: #ffc107;
+.appointment-status.confirmado {
+  background-color: #c6f6d5;
+  color: #22543d;
 }
 
-.appointment-status.completed {
-  background-color: #e8f5e9;
-  color: #4caf50;
+.appointment-status.concluido {
+  background-color: #bee3f8;
+  color: #2a4365;
+}
+
+.appointment-status.cancelado {
+  background-color: #fed7d7;
+  color: #742a2a;
+}
+
+.empty-widget {
+  color: #999;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem 0;
 }
 
 /* Vendas Recentes */
@@ -479,6 +491,8 @@
   flex-direction: column;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   height: 100%;
+  text-decoration: none;
+  color: inherit;
 }
 
 .modulo-card:hover {

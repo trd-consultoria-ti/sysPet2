@@ -1,0 +1,155 @@
+.admin-page {
+  padding: 1.5rem;
+
+  h1 {
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+  }
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h1 {
+    margin-bottom: 0;
+  }
+}
+
+.create-form {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+
+  h2 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 160px;
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--muted);
+  }
+
+  input {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+  }
+}
+
+.form-group-sm {
+  flex: 0 0 140px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.readonly-badge {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.btn-outline-danger {
+  border: 1px solid #e53e3e;
+  color: #e53e3e;
+  background: transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+
+  &:hover {
+    background: #fff5f5;
+  }
+}
+
+.empty-state {
+  padding: 3rem;
+  text-align: center;
+  color: var(--muted);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.table-container {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th, td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  th {
+    background: var(--input);
+    font-weight: 600;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.table-input {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.table-input-sm {
+  width: 100px;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-sm {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.saved-badge {
+  color: #38a169;
+  font-size: 0.8rem;
+  font-weight: 600;
+}

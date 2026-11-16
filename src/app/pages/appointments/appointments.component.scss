@@ -53,3 +53,113 @@ textarea.form-control {
   width: 100%;
   margin-top: 1rem;
 }
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+
+  .form-group {
+    flex: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+.error-message {
+  color: #e53e3e;
+  font-size: 0.8rem;
+}
+
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+
+.alert-success {
+  background-color: #c6f6d5;
+  color: #22543d;
+}
+
+.my-appointments {
+  max-width: 800px;
+  margin: 3rem auto 0;
+
+  h2 {
+    margin-bottom: 1rem;
+  }
+}
+
+.appointment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.appointment-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.appointment-info {
+  flex: 1;
+}
+
+.appointment-pet {
+  font-weight: 600;
+}
+
+.appointment-service {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.appointment-datetime {
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.appointment-notes {
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.appointment-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &.solicitado {
+    background-color: #feebc8;
+    color: #7b341e;
+  }
+
+  &.confirmado {
+    background-color: #c6f6d5;
+    color: #22543d;
+  }
+
+  &.concluido {
+    background-color: #bee3f8;
+    color: #2a4365;
+  }
+
+  &.cancelado {
+    background-color: #fed7d7;
+    color: #742a2a;
+  }
+}

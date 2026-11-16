@@ -25,12 +25,26 @@
             <a routerLink="/contact" routerLinkActive="active" (click)="closeMenu()">Contato</a>
           </li>
           <li class="nav-item">
+            <a routerLink="/orders" routerLinkActive="active" (click)="closeMenu()">Meus Pedidos</a>
+          </li>
+          <li class="nav-item">
             <a routerLink="/dashboard" routerLinkActive="active" (click)="closeMenu()">Dashboard</a>
           </li>
-
         </ul>
         <div class="nav-actions">
-          <a routerLink="/login" class="btn btn-primary" (click)="closeMenu()">Login</a>
+          <a routerLink="/cart" class="cart-link" (click)="closeMenu()">
+            <i class="fas fa-shopping-cart"></i>
+            <ng-container *ngIf="cartCount$ | async as count">
+              <span class="cart-badge" *ngIf="count > 0">{{ count }}</span>
+            </ng-container>
+          </a>
+          <ng-container *ngIf="currentUser$ | async as user; else loginButton">
+            <span class="nav-user">{{ user.name }}</span>
+            <button class="btn btn-outline-secondary" (click)="logout(); closeMenu()">Sair</button>
+          </ng-container>
+          <ng-template #loginButton>
+            <a routerLink="/login" class="btn btn-primary" (click)="closeMenu()">Login</a>
+          </ng-template>
         </div>
       </nav>
     </div>

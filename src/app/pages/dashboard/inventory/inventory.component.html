@@ -1,0 +1,84 @@
+<div class="admin-page">
+  <div class="page-header">
+    <h1>Estoque — Produtos</h1>
+    <button class="btn btn-primary" *ngIf="canManage" (click)="openCreate()">+ Novo produto</button>
+  </div>
+
+  <form class="create-form" *ngIf="showCreateForm" [formGroup]="createForm" (ngSubmit)="saveCreate()">
+    <h2>Novo produto</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nome *</label>
+        <input type="text" formControlName="name">
+      </div>
+      <div class="form-group form-group-sm">
+        <label>Preço (R$) *</label>
+        <input type="number" formControlName="price" min="0" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Categoria *</label>
+        <input type="text" formControlName="category">
+      </div>
+      <div class="form-group">
+        <label>Descrição</label>
+        <input type="text" formControlName="description">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="createForm.invalid">Salvar</button>
+      <button type="button" class="btn btn-outline-secondary" (click)="cancelCreate()">Cancelar</button>
+    </div>
+  </form>
+
+  <div class="empty-state" *ngIf="products.length === 0">
+    <p>Nenhum produto cadastrado.</p>
+  </div>
+
+  <div class="table-container" *ngIf="products.length > 0">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Categoria</th>
+          <th>Preço</th>
+          <th>Avaliação</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let product of products">
+          <ng-container *ngIf="editingId === product.id; else viewMode">
+            <td>
+              <input type="text" class="table-input" [formControl]="ctrl(product.id, 'name')">
+            </td>
+            <td>
+              <input type="text" class="table-input" [formControl]="ctrl(product.id, 'category')">
+            </td>
+            <td>
+              <input type="number" class="table-input table-input-sm" [formControl]="ctrl(product.id, 'price')" min="0" step="0.01">
+            </td>
+            <td>{{ product.rating }} ({{ product.reviews }})</td>
+            <td class="actions-cell">
+              <button class="btn btn-sm btn-primary" (click)="saveEdit(product)">Salvar</button>
+              <button class="btn btn-sm btn-outline-secondary" (click)="cancelEdit()">Cancelar</button>
+            </td>
+          </ng-container>
+          <ng-template #viewMode>
+            <td>{{ product.name }}</td>
+            <td>{{ product.category }}</td>
+            <td>R$ {{ formatPrice(product.price) }}</td>
+            <td>{{ product.rating }} ({{ product.reviews }})</td>
+            <td class="actions-cell" *ngIf="canManage">
+              <button class="btn btn-sm btn-outline-primary" (click)="startEdit(product)">Editar</button>
+              <button class="btn btn-sm btn-outline-danger" (click)="remove(product)">Excluir</button>
+              <span class="saved-badge" *ngIf="savedId === product.id">Salvo!</span>
+            </td>
+            <td class="actions-cell" *ngIf="!canManage">
+              <span class="readonly-badge">Somente leitura</span>
+            </td>
+          </ng-template>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

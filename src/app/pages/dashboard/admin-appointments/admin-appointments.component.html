@@ -1,0 +1,57 @@
+<div class="admin-page">
+  <h1>Agendamentos</h1>
+
+  <div class="empty-state" *ngIf="appointments.length === 0">
+    <p>Nenhum agendamento cadastrado ainda.</p>
+  </div>
+
+  <div class="table-container" *ngIf="appointments.length > 0">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Pet</th>
+          <th>Serviço</th>
+          <th>Data</th>
+          <th>Horário</th>
+          <th>Cliente</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let appointment of appointments">
+          <td>{{ appointment.petName }}</td>
+          <td>{{ appointment.serviceName || '—' }}</td>
+          <td>{{ formatDate(appointment.date) }}</td>
+          <td>{{ appointment.time }}</td>
+          <td>{{ appointment.customerName || '—' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="appointment.status">
+              {{ statusLabels[appointment.status] }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            <button
+              *ngIf="appointment.status === 'solicitado'"
+              class="btn btn-sm btn-primary"
+              (click)="setStatus(appointment, 'confirmado')">
+              Confirmar
+            </button>
+            <button
+              *ngIf="appointment.status === 'confirmado'"
+              class="btn btn-sm btn-primary"
+              (click)="setStatus(appointment, 'concluido')">
+              Concluir
+            </button>
+            <button
+              *ngIf="appointment.status !== 'cancelado' && appointment.status !== 'concluido'"
+              class="btn btn-sm btn-outline-danger"
+              (click)="setStatus(appointment, 'cancelado')">
+              Cancelar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,66 @@
+<div class="customer-form-container">
+  <div class="customer-form-header">
+    <div class="back-button">
+      <a [routerLink]="['/customers']" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Voltar para Clientes
+      </a>
+    </div>
+
+    <div class="form-title">
+      <h1>{{ isEditMode ? 'Editar' : 'Novo' }} Cliente</h1>
+    </div>
+  </div>
+
+  <div class="customer-form-content">
+    <div class="form-panel">
+      <div class="panel-header">
+        <h2>Informações do Cliente</h2>
+      </div>
+
+      <div class="panel-content">
+        <form [formGroup]="customerForm" (ngSubmit)="onSubmit()">
+          <div class="form-group">
+            <label for="name">Nome Completo *</label>
+            <input type="text" id="name" formControlName="name" class="form-control" placeholder="Digite o nome do cliente">
+            <div class="error-message" *ngIf="customerForm.get('name')?.invalid && customerForm.get('name')?.touched">
+              Nome é obrigatório
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input type="email" id="email" formControlName="email" class="form-control" placeholder="Digite o email do cliente">
+            <div class="error-message" *ngIf="customerForm.get('email')?.invalid && customerForm.get('email')?.touched">
+              Email válido é obrigatório
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Telefone *</label>
+            <input type="tel" id="phone" formControlName="phone" class="form-control" placeholder="(11) 99999-9999">
+            <div class="error-message" *ngIf="customerForm.get('phone')?.invalid && customerForm.get('phone')?.touched">
+              Telefone é obrigatório
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" formControlName="status" class="form-control">
+              <option value="active">Ativo</option>
+              <option value="inactive">Inativo</option>
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline-secondary" (click)="onCancel()">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="customerForm.invalid">
+              {{ isEditMode ? 'Atualizar' : 'Adicionar' }} Cliente
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

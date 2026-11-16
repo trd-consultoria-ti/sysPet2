@@ -2,6 +2,7 @@ import { Pet } from './pet.model';
 
 export interface Customer {
   id?: number;
+  userId?: number;
   name: string;
   email: string;
   phone: string;

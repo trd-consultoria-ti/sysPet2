@@ -1,0 +1,37 @@
+<div class="orders-container">
+  <h1 class="orders-title">Meus Pedidos</h1>
+
+  <div class="orders-empty" *ngIf="orders.length === 0">
+    <i class="fas fa-box-open"></i>
+    <p>Você ainda não fez nenhum pedido.</p>
+    <a routerLink="/products" class="btn btn-primary">Ver Produtos</a>
+  </div>
+
+  <div class="orders-list" *ngIf="orders.length !== 0">
+    <div class="order-card" *ngFor="let order of orders">
+      <div class="order-header">
+        <div class="order-id">
+          <strong>{{ order.orderNumber }}</strong>
+          <span class="order-date">{{ formatDate(order.createdAt) }}</span>
+        </div>
+        <span class="order-status" [ngClass]="order.status">{{ statusLabels[order.status] }}</span>
+      </div>
+
+      <div class="order-customer" *ngIf="order.customerName">
+        {{ order.customerName }} — {{ order.email }}
+      </div>
+
+      <div class="order-items">
+        <div class="order-item" *ngFor="let item of order.items">
+          <span>{{ item.name }} × {{ item.quantity }}</span>
+          <span>R$ {{ formatPrice(item.price * item.quantity) }}</span>
+        </div>
+      </div>
+
+      <div class="order-footer">
+        <span class="order-items-count">{{ itemCount(order) }} {{ itemCount(order) === 1 ? 'item' : 'itens' }}</span>
+        <span class="order-total">Total: R$ {{ formatPrice(order.total) }}</span>
+      </div>
+    </div>
+  </div>
+</div>
