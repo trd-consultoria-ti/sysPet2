@@ -1,192 +1,172 @@
-<!-- Backdrop Overlay (clique fecha o menu deslizante) -->
-<div class="drawer-backdrop" [class.open]="isOpen" (click)="close()" aria-hidden="true"></div>
+<!-- Backdrop com clique para fechar -->
+<div class="sidebar-backdrop" [class.open]="isOpen" (click)="close()" aria-hidden="true"></div>
 
-<!-- Gaveta Deslizante Lateral (Offcanvas Drawer) -->
-<aside class="global-nav-drawer" [class.open]="isOpen" role="dialog" aria-modal="true" aria-label="Menu Geral do Sistema">
+<!-- Coluna Deslizante Lateral idêntica ao design system do Animal World -->
+<aside class="dashboard-sidebar-drawer" [class.open]="isOpen" role="dialog" aria-modal="true" aria-label="Navegação Geral Animal World">
 
-  <!-- 1. Header do Drawer -->
-  <div class="drawer-header">
-    <div class="brand-group">
-      <div class="brand-icon">
-        <i class="fas fa-paw"></i>
-      </div>
-      <div>
-        <h2 class="drawer-title">
-          Menu do Sistema
-          <span class="count-pill">{{ totalCount }}</span>
-        </h2>
-        <span class="drawer-subtitle">Navegação geral do Animal World</span>
-      </div>
+  <!-- Header idêntico à coluna original -->
+  <div class="sidebar-header">
+    <div class="header-brand-wrap">
+      <button type="button" class="btn-sidebar-menu" (click)="close()" title="Fechar menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <span class="sidebar-brand">Animal World</span>
     </div>
-
-    <button type="button" class="btn-close-drawer" (click)="close()" title="Fechar menu (ESC)" aria-label="Fechar menu">
+    <button type="button" class="btn-close-subtle" (click)="close()" title="Fechar (ESC)">
       <i class="fas fa-times"></i>
     </button>
   </div>
 
-  <!-- 2. Busca e Filtros Rápidos -->
-  <div class="drawer-search-area">
-    <div class="search-input-wrapper">
-      <i class="fas fa-search search-icon" aria-hidden="true"></i>
-      <input #searchInput
-             type="text"
-             class="drawer-search-input"
-             placeholder="Buscar telas (ex: tosa, remédio, caixa)..."
-             [(ngModel)]="searchQuery"
-             (keyup.escape)="close()"
-             aria-label="Buscar telas do sistema">
-      <button *ngIf="searchQuery" type="button" class="btn-clear-search" (click)="clearSearch()" title="Limpar busca">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
+  <!-- Menu de Itens com o exato estilo da coluna do sistema -->
+  <div class="sidebar-scrollable">
+    <ul class="sidebar-menu">
 
-    <!-- Pílulas de Categoria em Scroll Horizontal -->
-    <div class="category-chips">
-      <button type="button" class="chip-btn" [class.active]="selectedCategory === 'all'" (click)="setCategory('all')">
-        Todos ({{ allRoutes.length }})
-      </button>
-      <button type="button" class="chip-btn" [class.active]="selectedCategory === 'operacao'" (click)="setCategory('operacao')">
-        ✂️ Operação
-      </button>
-      <button type="button" class="chip-btn" [class.active]="selectedCategory === 'cadastros'" (click)="setCategory('cadastros')">
-        📋 Cadastros
-      </button>
-      <button type="button" class="chip-btn" [class.active]="selectedCategory === 'financeiro'" (click)="setCategory('financeiro')">
-        💼 Financeiro
-      </button>
-      <button type="button" class="chip-btn" [class.active]="selectedCategory === 'publico'" (click)="setCategory('publico')">
-        🛍️ Loja
-      </button>
-    </div>
-  </div>
+      <!-- 1. Gestão & Dashboard -->
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard')">
+          <i class="fas fa-home" aria-hidden="true"></i> Painel
+        </a>
+      </li>
 
-  <!-- 3. Lista de Rotas com Rolagem Suave -->
-  <div class="drawer-content">
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard/rotas')">
+          <i class="fas fa-sitemap" aria-hidden="true"></i> Mapa do Sistema
+        </a>
+      </li>
 
-    <!-- Mensagem de resultado vazio -->
-    <div class="empty-state" *ngIf="filteredRoutes.length === 0">
-      <i class="fas fa-search-minus empty-icon"></i>
-      <p class="empty-text">Nenhuma tela para "<strong>{{ searchQuery }}</strong>"</p>
-      <button type="button" class="btn-reset" (click)="clearSearch()">Mostrar todas</button>
-    </div>
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard/customers')">
+          <i class="fas fa-users" aria-hidden="true"></i> Clientes & Pets
+        </a>
+      </li>
 
-    <!-- SEÇÃO 1: OPERAÇÃO BANHO, TOSA & CLÍNICA -->
-    <div class="drawer-section" *ngIf="getRoutesByCategory('operacao').length > 0">
-      <div class="section-label label-operacao">
-        <i class="fas fa-cut"></i>
-        <span>Operação & Atendimento</span>
-      </div>
-      <div class="section-items">
-        <button type="button"
-                class="drawer-item"
-                *ngFor="let item of getRoutesByCategory('operacao')"
-                (click)="navigate(item.path)">
-          <div class="item-icon-box">
-            <i [class]="item.icon"></i>
-          </div>
-          <div class="item-body">
-            <div class="item-top">
-              <span class="item-name">{{ item.title }}</span>
-              <span class="item-badge" [class]="item.badgeClass" *ngIf="item.badge">{{ item.badge }}</span>
-            </div>
-            <p class="item-description">{{ item.description }}</p>
-          </div>
-          <i class="fas fa-chevron-right item-arrow"></i>
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard/daily-queue')">
+          <i class="fas fa-clipboard-list" aria-hidden="true"></i> Fila do Dia
+        </a>
+      </li>
+
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard/daily-queue')">
+          <i class="fas fa-columns" aria-hidden="true"></i> Esteira Delivery
+        </a>
+      </li>
+
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard/appointments')">
+          <i class="fas fa-calendar-alt" aria-hidden="true"></i> Agendamentos
+        </a>
+      </li>
+
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard/consultations')">
+          <i class="fas fa-stethoscope" aria-hidden="true"></i> Consultório
+        </a>
+      </li>
+
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard/vets')">
+          <i class="fas fa-user-md" aria-hidden="true"></i> Médicos Veterinários
+        </a>
+      </li>
+
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard/orders')">
+          <i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos
+        </a>
+      </li>
+
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard/inventory')">
+          <i class="fas fa-box" aria-hidden="true"></i> Produtos & Estoque
+        </a>
+      </li>
+
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard/medications')">
+          <i class="fas fa-pills" aria-hidden="true"></i> Medicamentos
+        </a>
+      </li>
+
+      <li class="sidebar-item" *ngIf="isAdmin">
+        <a (click)="navigate('/dashboard/services')">
+          <i class="fas fa-concierge-bell" aria-hidden="true"></i> Serviços
+        </a>
+      </li>
+
+      <li class="sidebar-item" *ngIf="isAdmin">
+        <a (click)="navigate('/dashboard/users')">
+          <i class="fas fa-user-tie" aria-hidden="true"></i> Funcionários & Equipe
+        </a>
+      </li>
+
+      <li class="sidebar-item" *ngIf="isAdmin">
+        <a (click)="navigate('/dashboard/cash')">
+          <i class="fas fa-cash-register" aria-hidden="true"></i> Caixa
+        </a>
+      </li>
+
+      <li class="sidebar-item" *ngIf="isAdmin">
+        <a (click)="navigate('/dashboard/reports')">
+          <i class="fas fa-chart-line" aria-hidden="true"></i> Balanço
+        </a>
+      </li>
+
+      <!-- Divisor para a Área do Cliente / Loja Pública -->
+      <li class="sidebar-divider">
+        <span>Área da Loja & Tutor</span>
+      </li>
+
+      <li class="sidebar-item">
+        <a (click)="navigate('/')">
+          <i class="fas fa-store" aria-hidden="true"></i> Início da Loja
+        </a>
+      </li>
+
+      <li class="sidebar-item">
+        <a (click)="navigate('/services')">
+          <i class="fas fa-cut" aria-hidden="true"></i> Serviços Pet
+        </a>
+      </li>
+
+      <li class="sidebar-item">
+        <a (click)="navigate('/products')">
+          <i class="fas fa-box-open" aria-hidden="true"></i> Produtos Loja
+        </a>
+      </li>
+
+      <li class="sidebar-item">
+        <a (click)="navigate('/appointments')">
+          <i class="fas fa-calendar-check" aria-hidden="true"></i> Agendamento Online
+        </a>
+      </li>
+
+      <li class="sidebar-item">
+        <a (click)="navigate('/cart')">
+          <i class="fas fa-shopping-cart" aria-hidden="true"></i> Carrinho
+        </a>
+      </li>
+
+      <li class="sidebar-item" *ngIf="currentUser">
+        <a (click)="navigate('/account')">
+          <i class="fas fa-user-circle" aria-hidden="true"></i> Minha Conta
+        </a>
+      </li>
+
+      <!-- Sair -->
+      <li class="sidebar-item" *ngIf="currentUser">
+        <button type="button" class="sidebar-logout" (click)="logout()">
+          <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Sair
         </button>
-      </div>
-    </div>
+      </li>
 
-    <!-- SEÇÃO 2: CENTRAL DE CADASTROS -->
-    <div class="drawer-section" *ngIf="getRoutesByCategory('cadastros').length > 0">
-      <div class="section-label label-cadastros">
-        <i class="fas fa-folder-open"></i>
-        <span>Central de Cadastros</span>
-      </div>
-      <div class="section-items">
-        <button type="button"
-                class="drawer-item"
-                *ngFor="let item of getRoutesByCategory('cadastros')"
-                (click)="navigate(item.path)">
-          <div class="item-icon-box">
-            <i [class]="item.icon"></i>
-          </div>
-          <div class="item-body">
-            <div class="item-top">
-              <span class="item-name">{{ item.title }}</span>
-              <span class="item-badge" [class]="item.badgeClass" *ngIf="item.badge">{{ item.badge }}</span>
-            </div>
-            <p class="item-description">{{ item.description }}</p>
-          </div>
-          <i class="fas fa-chevron-right item-arrow"></i>
-        </button>
-      </div>
-    </div>
+      <li class="sidebar-item" *ngIf="!currentUser">
+        <a (click)="navigate('/login')">
+          <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Login
+        </a>
+      </li>
 
-    <!-- SEÇÃO 3: FINANCEIRO & GESTÃO -->
-    <div class="drawer-section" *ngIf="getRoutesByCategory('financeiro').length > 0">
-      <div class="section-label label-financeiro">
-        <i class="fas fa-chart-pie"></i>
-        <span>Financeiro & Gestão</span>
-      </div>
-      <div class="section-items">
-        <button type="button"
-                class="drawer-item"
-                *ngFor="let item of getRoutesByCategory('financeiro')"
-                (click)="navigate(item.path)">
-          <div class="item-icon-box">
-            <i [class]="item.icon"></i>
-          </div>
-          <div class="item-body">
-            <div class="item-top">
-              <span class="item-name">{{ item.title }}</span>
-              <span class="item-badge" [class]="item.badgeClass" *ngIf="item.badge">{{ item.badge }}</span>
-            </div>
-            <p class="item-description">{{ item.description }}</p>
-          </div>
-          <i class="fas fa-chevron-right item-arrow"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- SEÇÃO 4: LOJA & ÁREA DO CLIENTE -->
-    <div class="drawer-section" *ngIf="getRoutesByCategory('publico').length > 0">
-      <div class="section-label label-publico">
-        <i class="fas fa-store"></i>
-        <span>Loja & Tutor (Público)</span>
-      </div>
-      <div class="section-items">
-        <button type="button"
-                class="drawer-item"
-                *ngFor="let item of getRoutesByCategory('publico')"
-                (click)="navigate(item.path)">
-          <div class="item-icon-box">
-            <i [class]="item.icon"></i>
-          </div>
-          <div class="item-body">
-            <div class="item-top">
-              <span class="item-name">{{ item.title }}</span>
-              <span class="item-badge" [class]="item.badgeClass" *ngIf="item.badge">{{ item.badge }}</span>
-            </div>
-            <p class="item-description">{{ item.description }}</p>
-          </div>
-          <i class="fas fa-chevron-right item-arrow"></i>
-        </button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- 4. Footer do Drawer -->
-  <div class="drawer-footer">
-    <button type="button" class="btn-view-sitemap" (click)="navigate('/dashboard/rotas')">
-      <i class="fas fa-sitemap"></i>
-      <span>Ver Mapa Completo de Rotas</span>
-      <i class="fas fa-arrow-right ms-auto"></i>
-    </button>
-    <div class="footer-bottom-info">
-      <span>Atalho: <code>Ctrl + K</code></span>
-      <span>Pressione <code>ESC</code> para fechar</span>
-    </div>
+    </ul>
   </div>
 
 </aside>
