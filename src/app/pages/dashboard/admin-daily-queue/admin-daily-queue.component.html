@@ -4,43 +4,17 @@
     <span>{{ toastMessage }}</span>
   </div>
 
-  <!-- Header & Ações -->
-  <div class="page-header">
-    <div class="header-left">
-      <h1>Esteira de Produção — Banho & Tosa</h1>
-      <p class="subtitle">Quadro Kanban de produção: clique para avançar o pet de estágio ou arraste entre colunas</p>
-    </div>
-
-    <div class="header-right">
-      <!-- Toggle de Visualização Kanban / Lista -->
-      <div class="view-mode-toggle" role="group" aria-label="Visualização">
-        <button type="button" class="btn btn-sm" [class.btn-primary]="viewMode === 'kanban'"
-                [class.btn-outline-secondary]="viewMode !== 'kanban'" (click)="viewMode = 'kanban'">
-          <i class="fas fa-columns"></i> Esteira Kanban
-        </button>
-        <button type="button" class="btn btn-sm" [class.btn-primary]="viewMode === 'list'"
-                [class.btn-outline-secondary]="viewMode !== 'list'" (click)="viewMode = 'list'">
-          <i class="fas fa-list"></i> Lista
-        </button>
-      </div>
-
-      <div class="date-navigator">
-        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="changeDate(-1)" title="Dia anterior">
-          <i class="fas fa-chevron-left"></i>
-        </button>
-        <button type="button" class="btn btn-outline-primary btn-sm" (click)="setToday()">
-          Hoje ({{ currentDate | date:'dd/MM/yyyy' }})
-        </button>
-        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="changeDate(1)" title="Próximo dia">
-          <i class="fas fa-chevron-right"></i>
-        </button>
-      </div>
-
-      <button type="button" class="btn btn-primary checkin-btn" (click)="openCheckinModal()" [disabled]="stats.isFull">
-        <i class="fas fa-plus"></i> Novo Check-in (Balcão)
-      </button>
-    </div>
-  </div>
+  <!-- Header & Ações (Componentizado) -->
+  <app-daily-queue-header
+    [title]="'Esteira de Produção — Banho & Tosa'"
+    [subtitle]="'Quadro Kanban de produção: clique para avançar o pet de estágio ou arraste entre colunas'"
+    [(viewMode)]="viewMode"
+    [currentDate]="currentDate"
+    [isFull]="stats.isFull"
+    (dateChange)="changeDate($event)"
+    (todayClick)="setToday()"
+    (checkinClick)="openCheckinModal()">
+  </app-daily-queue-header>
 
   <!-- Barra de Capacidade do Dia -->
   <div class="capacity-strip" [class.strip-full]="stats.isFull">

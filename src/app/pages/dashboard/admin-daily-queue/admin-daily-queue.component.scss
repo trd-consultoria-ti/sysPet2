@@ -29,40 +29,6 @@
   to { transform: translateX(0); opacity: 1; }
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-
-  .header-left {
-    h1 { margin: 0; font-size: 1.75rem; font-weight: 700; color: var(--foreground); }
-    .subtitle { margin: 0.25rem 0 0; font-size: 0.9rem; color: var(--muted-foreground); }
-  }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-  }
-}
-
-.view-mode-toggle, .date-navigator {
-  display: inline-flex;
-  gap: 0.25rem;
-  background: white;
-  padding: 0.25rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border);
-
-  .btn { border-radius: 0.35rem; font-size: 0.85rem; font-weight: 600; }
-}
-
-.checkin-btn { font-weight: 600; padding: 0.55rem 1.1rem; }
-
 /* Faixa de Capacidade */
 .capacity-strip {
   background: white;

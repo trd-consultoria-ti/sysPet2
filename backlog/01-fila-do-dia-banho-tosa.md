@@ -20,7 +20,7 @@ A recepção faz **check-in** do pet (não agendamento): identifica tutor+pet, p
 
 - Check-in cria registro do dia: tutor, pet, procedimento, observações de saúde, preço
 - Fila visível em tempo real: posição, pets à frente/atrás, status (aguardando → em atendimento → pronto → entregue)
-- ETA de saída por pet (baseado no tempo médio do serviço — ver pendência com Thaina)
+- ETA de saída por pet — **tempo é variável** (confirmado por Thaina: depende de procedimento + temperamento + tamanho/palagem; banho varia 30min–2h). Estimativa configurável por serviço+porte, com ajuste manual/média histórica
 - Limite diário de vagas configurável; ao atingir, sistema indica "encerrar" e WhatsApp pode responder "vagas encerradas"
 - Status "pronto" dispara notificação WhatsApp pro tutor (ver card 05)
 - Check-in inclui **checklist de saúde**: lesão de pele, parasitas, diarreia, vômito, mal-estar, lesão em pata → tutor informado + registro no histórico do pet
@@ -35,3 +35,4 @@ A recepção faz **check-in** do pet (não agendamento): identifica tutor+pet, p
 - Campos: customer_id, pet_id, service composition (JSONB ou tabela filha), checkin_at, started_at, ready_at, delivered_at, groomer_ids[], health_flags JSONB, price_snapshot
 - Índices por (date, status); unique parcial p/ 1 pet ativo por vez
 - `pets` precisa `weight_kg`/`size_tier` (card 02)
+- Pagamento é **sempre após o serviço** (dinheiro, cartão ou pix) — confirmar na entrega (card 03)

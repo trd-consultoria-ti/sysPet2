@@ -25,4 +25,4 @@ O financeiro dela no sistema: **entradas** automáticas de toda venda (serviço+
 
 - `cash_movements` já cobre o lançamento; falta entidade `payables` (contas a pagar) com due_date/status, ou estender cash_movements com tipo específico.
 - Relatórios: `/api/reports` existe (admin) — verificar cobertura e estender.
-- Forms de pagamento: pix/cartão/dinheiro — depende da resposta pendente com Thaina.
+- Forms de pagamento: **confirmado — dinheiro, cartão e pix; pagamento sempre após o procedimento** (na retirada).

@@ -13,6 +13,7 @@ import { AdminReportsComponent } from './admin-reports/admin-reports.component';
 import { AdminConsultationsComponent } from './admin-consultations/admin-consultations.component';
 import { AdminVetsComponent } from './admin-vets/admin-vets.component';
 import { AdminDailyQueueComponent } from './admin-daily-queue/admin-daily-queue.component';
+import { DailyQueueHeaderComponent } from './admin-daily-queue/daily-queue-header/daily-queue-header.component';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 
 const routes: Routes = [
@@ -41,6 +42,7 @@ const routes: Routes = [
     DashboardComponent,
     DashboardHomeComponent,
     AdminDailyQueueComponent,
+    DailyQueueHeaderComponent,
     AdminAppointmentsComponent,
     InventoryComponent,
     AdminServicesComponent,

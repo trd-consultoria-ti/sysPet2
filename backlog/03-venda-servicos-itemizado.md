@@ -32,5 +32,5 @@ O fechamento do atendimento do dia (card 01) gera uma **venda de serviços**: it
 - Opção A: estender `orders.items` JSONB p/ aceitar `{type:'service',...}` — menor mudança, orders já tem cupom/caixa.
 - Opção B: entidade `service_sales` separada vinculada ao check-in — mais limpo pro financeiro, mais trabalho.
 - Decidir: serviço pode ser vendido sem check-in (ex.: só extras no balcão)? Provável que sim.
-- Atenção: `orders` tem `payment_method`, `status` (pendente/pago/entregue) — mapear pra realidade do pet shop (pagamento na retirada?).
-- Pendente com Thaina: forma de pagamento (pix/cartão/dinheiro) e quando paga — pergunta enviada.
+- Atenção: `orders` tem `payment_method`, `status` (pendente/pago/entregue) — mapear pra realidade do pet shop.
+- **Pagamento confirmado por Thaina:** sempre **após o procedimento**, meios = dinheiro, cartão ou pix. Sem cobrança prévia, sem fiado — fecha no balcão na retirada.

@@ -22,4 +22,4 @@ O tutor compra um pacote mensal pro pet: N banhos + 1 tosa no mês. O sistema co
 
 - Nova entidade `packages` + `package_credits` (ou saldo JSONB no pet).
 - Depende dos cards 01 (check-in) e 02 (preços) estarem prontos.
-- Pendente com Thaina: valores exatos dos pacotes (foto ilegível).
+- Pendente com Thaina: valores exatos dos pacotes (foto ilegível) + **como controla pacotes hoje** (pergunta enviada ~13:20 — caderno/planilha/celular?).
