@@ -1,15 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Customer } from '../../../shared/models/customer.model';
 import { CustomerService } from '../../../shared/services/customer.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-customer-form',
   templateUrl: './customer-form.component.html',
   styleUrls: ['./customer-form.component.scss']
 })
-export class CustomerFormComponent implements OnInit {
+export class CustomerFormComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   customerForm: FormGroup;
   customerId: number | null = null;
   isEditMode = false;
@@ -29,7 +32,7 @@ export class CustomerFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const id = params.get('id');
       if (id) {
         this.customerId = +id;
@@ -41,7 +44,7 @@ export class CustomerFormComponent implements OnInit {
 
   loadCustomer(): void {
     if (this.customerId) {
-      this.customerService.getCustomers().subscribe(customers => {
+      this.customerService.getCustomers().pipe(takeUntil(this.destroy$)).subscribe(customers => {
         const customer = customers.find(c => c.id === this.customerId);
         if (customer) {
           this.customerForm.patchValue({
@@ -68,7 +71,7 @@ export class CustomerFormComponent implements OnInit {
             email: formValues.email,
             phone: formValues.phone,
             status: formValues.status
-          }).subscribe(() => this.router.navigate(['/customers', this.customerId]));
+          }).pipe(takeUntil(this.destroy$)).subscribe(() => this.router.navigate(['/customers', this.customerId]));
           return;
         }
         this.router.navigate(['/customers', this.customerId]);
@@ -78,7 +81,7 @@ export class CustomerFormComponent implements OnInit {
           email: formValues.email,
           phone: formValues.phone,
           status: formValues.status
-        }).subscribe(created => this.router.navigate(['/customers', created.id]));
+        }).pipe(takeUntil(this.destroy$)).subscribe(created => this.router.navigate(['/customers', created.id]));
       }
     }
   }
@@ -89,5 +92,10 @@ export class CustomerFormComponent implements OnInit {
     } else {
       this.router.navigate(['/customers']);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

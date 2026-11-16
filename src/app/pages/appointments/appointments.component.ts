@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Service } from '../../shared/models/service.model';
@@ -9,13 +9,16 @@ import { AppointmentService } from '../../shared/services/appointment.service';
 import { ServiceCatalogService } from '../../shared/services/service-catalog.service';
 import { CustomerService } from '../../shared/services/customer.service';
 import { AuthService } from '../../shared/services/auth.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-appointments',
   templateUrl: './appointments.component.html',
   styleUrls: ['./appointments.component.scss']
 })
-export class AppointmentsComponent implements OnInit {
+export class AppointmentsComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   appointmentForm: FormGroup;
   services: Service[] = [];
   customers: Customer[] = [];
@@ -63,7 +66,7 @@ export class AppointmentsComponent implements OnInit {
       age: [null]
     });
 
-    this.appointmentForm.get('customerId')!.valueChanges.subscribe(() => {
+    this.appointmentForm.get('customerId')!.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.appointmentForm.patchValue({ petId: null }, { emitEvent: false });
     });
   }
@@ -78,14 +81,14 @@ export class AppointmentsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.serviceCatalog.getServices().subscribe(services => {
+    this.serviceCatalog.getServices().pipe(takeUntil(this.destroy$)).subscribe(services => {
       this.services = [...services];
     });
 
     const user = this.authService.getCurrentUser();
     this.isCustomerRole = user?.role === 'customer';
 
-    this.customerService.getCustomers().subscribe(customers => {
+    this.customerService.getCustomers().pipe(takeUntil(this.destroy$)).subscribe(customers => {
       this.customers = [...customers];
       if (this.isCustomerRole && user) {
         const mine = customers.find(c => c.userId === user.id);
@@ -98,12 +101,12 @@ export class AppointmentsComponent implements OnInit {
       this.applyAppointmentFilter();
     });
 
-    this.appointmentService.getAppointments().subscribe(appointments => {
+    this.appointmentService.getAppointments().pipe(takeUntil(this.destroy$)).subscribe(appointments => {
       this.allAppointments = [...appointments];
       this.applyAppointmentFilter();
     });
 
-    this.route.queryParamMap.subscribe(params => {
+    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const serviceId = params.get('serviceId');
       if (serviceId) {
         this.appointmentForm.patchValue({ serviceId: +serviceId });
@@ -119,7 +122,7 @@ export class AppointmentsComponent implements OnInit {
         type: v.type,
         breed: v.breed || undefined,
         age: v.age || undefined
-      }).subscribe(() => {
+      }).pipe(takeUntil(this.destroy$)).subscribe(() => {
         this.customerService.refresh();
         this.petForm.reset({ type: 'Cachorro' });
         this.showPetForm = false;
@@ -164,7 +167,7 @@ export class AppointmentsComponent implements OnInit {
         date: formValues.date,
         time: formValues.time,
         notes: formValues.notes || undefined
-      }).subscribe(() => {
+      }).pipe(takeUntil(this.destroy$)).subscribe(() => {
         this.confirmationMessage = `Agendamento solicitado para ${pet?.name} em ${this.formatDate(formValues.date)} às ${formValues.time}.`;
         this.appointmentForm.reset();
       });
@@ -184,5 +187,10 @@ export class AppointmentsComponent implements OnInit {
   formatDate(date: string): string {
     const [year, month, day] = date.split('-');
     return `${day}/${month}/${year}`;
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

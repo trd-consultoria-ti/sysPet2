@@ -84,8 +84,8 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  background-color: var(--primary);
-  color: white;
+  background-color: var(--primary-text);
+  color: var(--foreground);
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.25rem 0.75rem;
@@ -108,7 +108,7 @@
 .product-price {
   font-size: 1.125rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--primary-text);
   margin-bottom: 0.75rem;
 }
 
@@ -153,8 +153,8 @@
 .btn-primary {
   flex-grow: 1;
   padding: 0.625rem 1rem;
-  background-color: var(--primary);
-  color: white;
+  background-color: var(--primary-text);
+  color: var(--foreground);
   border: none;
   border-radius: var(--radius);
   font-weight: 500;
@@ -181,7 +181,7 @@
 
 .btn-icon:hover {
   background-color: var(--secondary);
-  border-color: var(--primary);
+  border-color: var(--primary-text);
 }
 
 .btn-quick-view i {

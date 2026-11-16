@@ -1,17 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Appointment, AppointmentStatus } from '../../../shared/models/appointment.model';
 import { Order } from '../../../shared/models/order.model';
 import { AppointmentService } from '../../../shared/services/appointment.service';
 import { OrderService } from '../../../shared/services/order.service';
 import { CustomerService } from '../../../shared/services/customer.service';
 import { AuthService } from '../../../shared/services/auth.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard-home',
   templateUrl: './dashboard-home.component.html',
   styleUrls: ['../dashboard.component.scss']
 })
-export class DashboardHomeComponent implements OnInit {
+export class DashboardHomeComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   totalCustomers = 0;
   totalAppointments = 0;
   todayAppointments: Appointment[] = [];
@@ -37,11 +40,11 @@ export class DashboardHomeComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.customerService.getCustomers().subscribe(customers => {
+    this.customerService.getCustomers().pipe(takeUntil(this.destroy$)).subscribe(customers => {
       this.totalCustomers = customers.length;
     });
 
-    this.appointmentService.getAppointments().subscribe((appointments: Appointment[]) => {
+    this.appointmentService.getAppointments().pipe(takeUntil(this.destroy$)).subscribe((appointments: Appointment[]) => {
       this.totalAppointments = appointments.length;
       const today = new Date().toISOString().split('T')[0];
       this.todayAppointments = appointments
@@ -49,7 +52,7 @@ export class DashboardHomeComponent implements OnInit {
         .sort((a, b) => a.time.localeCompare(b.time));
     });
 
-    this.orderService.getOrders().subscribe((orders: Order[]) => {
+    this.orderService.getOrders().pipe(takeUntil(this.destroy$)).subscribe((orders: Order[]) => {
       this.totalOrders = orders.length;
       this.revenue = orders
         .filter(o => o.status !== 'cancelado')
@@ -66,5 +69,10 @@ export class DashboardHomeComponent implements OnInit {
 
   formatDateTime(iso: string): string {
     return new Date(iso).toLocaleString('pt-BR');
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

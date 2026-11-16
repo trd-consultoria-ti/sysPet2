@@ -8,6 +8,7 @@
       class="products-sort"
       [ngModel]="sortOption"
       (change)="onSortChange($event)"
+      aria-label="Ordenar produtos"
     >
       <option value="relevance">Ordenar por: Relevância</option>
       <option value="price-asc">Preço: Menor para Maior</option>
@@ -17,13 +18,6 @@
     </select>
   </div>
 
-<!-- Modal de visualização rápida -->
-<app-quick-view-modal
-  [product]="selectedProduct"
-  [visible]="quickViewVisible"
-  (close)="closeQuickView()"
-></app-quick-view-modal>
-  
   <!-- Mensagem quando não há resultados -->
   <div class="no-results" *ngIf="filteredProducts.length === 0">
     <p>Nenhum produto encontrado para os filtros selecionados.</p>
@@ -32,13 +26,6 @@
     </button>
   </div>
 
-<!-- Modal de visualização rápida -->
-<app-quick-view-modal
-  [product]="selectedProduct"
-  [visible]="quickViewVisible"
-  (close)="closeQuickView()"
-></app-quick-view-modal>
-  
   <!-- Grid de produtos -->
   <div class="products-grid" *ngIf="filteredProducts.length > 0">
     <div class="product-card" *ngFor="let product of filteredProducts" [attr.data-product-id]="product.id">
@@ -49,21 +36,7 @@
           (toggle)="toggleWishlist(product.id, $event)"
         ></app-wishlist-button>
         <div class="product-category">{{ product.category }}</div>
-
-<!-- Modal de visualização rápida -->
-<app-quick-view-modal
-  [product]="selectedProduct"
-  [visible]="quickViewVisible"
-  (close)="closeQuickView()"
-></app-quick-view-modal>
       </div>
-
-<!-- Modal de visualização rápida -->
-<app-quick-view-modal
-  [product]="selectedProduct"
-  [visible]="quickViewVisible"
-  (close)="closeQuickView()"
-></app-quick-view-modal>
       <div class="product-details">
         <h3 class="product-title">{{ product.name }}</h3>
         <p class="product-price">R$ {{ product.price.toFixed(2) }}</p>
@@ -74,56 +47,21 @@
           ></app-star-rating>
           <span class="reviews">{{ product.reviews }} avaliações</span>
         </div>
-
-<!-- Modal de visualização rápida -->
-<app-quick-view-modal
-  [product]="selectedProduct"
-  [visible]="quickViewVisible"
-  (close)="closeQuickView()"
-></app-quick-view-modal>
         <p class="product-description">{{ product.description }}</p>
         <div class="product-actions">
           <button class="btn btn-primary">Adicionar ao Carrinho</button>
           <button class="btn btn-icon btn-quick-view" (click)="openQuickView(product)" aria-label="Visualização rápida">
-            <i class="icon-eye"></i>
+            <i class="icon-eye" aria-hidden="true"></i>
           </button>
         </div>
-
-<!-- Modal de visualização rápida -->
-<app-quick-view-modal
-  [product]="selectedProduct"
-  [visible]="quickViewVisible"
-  (close)="closeQuickView()"
-></app-quick-view-modal>
       </div>
-
-<!-- Modal de visualização rápida -->
-<app-quick-view-modal
-  [product]="selectedProduct"
-  [visible]="quickViewVisible"
-  (close)="closeQuickView()"
-></app-quick-view-modal>
     </div>
-
-<!-- Modal de visualização rápida -->
-<app-quick-view-modal
-  [product]="selectedProduct"
-  [visible]="quickViewVisible"
-  (close)="closeQuickView()"
-></app-quick-view-modal>
   </div>
 
-<!-- Modal de visualização rápida -->
-<app-quick-view-modal
-  [product]="selectedProduct"
-  [visible]="quickViewVisible"
-  (close)="closeQuickView()"
-></app-quick-view-modal>
+  <!-- Modal de visualização rápida (instância única) -->
+  <app-quick-view-modal
+    [product]="selectedProduct"
+    [visible]="quickViewVisible"
+    (close)="closeQuickView()"
+  ></app-quick-view-modal>
 </div>
-
-<!-- Modal de visualização rápida -->
-<app-quick-view-modal
-  [product]="selectedProduct"
-  [visible]="quickViewVisible"
-  (close)="closeQuickView()"
-></app-quick-view-modal>

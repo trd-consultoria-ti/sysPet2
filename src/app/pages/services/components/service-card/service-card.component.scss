@@ -40,7 +40,7 @@
   font-weight: 500;
   border-radius: 9999px;
   background-color: rgba(var(--primary-rgb), 0.1);
-  color: var(--primary);
+  color: var(--primary-text);
 }
 
 .service-content {
@@ -56,7 +56,7 @@
 .rating-stars {
   display: flex;
   align-items: center;
-  color: #f59e0b; /* Amber/yellow color for stars */
+  color: #D97706; /* Amber/yellow color for stars */
 }
 
 .icon-star {

@@ -70,7 +70,7 @@
 
 .nav-item a:hover,
 .nav-item a.active {
-  color: var(--primary);
+  color: var(--primary-text);
 }
 
 .nav-item a.active::after {
@@ -95,12 +95,15 @@
     align-items: flex-start;
     padding: 2rem;
     transform: translateX(100%);
-    transition: transform 0.3s ease;
+    visibility: hidden;
+    transition: transform 0.3s ease, visibility 0s linear 0.3s;
     z-index: 40;
   }
 
   .nav-open {
     transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.3s ease, visibility 0s;
   }
 
   .nav-list {
@@ -139,7 +142,7 @@
 }
 
 .cart-link:hover {
-  color: var(--primary);
+  color: var(--primary-text);
 }
 
 .cart-badge {
@@ -147,7 +150,7 @@
   top: -8px;
   right: -10px;
   background-color: var(--accent);
-  color: white;
+  color: var(--foreground);
   font-size: 0.7rem;
   font-weight: 700;
   min-width: 18px;

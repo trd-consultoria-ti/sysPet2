@@ -1,14 +1,17 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { User } from '../../shared/services/auth.service';
 import { AuthService } from '../../shared/services/auth.service';
 import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnDestroy {
+  private destroy$ = new Subject<void>();
   user: User | null = null;
   isAdmin = false;
 
@@ -16,7 +19,7 @@ export class DashboardComponent {
     private authService: AuthService,
     private router: Router
   ) {
-    this.authService.currentUser$.subscribe(user => {
+    this.authService.currentUser$.pipe(takeUntil(this.destroy$)).subscribe(user => {
       this.user = user;
       this.isAdmin = user?.role === 'admin';
     });
@@ -25,5 +28,10 @@ export class DashboardComponent {
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/']);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

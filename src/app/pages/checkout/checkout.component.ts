@@ -1,17 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Order } from '../../shared/models/order.model';
 import { CartService } from '../../shared/services/cart.service';
 import { OrderService } from '../../shared/services/order.service';
 import { AuthService } from '../../shared/services/auth.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-checkout',
   templateUrl: './checkout.component.html',
   styleUrls: ['./checkout.component.scss']
 })
-export class CheckoutComponent implements OnInit {
+export class CheckoutComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   checkoutForm: FormGroup;
   completedOrder: Order | null = null;
 
@@ -68,7 +71,7 @@ export class CheckoutComponent implements OnInit {
         paymentMethod: formValues.paymentMethod,
         items: this.cartItems,
         userId: user?.id
-      }).subscribe(order => {
+      }).pipe(takeUntil(this.destroy$)).subscribe(order => {
         this.completedOrder = order;
         this.cartService.clear();
       });
@@ -77,5 +80,10 @@ export class CheckoutComponent implements OnInit {
 
   continueShopping(): void {
     this.router.navigate(['/products']);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

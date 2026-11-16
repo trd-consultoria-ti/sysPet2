@@ -88,9 +88,10 @@ CREATE TABLE IF NOT EXISTS orders (
 -- ============ SEED ============
 
 INSERT INTO users (name, email, password_hash, role) VALUES
-  ('Admin Animal World', 'admin@animalworld.com', 'eacd3e749088004975cd0f9145b4e37ea7dffdfa72bb2d368616387f7eaf2303', 'admin')
+  ('Admin Animal World', 'admin@animalworld.com', '$2b$10$ZVsN2xSC817qcewi104eb.IiuVpWK.vnV11xWLiWgEcuU8K3CaQuu', 'admin')
 ON CONFLICT (email) DO NOTHING;
--- senha do usuário seed: "animal123" (sha256)
+-- senha do usuário seed: "animal123" (bcrypt)
+-- hashes sha256 legados são migrados para bcrypt automaticamente no próximo login
 -- funcionários e clientes são cadastrados em runtime pelo admin (/dashboard/users) ou pelo auto-cadastro (/login)
 
 INSERT INTO products (id, name, price, rating, reviews, image, category, description) VALUES
@@ -148,3 +149,24 @@ CREATE TABLE IF NOT EXISTS cash_movements (
   payment_method VARCHAR(30),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Sessões server-side: todo token carrega um sid; logout revoga e troca de senha derruba as demais
+CREATE TABLE IF NOT EXISTS sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  revoked_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+
+-- Tokens de recuperação de senha (hash sha256 do token; expira em 1h, uso único)
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_prt_user ON password_reset_tokens(user_id);

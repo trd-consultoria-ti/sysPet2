@@ -12,7 +12,7 @@
     h1 {
       font-size: 2rem;
       font-weight: 600;
-      color: var(--primary);
+      color: var(--primary-text);
       margin: 0;
     }
     
@@ -22,7 +22,7 @@
       gap: 0.5rem;
       padding: 0.75rem 1.25rem;
       background-color: #0f172a;
-      color: white;
+      color: var(--foreground);
       border: none;
       border-radius: 0.5rem;
       font-weight: 500;
@@ -40,7 +40,7 @@
   }
   
   .customers-content {
-    background-color: white;
+    background-color: var(--foreground);
     border-radius: 1rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     overflow: hidden;
@@ -82,8 +82,8 @@
           }
           
           &.active {
-            background-color: var(--primary);
-            color: white;
+            background-color: var(--primary-text);
+            color: var(--foreground);
           }
         }
       }
@@ -102,7 +102,7 @@
           
           &:focus {
             outline: none;
-            border-color: var(--primary);
+            border-color: var(--primary-text);
           }
         }
         
@@ -152,7 +152,7 @@
               width: 3.5rem;
               height: 3.5rem;
               background-color: var(--primary-light);
-              color: var(--primary-dark);
+              color: var(--primary-text);
               border-radius: 50%;
               display: flex;
               align-items: center;
@@ -228,7 +228,7 @@
               margin-top: 0.25rem;
               
               i {
-                color: var(--primary);
+                color: var(--primary-text);
               }
             }
           }
@@ -247,12 +247,13 @@
             }
             
             .view-profile-btn {
-              border: 1px solid var(--primary);
-              color: var(--primary);
+              border: 1px solid var(--primary-text);
+              color: var(--primary-text);
               background-color: transparent;
               
               &:hover {
                 background-color: var(--primary-light);
+                color: var(--foreground);
               }
             }
             

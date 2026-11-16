@@ -1,13 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Product } from 'src/app/shared/models/product.model';
 import { ProductService } from 'src/app/shared/services/product.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-products',
   templateUrl: './products.component.html',
   styleUrls: ['./products.component.scss']
 })
-export class ProductsComponent implements OnInit {
+export class ProductsComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   searchQuery: string = '';
   activeCategory: string = 'Todos';
   sortOption: string = 'relevance';
@@ -42,7 +45,7 @@ export class ProductsComponent implements OnInit {
   constructor(private productService: ProductService) { }
 
   ngOnInit(): void {
-    this.productService.getProducts().subscribe(products => {
+    this.productService.getProducts().pipe(takeUntil(this.destroy$)).subscribe(products => {
       this.products = [...products];
     });
   }
@@ -82,5 +85,10 @@ export class ProductsComponent implements OnInit {
         this.products.sort((a, b) => a.id - b.id);
         break;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

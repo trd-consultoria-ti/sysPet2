@@ -29,7 +29,7 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background-color: white;
+  background-color: var(--foreground);
   border: none;
   border-radius: 50%;
   width: 2.5rem;
@@ -87,8 +87,8 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  background-color: var(--primary);
-  color: white;
+  background-color: var(--primary-text);
+  color: var(--foreground);
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.25rem 0.75rem;
@@ -123,7 +123,7 @@
 .product-price {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--primary-text);
   margin-bottom: 1rem;
 }
 
@@ -194,8 +194,8 @@
   gap: 0.5rem;
   flex-grow: 1;
   padding: 0.75rem 1.5rem;
-  background-color: var(--primary);
-  color: white;
+  background-color: var(--primary-text);
+  color: var(--foreground);
   border: none;
   border-radius: var(--radius);
   font-weight: 600;

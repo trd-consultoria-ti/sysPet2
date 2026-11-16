@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 const { Pool } = require('pg');
 
 const app = express();
@@ -15,8 +16,57 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'animalworld'
 });
 
-app.use(cors());
+// CORS: só as origens configuradas + a própria API (front estático servido de docs/)
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:4200')
+  .split(',').map(s => s.trim()).filter(Boolean);
+const SELF_ORIGINS = [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
+app.use(cors({
+  origin: (origin, cb) =>
+    cb(null, !origin || ALLOWED_ORIGINS.includes(origin) || SELF_ORIGINS.includes(origin))
+}));
 app.use(express.json());
+
+// Rate limit em memória (janela fixa por IP) para endpoints sensíveis de auth
+function createRateLimiter(windowMs, max, message) {
+  const hits = new Map();
+  const timer = setInterval(() => {
+    const now = Date.now();
+    for (const [k, v] of hits) if (now > v.reset) hits.delete(k);
+  }, windowMs);
+  timer.unref();
+  return (req, res, next) => {
+    const now = Date.now();
+    let rec = hits.get(req.ip);
+    if (!rec || now > rec.reset) {
+      rec = { count: 0, reset: now + windowMs };
+      hits.set(req.ip, rec);
+    }
+    if (++rec.count > max) return res.status(429).json({ error: message });
+    next();
+  };
+}
+const loginLimiter = createRateLimiter(5 * 60 * 1000, 10, 'Muitas tentativas de login. Aguarde alguns minutos.');
+const authLimiter = createRateLimiter(10 * 60 * 1000, 5, 'Muitas requisições. Aguarde alguns minutos.');
+
+// ---------- senhas ----------
+
+const BCRYPT_ROUNDS = 10;
+const hashPassword = pw => bcrypt.hashSync(String(pw), BCRYPT_ROUNDS);
+const passwordError = pw => {
+  const s = String(pw || '');
+  if (s.length < 8) return 'Senha deve ter ao menos 8 caracteres';
+  if (!/[a-zA-Z]/.test(s) || !/\d/.test(s)) return 'Senha deve ter ao menos uma letra e um número';
+  return null;
+};
+// Hash legado sha256 sem salt (pré-bcrypt): confere na hora e migra para bcrypt no login
+const LEGACY_SHA256 = pw => crypto.createHash('sha256').update(String(pw)).digest('hex');
+const isBcrypt = h => typeof h === 'string' && h.startsWith('$2');
+async function verifyPassword(password, storedHash) {
+  if (isBcrypt(storedHash)) return bcrypt.compare(String(password), storedHash);
+  return LEGACY_SHA256(password) === storedHash;
+}
+// Hash bcrypt real usado como dummy p/ igualar o tempo de resposta quando o email não existe
+const DUMMY_BCRYPT = '$2b$10$6fg4IaGWYY5NjfgQiU2ty.bxWnEhpoykIXRNsEdh2I3z8pz06OguC';
 
 const num = v => (v === null || v === undefined ? null : Number(v));
 
@@ -56,9 +106,9 @@ function loadSessionSecret() {
 const SESSION_SECRET = loadSessionSecret();
 const TOKEN_TTL = 30 * 24 * 60 * 60 * 1000; // 30 dias
 
-function signToken(user) {
+function signToken(user, sid) {
   const payload = Buffer.from(JSON.stringify({
-    uid: user.id, exp: Date.now() + TOKEN_TTL
+    uid: user.id, sid, exp: Date.now() + TOKEN_TTL
   })).toString('base64url');
   const sig = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url');
   return `${payload}.${sig}`;
@@ -76,17 +126,30 @@ function verifyToken(token) {
   } catch { return null; }
 }
 
-// Carrega o usuário fresco do banco a cada request (role/permissão nunca ficam velhas no token)
+// Carrega usuário + sessão fresca do banco a cada request:
+// role/permissão nunca ficam velhas no token e logout/reset revogam de verdade
+async function createSession(userId, client = pool) {
+  const { rows } = await client.query(
+    'INSERT INTO sessions (user_id, expires_at) VALUES ($1, $2) RETURNING id',
+    [userId, new Date(Date.now() + TOKEN_TTL)]
+  );
+  return rows[0].id;
+}
+
 async function loadUser(req, res, next) {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
   const data = verifyToken(token);
-  if (!data) return res.status(401).json({ error: 'Não autenticado' });
+  if (!data || !data.sid) return res.status(401).json({ error: 'Não autenticado' });
   const { rows } = await pool.query(
-    'SELECT id, name, email, role, can_manage_products FROM users WHERE id=$1', [data.uid]
+    `SELECT u.id, u.name, u.email, u.role, u.can_manage_products, s.id AS session_id
+     FROM sessions s JOIN users u ON u.id = s.user_id
+     WHERE s.id = $1 AND s.user_id = $2 AND s.revoked_at IS NULL AND s.expires_at > now()`,
+    [data.sid, data.uid]
   );
-  if (!rows.length) return res.status(401).json({ error: 'Usuário não encontrado' });
+  if (!rows.length) return res.status(401).json({ error: 'Sessão expirada ou encerrada' });
   req.user = rows[0];
+  req.sessionId = rows[0].session_id;
   next();
 }
 
@@ -106,31 +169,99 @@ const requireProductManager = (req, res, next) =>
 
 // ---------- auth ----------
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Email e senha obrigatórios' });
-  const hash = crypto.createHash('sha256').update(String(password)).digest('hex');
   const { rows } = await pool.query(
-    'SELECT id, name, email, role, can_manage_products FROM users WHERE email = $1 AND password_hash = $2',
-    [email, hash]
+    'SELECT id, name, email, role, can_manage_products, password_hash FROM users WHERE email = $1',
+    [email]
   );
-  if (!rows.length) return res.status(401).json({ error: 'Credenciais inválidas' });
   const u = rows[0];
+  // bcrypt.compare roda sempre (hash dummy se o email não existe) — não vaza timing nem existência
+  const valid = await verifyPassword(password, u ? u.password_hash : DUMMY_BCRYPT);
+  if (!u || !valid) return res.status(401).json({ error: 'Credenciais inválidas' });
+  if (!isBcrypt(u.password_hash)) {
+    await pool.query('UPDATE users SET password_hash=$2 WHERE id=$1', [u.id, hashPassword(password)]);
+  }
+  const sid = await createSession(u.id);
   res.json({
     id: u.id, name: u.name, email: u.email, role: u.role,
-    canManageProducts: u.can_manage_products, token: signToken(u)
+    canManageProducts: u.can_manage_products, token: signToken(u, sid)
   });
 });
 
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/logout', requireAuth, async (req, res) => {
+  await pool.query('UPDATE sessions SET revoked_at=now() WHERE id=$1', [req.sessionId]);
+  res.json({ ok: true });
+});
+
+app.post('/api/auth/forgot', authLimiter, async (req, res) => {
+  const { email } = req.body || {};
+  // Sempre 200 — não vaza se o email existe
+  res.json({ ok: true });
+  if (!email) return;
+  try {
+    const { rows } = await pool.query('SELECT id FROM users WHERE email=$1', [email]);
+    if (!rows.length) return;
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM password_reset_tokens WHERE user_id=$1 AND used_at IS NULL', [rows[0].id]);
+      await client.query(
+        'INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES ($1,$2,$3)',
+        [rows[0].id, tokenHash, new Date(Date.now() + 60 * 60 * 1000)]
+      );
+      await client.query('COMMIT');
+    } finally {
+      client.release();
+    }
+    // TODO(M6): entregar por e-mail quando houver SMTP; por ora o link sai no log da API (dev)
+    console.log(`[password-reset] ${email}: /#/reset-password?token=${token}`);
+  } catch (e) {
+    console.error('forgot:', e);
+  }
+});
+
+app.post('/api/auth/reset', authLimiter, async (req, res) => {
+  const { token, newPassword } = req.body || {};
+  const pwErr = passwordError(newPassword);
+  if (!token || pwErr) return res.status(400).json({ error: pwErr || 'Token obrigatório' });
+  const tokenHash = crypto.createHash('sha256').update(String(token)).digest('hex');
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query(
+      `SELECT id, user_id FROM password_reset_tokens
+       WHERE token_hash=$1 AND used_at IS NULL AND expires_at > now()`,
+      [tokenHash]
+    );
+    if (!rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Token inválido ou expirado' });
+    }
+    await client.query('UPDATE password_reset_tokens SET used_at=now() WHERE id=$1', [rows[0].id]);
+    await client.query('UPDATE users SET password_hash=$2 WHERE id=$1', [rows[0].user_id, hashPassword(newPassword)]);
+    await client.query('UPDATE sessions SET revoked_at=now() WHERE user_id=$1', [rows[0].user_id]);
+    await client.query('COMMIT');
+    res.json({ ok: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+});
+
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   const { name, email, password } = req.body || {};
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
   }
-  if (String(password).length < 6) {
-    return res.status(400).json({ error: 'Senha deve ter ao menos 6 caracteres' });
-  }
-  const hash = crypto.createHash('sha256').update(String(password)).digest('hex');
+  const pwErr = passwordError(password);
+  if (pwErr) return res.status(400).json({ error: pwErr });
+  const hash = hashPassword(password);
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -155,11 +286,12 @@ app.post('/api/auth/register', async (req, res) => {
         [user.id, name, email, 'active']
       );
     }
+    const sid = await createSession(user.id, client);
     await client.query('COMMIT');
     res.status(201).json({
       ...user,
       canManageProducts: user.can_manage_products,
-      token: signToken(user)
+      token: signToken(user, sid)
     });
   } catch (e) {
     await client.query('ROLLBACK');
@@ -181,9 +313,11 @@ app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
 app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
   const { name, email, password, role, canManageProducts } = req.body || {};
   if (!name || !email || !password) return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
+  const pwErr = passwordError(password);
+  if (pwErr) return res.status(400).json({ error: pwErr });
   const validRoles = ['admin', 'collaborator', 'customer'];
   const userRole = validRoles.includes(role) ? role : 'collaborator';
-  const hash = crypto.createHash('sha256').update(String(password)).digest('hex');
+  const hash = hashPassword(password);
   try {
     const { rows } = await pool.query(
       'INSERT INTO users (name, email, password_hash, role, can_manage_products) VALUES ($1,$2,$3,$4,$5) RETURNING id, name, email, role, can_manage_products',
@@ -221,20 +355,23 @@ app.put('/api/users/:id/password', requireAuth, async (req, res) => {
     return res.status(403).json({ error: 'Você só pode alterar a própria senha' });
   }
   const { currentPassword, newPassword } = req.body || {};
-  if (!newPassword || String(newPassword).length < 6) {
-    return res.status(400).json({ error: 'Nova senha deve ter ao menos 6 caracteres' });
-  }
+  const pwErr = passwordError(newPassword);
+  if (pwErr) return res.status(400).json({ error: pwErr });
   const { rows } = await pool.query('SELECT password_hash FROM users WHERE id=$1', [req.params.id]);
   if (!rows.length) return res.status(404).json({ error: 'Usuário não encontrado' });
   // Admin redefine senha sem conhecer a atual; usuário comum precisa provar a senha atual
   if (!isAdmin) {
-    const currentHash = crypto.createHash('sha256').update(String(currentPassword || '')).digest('hex');
-    if (rows[0].password_hash !== currentHash) {
+    const ok = await verifyPassword(currentPassword || '', rows[0].password_hash);
+    if (!ok) {
       return res.status(401).json({ error: 'Senha atual incorreta' });
     }
   }
-  const newHash = crypto.createHash('sha256').update(String(newPassword)).digest('hex');
-  await pool.query('UPDATE users SET password_hash=$2 WHERE id=$1', [req.params.id, newHash]);
+  await pool.query('UPDATE users SET password_hash=$2 WHERE id=$1', [req.params.id, hashPassword(newPassword)]);
+  // Derruba as outras sessões do usuário (a atual, se for troca própria, continua valendo)
+  await pool.query(
+    'UPDATE sessions SET revoked_at=now() WHERE user_id=$1 AND id<>$2',
+    [req.params.id, req.sessionId]
+  );
   res.json({ ok: true });
 });
 
@@ -565,4 +702,13 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Animal World API em http://localhost:${PORT}`);
+  console.log(`Session secret: ${process.env.SESSION_SECRET ? 'SESSION_SECRET (env)' : 'server/.session-secret (arquivo local)'}`);
 });
+
+// Limpeza diária de sessões e tokens de reset expirados/revogados
+setInterval(() => {
+  pool.query(`DELETE FROM sessions WHERE expires_at < now() - interval '7 days'`)
+    .then(() => pool.query(`DELETE FROM sessions WHERE revoked_at IS NOT NULL AND revoked_at < now() - interval '7 days'`))
+    .then(() => pool.query(`DELETE FROM password_reset_tokens WHERE expires_at < now() - interval '1 day'`))
+    .catch(() => {});
+}, 24 * 60 * 60 * 1000).unref();

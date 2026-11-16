@@ -3,7 +3,7 @@
     <!-- Sidebar de navegação -->
     <div class="dashboard-sidebar">
       <div class="sidebar-header">
-        <h3>Animal World</h3>
+        <span class="sidebar-brand">Animal World</span>
       </div>
       <ul class="sidebar-menu">
         <li class="sidebar-item">
@@ -47,9 +47,9 @@
           </a>
         </li>
         <li class="sidebar-item">
-          <a href="javascript:void(0)" (click)="logout()">
-            <i class="fas fa-sign-out-alt"></i> Sair
-          </a>
+          <button type="button" class="sidebar-logout" (click)="logout()">
+            <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Sair
+          </button>
         </li>
       </ul>
     </div>

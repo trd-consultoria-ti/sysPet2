@@ -80,7 +80,20 @@ export class AuthService {
   }
 
   logout(): void {
+    const token = this.getToken();
+    if (token) {
+      // Revoga a sessão no servidor; falha de rede não impede o logout local
+      this.http.post(`${environment.apiUrl}/auth/logout`, {}).subscribe({ error: () => {} });
+    }
     this.clearSession();
+  }
+
+  forgotPassword(email: string): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>(`${environment.apiUrl}/auth/forgot`, { email });
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>(`${environment.apiUrl}/auth/reset`, { token, newPassword });
   }
 
   isLoggedIn(): boolean {

@@ -1,13 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../shared/services/auth.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   email: string = '';
   password: string = '';
   name: string = '';
@@ -37,6 +40,28 @@ export class LoginComponent implements OnInit {
     this.error = '';
   }
 
+  forgot(): void {
+    this.error = '';
+    if (!this.email) {
+      this.error = 'Informe seu email para recuperar a senha.';
+      return;
+    }
+    this.loading = true;
+    this.authService.forgotPassword(this.email)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.error = '';
+          this.loading = false;
+          alert('Se o email estiver cadastrado, enviaremos as instruções de recuperação.');
+        },
+        error: () => {
+          this.error = 'Não foi possível processar a solicitação. Tente novamente.';
+          this.loading = false;
+        }
+      });
+  }
+
   onSubmit(): void {
     this.loading = true;
     this.error = '';
@@ -45,19 +70,24 @@ export class LoginComponent implements OnInit {
       ? this.authService.register(this.name, this.email, this.password)
       : this.authService.login(this.email, this.password);
 
-    request$.subscribe({
+    request$.pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.router.navigate([this.returnUrl]);
       },
       error: err => {
-        this.error = this.isRegisterMode
-          ? (err.error?.error || 'Não foi possível criar a conta. Verifique os dados.')
-          : 'Falha na autenticação. Verifique suas credenciais.';
+        this.error = err.error?.error || (this.isRegisterMode
+          ? 'Não foi possível criar a conta. Verifique os dados.'
+          : 'Falha na autenticação. Verifique suas credenciais.');
         this.loading = false;
       },
       complete: () => {
         this.loading = false;
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

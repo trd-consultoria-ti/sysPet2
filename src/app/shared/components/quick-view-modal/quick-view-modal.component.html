@@ -1,7 +1,7 @@
 <div class="modal-overlay" *ngIf="visible" (click)="closeModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
+  <div class="modal-container" #dialog role="dialog" aria-modal="true" aria-labelledby="qv-product-title" tabindex="-1" (click)="$event.stopPropagation()">
     <button class="modal-close" (click)="closeModal()" aria-label="Fechar">
-      <i class="icon-x"></i>
+      <i class="icon-x" aria-hidden="true"></i>
     </button>
     
     <div class="modal-content" *ngIf="product">
@@ -11,7 +11,7 @@
       </div>
       
       <div class="modal-details">
-        <h2 class="product-title">{{ product.name }}</h2>
+        <h2 id="qv-product-title" class="product-title">{{ product.name }}</h2>
         
         <div class="product-rating">
           <app-star-rating 
@@ -35,7 +35,7 @@
               [disabled]="quantity <= 1"
               aria-label="Diminuir quantidade"
             >
-              <i class="icon-minus"></i>
+              <i class="icon-minus" aria-hidden="true"></i>
             </button>
             <span class="quantity-value">{{ quantity }}</span>
             <button 
@@ -43,14 +43,14 @@
               (click)="incrementQuantity()"
               aria-label="Aumentar quantidade"
             >
-              <i class="icon-plus"></i>
+              <i class="icon-plus" aria-hidden="true"></i>
             </button>
           </div>
         </div>
         
         <div class="modal-actions">
           <button class="btn btn-primary btn-add-cart" (click)="addToCart()">
-            <i class="icon-shopping-cart"></i>
+            <i class="icon-shopping-cart" aria-hidden="true"></i>
             Adicionar ao Carrinho
           </button>
           <app-wishlist-button 

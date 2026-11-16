@@ -1,13 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CashService, CashMovement } from '../../../shared/services/cash.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-admin-cash',
   templateUrl: './admin-cash.component.html',
   styleUrls: ['./admin-cash.component.scss']
 })
-export class AdminCashComponent implements OnInit {
+export class AdminCashComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   movements: CashMovement[] = [];
   showForm = false;
   movementForm: FormGroup;
@@ -22,7 +25,7 @@ export class AdminCashComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.cashService.list().subscribe(m => this.movements = m);
+    this.cashService.list().pipe(takeUntil(this.destroy$)).subscribe(m => this.movements = m);
   }
 
   get balance(): number {
@@ -48,7 +51,7 @@ export class AdminCashComponent implements OnInit {
       description: v.description,
       amount: Number(v.amount),
       paymentMethod: v.paymentMethod || undefined
-    }).subscribe(() => this.showForm = false);
+    }).pipe(takeUntil(this.destroy$)).subscribe(() => this.showForm = false);
   }
 
   formatPrice(value: number): string {
@@ -57,5 +60,10 @@ export class AdminCashComponent implements OnInit {
 
   formatDate(value: string): string {
     return new Date(value).toLocaleString('pt-BR');
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

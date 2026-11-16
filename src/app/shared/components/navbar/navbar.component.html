@@ -3,11 +3,14 @@
     <div class="navbar-content">
       <app-logo size="md"></app-logo>
 
-      <button class="menu-toggle" (click)="toggleMenu()" *ngIf="isMobile">
-        <span class="icon" [ngClass]="{'icon-menu': !isMenuOpen, 'icon-x': isMenuOpen}"></span>
+      <button type="button" class="menu-toggle" (click)="toggleMenu()" *ngIf="isMobile"
+              [attr.aria-label]="isMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'"
+              [attr.aria-expanded]="isMenuOpen"
+              aria-controls="main-nav">
+        <span class="icon" aria-hidden="true" [ngClass]="{'icon-menu': !isMenuOpen, 'icon-x': isMenuOpen}"></span>
       </button>
 
-      <nav class="nav" [ngClass]="{'nav-open': isMenuOpen}">
+      <nav id="main-nav" class="nav" [ngClass]="{'nav-open': isMenuOpen}" aria-label="Navegação principal">
         <ul class="nav-list">
           <li class="nav-item">
             <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMenu()">Home</a>
@@ -32,8 +35,8 @@
           </li>
         </ul>
         <div class="nav-actions">
-          <a routerLink="/cart" class="cart-link" (click)="closeMenu()">
-            <i class="fas fa-shopping-cart"></i>
+          <a routerLink="/cart" class="cart-link" (click)="closeMenu()" aria-label="Carrinho de compras">
+            <i class="fas fa-shopping-cart" aria-hidden="true"></i>
             <ng-container *ngIf="cartCount$ | async as count">
               <span class="cart-badge" *ngIf="count > 0">{{ count }}</span>
             </ng-container>

@@ -1,7 +1,7 @@
 <div class="login-container">
   <div class="login-card">
     <div class="login-header">
-      <h2>{{ isRegisterMode ? 'Criar Conta' : 'Bem-vindo de Volta' }}</h2>
+      <h1>{{ isRegisterMode ? 'Criar Conta' : 'Bem-vindo de Volta' }}</h1>
       <p>{{ isRegisterMode ? 'Cadastre-se para agendar e acompanhar pedidos' : 'Entre na sua conta' }}</p>
     </div>
 
@@ -33,18 +33,20 @@
           <input type="checkbox" id="remember">
           <label for="remember">Lembrar-me</label>
         </div>
-        <a href="#" class="forgot-password">Esqueceu a senha?</a>
+        <button type="button" class="forgot-password" (click)="forgot()">Esqueceu a senha?</button>
       </div>
 
       <button type="submit" class="btn btn-primary btn-block" [disabled]="loading">
-        <span *ngIf="loading" class="spinner-border spinner-border-sm mr-1"></span>
+        <i *ngIf="loading" class="fas fa-spinner fa-spin" aria-hidden="true"></i>
         {{ isRegisterMode ? 'Cadastrar' : 'Entrar' }}
       </button>
 
       <p class="toggle-mode">
         {{ isRegisterMode ? 'Já tem conta?' : 'Não tem conta?' }}
-        <a href="javascript:void(0)" (click)="toggleMode()">
+        <button type="button" class="link-button" (click)="toggleMode()">
           {{ isRegisterMode ? 'Entrar' : 'Criar conta' }}
-        </a>
+        </button>
       </p>
     </form>
+  </div>
+</div>

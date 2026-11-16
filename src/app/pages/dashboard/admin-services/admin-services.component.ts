@@ -1,14 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ServiceCatalogService } from '../../../shared/services/service-catalog.service';
 import { Service } from '../../../shared/models/service.model';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-admin-services',
   templateUrl: './admin-services.component.html',
   styleUrls: ['./admin-services.component.scss']
 })
-export class AdminServicesComponent implements OnInit {
+export class AdminServicesComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   services: Service[] = [];
   showForm = false;
   editingId: number | null = null;
@@ -25,7 +28,7 @@ export class AdminServicesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.catalogService.getServices().subscribe(s => this.services = s);
+    this.catalogService.getServices().pipe(takeUntil(this.destroy$)).subscribe(s => this.services = s);
   }
 
   openCreate(): void {
@@ -69,7 +72,7 @@ export class AdminServicesComponent implements OnInit {
       ? this.catalogService.update({ ...payload, id: this.editingId } as Service)
       : this.catalogService.create(payload);
 
-    request$.subscribe(() => {
+    request$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.showForm = false;
       this.editingId = null;
     });
@@ -78,11 +81,16 @@ export class AdminServicesComponent implements OnInit {
   remove(service: Service): void {
     if (!service.id) return;
     if (confirm(`Excluir o serviço "${service.name}"?`)) {
-      this.catalogService.delete(service.id).subscribe();
+      this.catalogService.delete(service.id).pipe(takeUntil(this.destroy$)).subscribe();
     }
   }
 
   formatPrice(price: number): string {
     return price.toFixed(2).replace('.', ',');
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

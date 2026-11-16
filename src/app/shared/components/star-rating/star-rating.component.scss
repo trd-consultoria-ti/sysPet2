@@ -18,7 +18,7 @@
 }
 
 .icon-star.filled {
-  color: #FFB800;
+  color: #D97706;
 }
 
 .icon-star.half {
@@ -26,14 +26,16 @@
 }
 
 .icon-star.half:after {
-  content: '';
+  content: '\f005';
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-style: normal;
   position: absolute;
   top: 0;
   left: 0;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(to right, #FFB800 50%, transparent 50%);
+  background: linear-gradient(to right, #D97706 50%, transparent 50%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

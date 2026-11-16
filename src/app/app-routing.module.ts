@@ -11,6 +11,7 @@ const routes: Routes = [
   { path: 'appointments', canActivate: [AuthGuard], loadChildren: () => import('./pages/appointments/appointments.module').then(m => m.AppointmentsModule) },
   { path: 'contact', loadChildren: () => import('./pages/contact/contact.module').then(m => m.ContactModule) },
   { path: 'login', loadChildren: () => import('./pages/login/login.module').then(m => m.LoginModule) },
+  { path: 'reset-password', loadChildren: () => import('./pages/reset-password/reset-password.module').then(m => m.ResetPasswordModule) },
   { path: 'cart', loadChildren: () => import('./pages/cart/cart.module').then(m => m.CartModule) },
   { path: 'checkout', canActivate: [AuthGuard], loadChildren: () => import('./pages/checkout/checkout.module').then(m => m.CheckoutModule) },
   { path: 'orders', canActivate: [AuthGuard], loadChildren: () => import('./pages/orders/orders.module').then(m => m.OrdersModule) },

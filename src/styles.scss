@@ -26,12 +26,15 @@ html, body {
   /* Cores de interface */
   --background: #ffffff;
   --foreground: #1a202c;
-  --muted: #718096;
-  --muted-foreground: #a0aec0;
+  --muted: #64748b;
+  --muted-foreground: #5f6b7a;
   --border: #e2e8f0;
   --input: #edf2f7;
   --ring: #4ECDC4;
   --radius: 0.5rem;
+
+  /* Tons escuros da paleta para texto/ícone (contraste WCAG AA) */
+  --primary-text: #1f766b;
   
   /* Cores de destaque */
   --accent: #FF8364;
@@ -72,7 +75,7 @@ button {
 
 .btn-primary {
   background-color: var(--primary);
-  color: white;
+  color: var(--foreground);
   border: none;
 }
 
@@ -82,7 +85,7 @@ button {
 
 .btn-secondary {
   background-color: var(--secondary);
-  color: var(--primary-dark);
+  color: var(--foreground);
   border: none;
 }
 
@@ -90,8 +93,19 @@ button {
   background-color: var(--secondary-dark);
 }
 
+.btn-outline-secondary {
+  background-color: transparent;
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--secondary-light);
+  color: var(--foreground);
+}
+
 /* Form elements */
-input, select, textarea {
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0.5rem;
@@ -99,9 +113,88 @@ input, select, textarea {
   width: 100%;
 }
 
-input:focus, select:focus, textarea:focus {
-  outline: 2px solid var(--ring);
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus, textarea:focus {
+  outline: 2px solid var(--primary-dark);
   outline-offset: 2px;
+}
+
+input[type="checkbox"], input[type="radio"] {
+  accent-color: var(--primary-dark);
+}
+
+/* Focus visível padronizado em links e botões */
+a:focus-visible, button:focus-visible, .btn:focus-visible {
+  outline: 2px solid var(--primary-dark);
+  outline-offset: 2px;
+}
+
+/* Acessibilidade: skip-link */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  z-index: 10000;
+  padding: 0.75rem 1.25rem;
+  background: var(--foreground);
+  color: var(--background);
+  border-radius: var(--radius);
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Ícones .icon-* mapeados para os glifos do Font Awesome (webfont carregado via angular.json) */
+[class^="icon-"]::before,
+[class*=" icon-"]::before {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+}
+
+.icon-menu::before { content: "\f0c9"; }
+.icon-x::before { content: "\f00d"; }
+.icon-star::before { content: "\f005"; }
+.icon-clock::before { content: "\f017"; }
+.icon-calendar::before { content: "\f073"; }
+.icon-shopping-cart::before { content: "\f07a"; }
+.icon-heart::before { content: "\f004"; }
+.icon-minus::before { content: "\f068"; }
+.icon-plus::before { content: "\f067"; }
+.icon-phone::before { content: "\f095"; }
+.icon-mail::before { content: "\f0e0"; }
+.icon-map-pin::before { content: "\f3c5"; }
+.icon-search::before { content: "\f002"; }
+.icon-eye::before { content: "\f06e"; }
+.icon-arrow-right::before { content: "\f061"; }
+
+.icon-instagram::before,
+.icon-facebook::before,
+.icon-twitter::before {
+  font-family: "Font Awesome 6 Brands";
+  font-weight: 400;
+}
+
+.icon-instagram::before { content: "\f16d"; }
+.icon-facebook::before { content: "\f09a"; }
+.icon-twitter::before { content: "\f099"; }
+
+/* Respeita preferência de movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Responsive utilities */

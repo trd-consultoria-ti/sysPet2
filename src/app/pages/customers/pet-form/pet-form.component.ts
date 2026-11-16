@@ -1,16 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Customer } from '../../../shared/models/customer.model';
 import { Pet } from '../../../shared/models/pet.model';
 import { CustomerService } from '../../../shared/services/customer.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-pet-form',
   templateUrl: './pet-form.component.html',
   styleUrls: ['./pet-form.component.scss']
 })
-export class PetFormComponent implements OnInit {
+export class PetFormComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   petForm: FormGroup;
   customerId: number | null = null;
   petId: number | null = null;
@@ -33,7 +36,7 @@ export class PetFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const customerId = params.get('customerId');
       const petId = params.get('petId');
 
@@ -52,7 +55,7 @@ export class PetFormComponent implements OnInit {
 
   loadCustomer(): void {
     if (this.customerId) {
-      this.customerService.getCustomers().subscribe(customers => {
+      this.customerService.getCustomers().pipe(takeUntil(this.destroy$)).subscribe(customers => {
         this.customer = customers.find(c => c.id === this.customerId) || null;
         if (this.petId) {
           this.loadPet();
@@ -89,14 +92,14 @@ export class PetFormComponent implements OnInit {
           type: formValues.type,
           breed: formValues.breed || undefined,
           age: formValues.age || undefined
-        }).subscribe(done);
+        }).pipe(takeUntil(this.destroy$)).subscribe(done);
       } else {
         this.customerService.addPet(this.customerId, {
           name: formValues.name,
           type: formValues.type,
           breed: formValues.breed || undefined,
           age: formValues.age || undefined
-        }).subscribe(done);
+        }).pipe(takeUntil(this.destroy$)).subscribe(done);
       }
     }
   }
@@ -107,5 +110,10 @@ export class PetFormComponent implements OnInit {
     } else {
       this.router.navigate(['/customers']);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

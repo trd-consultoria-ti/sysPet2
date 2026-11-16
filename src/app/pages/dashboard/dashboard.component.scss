@@ -30,7 +30,8 @@
   margin-bottom: 1rem;
 }
 
-.sidebar-header h3 {
+.sidebar-brand {
+  display: block;
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
@@ -47,25 +48,35 @@
   margin-bottom: 0.25rem;
 }
 
-.sidebar-item a {
+.sidebar-item a,
+.sidebar-item button {
   display: flex;
   align-items: center;
+  width: 100%;
   padding: 0.75rem 1.5rem;
-  color: #666;
+  color: #555;
   text-decoration: none;
   transition: all 0.2s ease;
   border-left: 3px solid transparent;
+  background: none;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.sidebar-item a:hover {
+.sidebar-item a:hover,
+.sidebar-item button:hover {
   background-color: #f5f7fa;
-  color: #3498db;
+  color: #1a6fb3;
 }
 
 .sidebar-item.active a {
   background-color: #f0f7ff;
-  color: #3498db;
-  border-left: 3px solid #3498db;
+  color: #1a6fb3;
+  border-left: 3px solid #1a6fb3;
 }
 
 .sidebar-item i {
@@ -150,7 +161,7 @@
   position: absolute;
   top: -5px;
   right: -5px;
-  background-color: #e74c3c;
+  background-color: #c0392b;
   color: white;
   border-radius: 50%;
   width: 18px;
@@ -165,7 +176,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: #3498db;
+  background-color: #1a6fb3;
   color: white;
   display: flex;
   align-items: center;
@@ -224,7 +235,7 @@
 
 .stat-icon {
   font-size: 1.2rem;
-  color: #3498db;
+  color: #1a6fb3;
 }
 
 .stat-value {
@@ -249,7 +260,7 @@
 }
 
 .stat-change.negative {
-  color: #e74c3c;
+  color: #c0392b;
 }
 
 /* Widgets */
@@ -421,8 +432,8 @@
 }
 
 .tab.active {
-  color: #3498db;
-  border-bottom: 2px solid #3498db;
+  color: #1a6fb3;
+  border-bottom: 2px solid #1a6fb3;
 }
 
 .venda-item {
@@ -511,7 +522,7 @@
   height: 40px;
   border-radius: 10px;
   background-color: #f0f7ff;
-  color: #3498db;
+  color: #1a6fb3;
   display: flex;
   align-items: center;
   justify-content: center;

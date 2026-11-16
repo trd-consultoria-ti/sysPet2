@@ -28,7 +28,7 @@
         font-size: 1.75rem;
         font-weight: 600;
         margin: 0;
-        color: var(--primary);
+        color: var(--primary-text);
       }
     }
   }
@@ -98,7 +98,7 @@
               
               &:focus {
                 outline: none;
-                border-color: var(--primary);
+                border-color: var(--primary-text);
                 box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
               }
               
@@ -140,7 +140,7 @@
   
   .loading-spinner {
     font-size: 2rem;
-    color: var(--primary);
+    color: var(--primary-text);
     margin-bottom: 1rem;
   }
 }
@@ -154,7 +154,7 @@
   
   .loading-spinner {
     font-size: 2rem;
-    color: var(--primary);
+    color: var(--primary-text);
     margin-bottom: 1rem;
   }
 }

@@ -1,13 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Customer } from '../../shared/models/customer.model';
 import { CustomerService } from '../../shared/services/customer.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-customers',
   templateUrl: './customers.component.html',
   styleUrls: ['./customers.component.scss']
 })
-export class CustomersComponent implements OnInit {
+export class CustomersComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   customers: Customer[] = [];
 
   filteredCustomers: Customer[] = [];
@@ -17,7 +20,7 @@ export class CustomersComponent implements OnInit {
   constructor(private customerService: CustomerService) { }
 
   ngOnInit(): void {
-    this.customerService.getCustomers().subscribe(customers => {
+    this.customerService.getCustomers().pipe(takeUntil(this.destroy$)).subscribe(customers => {
       this.customers = [...customers];
       this.applyFilters();
     });
@@ -58,5 +61,10 @@ export class CustomersComponent implements OnInit {
 
   getPetCount(customer: Customer): number {
     return customer.pets?.length || 0;
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

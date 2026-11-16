@@ -39,12 +39,30 @@ O `start.bat` já aplica essa flag. Alternativa definitiva: usar Node 18.
 
 ### Acesso
 
-Login seed (senha `animal123` para ambos):
+Login seed (senha `animal123`):
 
 - `admin@animalworld.com` — role admin
-- `colaborador@animalworld.com` — role collaborator
 
-Rotas protegidas por login: `/customers`, `/dashboard`, `/appointments`, `/orders`.
+Funcionários e clientes são criados em runtime: admin em `/dashboard/users`, clientes pelo cadastro em `/login`.
+
+Rotas protegidas por login: `/customers`, `/dashboard`, `/appointments`, `/orders`, `/checkout`.
+
+### Configuração da API (variáveis de ambiente)
+
+A API lê variáveis de ambiente; veja `server/.env.example` para a lista completa. Principais:
+
+| Variável | Para quê |
+|---|---|
+| `SESSION_SECRET` | Segredo HMAC dos tokens de sessão. **Obrigatório em produção** — sem ele a API gera `server/.session-secret` aleatório e todas as sessões caem a cada reinstalação. Gere com `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+| `ALLOWED_ORIGINS` | Origens liberadas no CORS, separadas por vírgula (default `http://localhost:4200`) |
+| `DB_HOST`/`DB_PORT`/`DB_USER`/`DB_PASSWORD`/`DB_NAME` | Conexão Postgres (default = docker-compose local, porta 5433) |
+
+Notas de segurança do MVP:
+
+- Senhas com bcrypt (hashes sha256 antigos migram sozinhos no próximo login).
+- Tokens de sessão são server-side: logout revoga e troca de senha derruba as outras sessões.
+- Login tem rate limit (10 tentativas / 5 min por IP).
+- Recuperação de senha: `POST /api/auth/forgot` gera token de 1h; **hoje o link sai no log da API** (`server/api.log`) — entrega por e-mail depende de SMTP futuro.
 
 ## Estrutura do Projeto
 

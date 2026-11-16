@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { Product } from 'src/app/shared/models/product.model';
 import { CartService } from 'src/app/shared/services/cart.service';
 
@@ -9,12 +9,42 @@ import { CartService } from 'src/app/shared/services/cart.service';
 })
 export class QuickViewModalComponent {
   @Input() product: Product | null = null;
-  @Input() visible: boolean = false;
   @Output() close = new EventEmitter<void>();
+
+  @ViewChild('dialog') dialogRef?: ElementRef<HTMLElement>;
+
+  private _visible = false;
+  private previouslyFocused: HTMLElement | null = null;
+
+  @Input()
+  set visible(value: boolean) {
+    if (value && !this._visible) {
+      this.previouslyFocused = document.activeElement as HTMLElement | null;
+      this._visible = true;
+      setTimeout(() => this.dialogRef?.nativeElement.focus());
+    } else {
+      const wasVisible = this._visible;
+      this._visible = value;
+      if (wasVisible && !value) {
+        this.previouslyFocused?.focus();
+        this.previouslyFocused = null;
+      }
+    }
+  }
+  get visible(): boolean {
+    return this._visible;
+  }
 
   quantity: number = 1;
 
   constructor(private cartService: CartService) { }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.visible) {
+      this.closeModal();
+    }
+  }
 
   closeModal(): void {
     this.close.emit();

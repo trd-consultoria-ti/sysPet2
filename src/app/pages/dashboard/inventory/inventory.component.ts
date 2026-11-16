@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Product } from '../../../shared/models/product.model';
 import { ProductService } from '../../../shared/services/product.service';
 import { AuthService } from '../../../shared/services/auth.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 interface ProductEditForm {
   [key: number]: FormGroup;
@@ -13,7 +15,8 @@ interface ProductEditForm {
   templateUrl: './inventory.component.html',
   styleUrls: ['./inventory.component.scss']
 })
-export class InventoryComponent implements OnInit {
+export class InventoryComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   products: Product[] = [];
   editForms: ProductEditForm = {};
   editingId: number | null = null;
@@ -37,7 +40,7 @@ export class InventoryComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.productService.getProducts().subscribe(products => {
+    this.productService.getProducts().pipe(takeUntil(this.destroy$)).subscribe(products => {
       this.products = [...products];
     });
   }
@@ -71,7 +74,7 @@ export class InventoryComponent implements OnInit {
         name: values.name,
         price,
         category: values.category
-      }).subscribe();
+      }).pipe(takeUntil(this.destroy$)).subscribe();
       this.editingId = null;
       this.editForms = {};
       this.savedId = product.id;
@@ -100,7 +103,7 @@ export class InventoryComponent implements OnInit {
       image: '',
       category: values.category,
       description: values.description || ''
-    }).subscribe(() => {
+    }).pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.showCreateForm = false;
     });
   }
@@ -108,7 +111,7 @@ export class InventoryComponent implements OnInit {
   remove(product: Product): void {
     if (!this.canManage) return;
     if (confirm(`Excluir o produto "${product.name}"?`)) {
-      this.productService.delete(product.id).subscribe();
+      this.productService.delete(product.id).pipe(takeUntil(this.destroy$)).subscribe();
     }
   }
 
@@ -118,5 +121,10 @@ export class InventoryComponent implements OnInit {
 
   formatPrice(value: number): string {
     return value.toFixed(2).replace('.', ',');
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
