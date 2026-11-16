@@ -6,6 +6,14 @@ import { DailyService, DailyQueueStats, DailyServiceStatus, HealthChecklist } fr
 import { ServiceCatalogService } from '../../../shared/services/service-catalog.service';
 import { Service } from '../../../shared/models/service.model';
 
+export interface KanbanColumn {
+  key: DailyServiceStatus;
+  label: string;
+  icon: string;
+  actionLabel: string;
+  badgeClass: string;
+}
+
 @Component({
   selector: 'app-admin-daily-queue',
   templateUrl: './admin-daily-queue.component.html',
@@ -27,9 +35,20 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     isFull: false
   };
 
+  viewMode: 'kanban' | 'list' = 'kanban';
   currentDate: string = new Date().toISOString().split('T')[0];
   activeFilter: 'todos' | DailyServiceStatus = 'todos';
   availableServices: Service[] = [];
+
+  readonly columns: KanbanColumn[] = [
+    { key: 'aguardando', label: '1. Na Fila / Gaiola', icon: 'fas fa-clock', actionLabel: 'Iniciar Banho', badgeClass: 'waiting' },
+    { key: 'em_atendimento', label: '2. Em Banho & Tosa', icon: 'fas fa-bath', actionLabel: 'Marcar Pronto', badgeClass: 'in-progress' },
+    { key: 'pronto', label: '3. Pronto para Retirada', icon: 'fas fa-check-circle', actionLabel: 'Entregar ao Tutor', badgeClass: 'ready' },
+    { key: 'entregue', label: '4. Entregue / Concluído', icon: 'fas fa-paw', actionLabel: '', badgeClass: 'delivered' }
+  ];
+
+  draggedItem: DailyService | null = null;
+  dragOverColumn: DailyServiceStatus | null = null;
 
   showModal: boolean = false;
   isEditing: boolean = false;
@@ -139,6 +158,70 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     }
   }
 
+  getItemsByStatus(status: DailyServiceStatus): DailyService[] {
+    return this.queueItems.filter(item => item.status === status);
+  }
+
+  advanceStatus(item: DailyService): void {
+    let next: DailyServiceStatus | null = null;
+    if (item.status === 'aguardando') {
+      next = 'em_atendimento';
+    } else if (item.status === 'em_atendimento') {
+      next = 'pronto';
+    } else if (item.status === 'pronto') {
+      next = 'entregue';
+    }
+
+    if (next) {
+      this.changeStatus(item, next);
+    }
+  }
+
+  regressStatus(item: DailyService): void {
+    let prev: DailyServiceStatus | null = null;
+    if (item.status === 'entregue') {
+      prev = 'pronto';
+    } else if (item.status === 'pronto') {
+      prev = 'em_atendimento';
+    } else if (item.status === 'em_atendimento') {
+      prev = 'aguardando';
+    }
+
+    if (prev) {
+      this.changeStatus(item, prev);
+    }
+  }
+
+  // Drag and Drop
+  onDragStart(event: DragEvent, item: DailyService): void {
+    this.draggedItem = item;
+    if (event.dataTransfer) {
+      event.dataTransfer.setData('text/plain', String(item.id));
+      event.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
+  onDragOver(event: DragEvent, status: DailyServiceStatus): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    this.dragOverColumn = status;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    this.dragOverColumn = null;
+  }
+
+  onDrop(event: DragEvent, targetStatus: DailyServiceStatus): void {
+    event.preventDefault();
+    this.dragOverColumn = null;
+    if (this.draggedItem && this.draggedItem.status !== targetStatus) {
+      this.changeStatus(this.draggedItem, targetStatus);
+    }
+    this.draggedItem = null;
+  }
+
   openCheckinModal(): void {
     this.isEditing = false;
     this.editingId = null;
@@ -225,10 +308,12 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
   changeStatus(item: DailyService, newStatus: DailyServiceStatus): void {
     this.dailyService.updateStatus(item.id, newStatus).subscribe({
       next: (updated) => {
-        if (newStatus === 'pronto') {
-          this.showToast(`🐾 Pet ${updated.petName} pronto! Notifique o tutor no WhatsApp.`, 'info');
+        if (newStatus === 'em_atendimento') {
+          this.showToast(`🚿 ${updated.petName} entrou em banho/tosa!`, 'info');
+        } else if (newStatus === 'pronto') {
+          this.showToast(`✨ ${updated.petName} está prontinho para retirada!`, 'success');
         } else if (newStatus === 'entregue') {
-          this.showToast(`✓ Pet ${updated.petName} entregue ao tutor com sucesso!`, 'success');
+          this.showToast(`🐾 ${updated.petName} entregue ao tutor com sucesso!`, 'success');
         } else {
           this.showToast(`Status de ${updated.petName} alterado para "${newStatus}".`, 'info');
         }

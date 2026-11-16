@@ -7,11 +7,23 @@
   <!-- Header & Ações -->
   <div class="page-header">
     <div class="header-left">
-      <h1>Fila do Dia — Banho & Tosa</h1>
-      <p class="subtitle">Atendimento por ordem de chegada com integração à agenda</p>
+      <h1>Esteira de Produção — Banho & Tosa</h1>
+      <p class="subtitle">Quadro Kanban de produção: clique para avançar o pet de estágio ou arraste entre colunas</p>
     </div>
 
     <div class="header-right">
+      <!-- Toggle de Visualização Kanban / Lista -->
+      <div class="view-mode-toggle" role="group" aria-label="Visualização">
+        <button type="button" class="btn btn-sm" [class.btn-primary]="viewMode === 'kanban'"
+                [class.btn-outline-secondary]="viewMode !== 'kanban'" (click)="viewMode = 'kanban'">
+          <i class="fas fa-columns"></i> Esteira Kanban
+        </button>
+        <button type="button" class="btn btn-sm" [class.btn-primary]="viewMode === 'list'"
+                [class.btn-outline-secondary]="viewMode !== 'list'" (click)="viewMode = 'list'">
+          <i class="fas fa-list"></i> Lista
+        </button>
+      </div>
+
       <div class="date-navigator">
         <button type="button" class="btn btn-outline-secondary btn-sm" (click)="changeDate(-1)" title="Dia anterior">
           <i class="fas fa-chevron-left"></i>
@@ -30,191 +42,251 @@
     </div>
   </div>
 
-  <!-- Métricas de Capacidade e Vagas do Dia -->
-  <div class="capacity-banner" [class.banner-full]="stats.isFull">
-    <div class="capacity-info">
-      <div class="capacity-gauge">
-        <span class="gauge-label">Capacidade do Dia</span>
-        <div class="gauge-bar-wrapper">
-          <div class="gauge-bar" [style.width.%]="(stats.totalToday / stats.capacity) * 100"></div>
-        </div>
-        <span class="gauge-numbers">
-          <strong>{{ stats.totalToday }}</strong> de {{ stats.capacity }} vagas ocupadas
-          <span class="remaining-badge" [class.badge-warning]="stats.remainingSpots <= 5">
-            ({{ stats.remainingSpots }} vagas restantes)
-          </span>
+  <!-- Barra de Capacidade do Dia -->
+  <div class="capacity-strip" [class.strip-full]="stats.isFull">
+    <div class="capacity-gauge-row">
+      <div class="gauge-left">
+        <span class="capacity-title"><i class="fas fa-calendar-day"></i> Vagas do Dia:</span>
+        <strong>{{ stats.totalToday }} / {{ stats.capacity }}</strong> ocupadas
+        <span class="remaining-tag" [class.tag-warning]="stats.remainingSpots <= 5">
+          ({{ stats.remainingSpots }} restantes)
         </span>
       </div>
-    </div>
-
-    <!-- Mini-contadores de status -->
-    <div class="queue-status-cards">
-      <div class="status-stat-card waiting" (click)="setFilter('aguardando')" [class.active]="activeFilter === 'aguardando'">
-        <span class="stat-number">{{ stats.waiting }}</span>
-        <span class="stat-title"><i class="fas fa-clock"></i> Aguardando</span>
+      <div class="gauge-bar-outer">
+        <div class="gauge-bar-fill" [style.width.%]="(stats.totalToday / stats.capacity) * 100"></div>
       </div>
-      <div class="status-stat-card in-progress" (click)="setFilter('em_atendimento')" [class.active]="activeFilter === 'em_atendimento'">
-        <span class="stat-number">{{ stats.inProgress }}</span>
-        <span class="stat-title"><i class="fas fa-bath"></i> Em Atendimento</span>
-      </div>
-      <div class="status-stat-card ready" (click)="setFilter('pronto')" [class.active]="activeFilter === 'pronto'">
-        <span class="stat-number">{{ stats.ready }}</span>
-        <span class="stat-title"><i class="fas fa-check-circle"></i> Prontos</span>
-      </div>
-      <div class="status-stat-card delivered" (click)="setFilter('entregue')" [class.active]="activeFilter === 'entregue'">
-        <span class="stat-number">{{ stats.delivered }}</span>
-        <span class="stat-title"><i class="fas fa-paw"></i> Entregues</span>
+      <div class="status-summary-mini">
+        <span class="badge-waiting">⏳ {{ stats.waiting }} aguardando</span>
+        <span class="badge-in-progress">🚿 {{ stats.inProgress }} em banho/tosa</span>
+        <span class="badge-ready">✨ {{ stats.ready }} prontos</span>
+        <span class="badge-delivered">🐾 {{ stats.delivered }} entregues</span>
       </div>
     </div>
   </div>
 
-  <!-- Abas de Filtro -->
-  <div class="filter-tabs">
-    <button type="button" class="tab-btn" [class.active]="activeFilter === 'todos'" (click)="setFilter('todos')">
-      Todos ({{ queueItems.length }})
-    </button>
-    <button type="button" class="tab-btn" [class.active]="activeFilter === 'aguardando'" (click)="setFilter('aguardando')">
-      Aguardando ({{ stats.waiting }})
-    </button>
-    <button type="button" class="tab-btn" [class.active]="activeFilter === 'em_atendimento'" (click)="setFilter('em_atendimento')">
-      Em Banho / Tosa ({{ stats.inProgress }})
-    </button>
-    <button type="button" class="tab-btn" [class.active]="activeFilter === 'pronto'" (click)="setFilter('pronto')">
-      Pronto para Retirada ({{ stats.ready }})
-    </button>
-    <button type="button" class="tab-btn" [class.active]="activeFilter === 'entregue'" (click)="setFilter('entregue')">
-      Entregues ({{ stats.delivered }})
-    </button>
+  <!-- ======================================================== -->
+  <!-- 1. MODO KANBAN: ESTEIRA DE PRODUÇÃO                      -->
+  <!-- ======================================================== -->
+  <div class="kanban-board" *ngIf="viewMode === 'kanban'">
+    <div
+      class="kanban-column"
+      *ngFor="let col of columns"
+      [ngClass]="'col-' + col.key"
+      [class.drag-over]="dragOverColumn === col.key"
+      (dragover)="onDragOver($event, col.key)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event, col.key)">
+
+      <!-- Cabeçalho da Coluna -->
+      <div class="column-header">
+        <div class="col-title-group">
+          <i [class]="col.icon"></i>
+          <h3>{{ col.label }}</h3>
+        </div>
+        <span class="col-count-badge">{{ getItemsByStatus(col.key).length }}</span>
+      </div>
+
+      <!-- Área de Cards -->
+      <div class="column-cards">
+        <div
+          class="kanban-card"
+          *ngFor="let item of getItemsByStatus(col.key)"
+          draggable="true"
+          (dragstart)="onDragStart($event, item)">
+
+          <!-- Topo do Card: Posição + Preço -->
+          <div class="card-top-bar">
+            <span class="card-order-badge">#{{ item.queueOrder }}</span>
+            <span class="card-time"><i class="far fa-clock"></i> {{ formatTime(item.checkinAt) }}</span>
+            <span class="card-price">R$ {{ formatPrice(item.finalPrice || item.estimatedPrice) }}</span>
+          </div>
+
+          <!-- Informações do Pet -->
+          <div class="card-pet-main">
+            <h4 class="card-pet-name">
+              {{ item.petName }}
+              <small class="card-pet-breed" *ngIf="item.petBreed">({{ item.petBreed }})</small>
+            </h4>
+            <span class="service-pill">{{ item.serviceName }}</span>
+          </div>
+
+          <!-- Dados do Tutor e Box -->
+          <div class="card-details-grid">
+            <div class="detail-row">
+              <i class="fas fa-user"></i> <span>{{ item.customerName }}</span>
+            </div>
+            <div class="detail-row" *ngIf="item.phone">
+              <i class="fas fa-phone-alt"></i> <span>{{ item.phone }}</span>
+            </div>
+            <div class="detail-row" *ngIf="item.cageNumber">
+              <i class="fas fa-home"></i> <strong>{{ item.cageNumber }}</strong>
+            </div>
+            <div class="detail-row" *ngIf="item.groomerName">
+              <i class="fas fa-cut"></i> <span>{{ item.groomerName }}</span>
+            </div>
+          </div>
+
+          <!-- Alerta de Triagem de Saúde -->
+          <div class="card-health-alert" *ngIf="hasHealthAlerts(item.healthChecklist)">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span><strong>Saúde:</strong> {{ getHealthSummary(item.healthChecklist) }}</span>
+          </div>
+
+          <!-- Alerta de Validação de Tosa -->
+          <div class="card-tosa-validation" *ngIf="item.requiresValidation && !item.validationConfirmed">
+            <i class="fas fa-info-circle"></i>
+            <span>Tosa exige validação com tutor!</span>
+            <button type="button" class="btn btn-xs btn-outline-success" (click)="confirmValidation(item)">
+              Validar
+            </button>
+          </div>
+
+          <!-- Notas -->
+          <p class="card-notes" *ngIf="item.notes">
+            <i class="far fa-comment-alt"></i> {{ item.notes }}
+          </p>
+
+          <!-- Ação Rápida de Esteira: "Clicou passou para o próximo" -->
+          <div class="card-advance-strip">
+            <!-- Botão de Voltar Estágio (se não for o primeiro) -->
+            <button
+              *ngIf="item.status !== 'aguardando'"
+              type="button"
+              class="btn btn-xs btn-outline-secondary regress-btn"
+              (click)="regressStatus(item)"
+              title="Voltar ao estágio anterior">
+              <i class="fas fa-arrow-left"></i>
+            </button>
+
+            <!-- Botão de AVANÇAR ESTÁGIO (1 clique) -->
+            <button
+              *ngIf="item.status !== 'entregue'"
+              type="button"
+              class="btn btn-sm btn-advance"
+              [ngClass]="'btn-advance-' + item.status"
+              (click)="advanceStatus(item)">
+              <span *ngIf="item.status === 'aguardando'"><i class="fas fa-play"></i> Iniciar Banho/Tosa ➔</span>
+              <span *ngIf="item.status === 'em_atendimento'"><i class="fas fa-check"></i> Marcar Pronto ➔</span>
+              <span *ngIf="item.status === 'pronto'"><i class="fas fa-paw"></i> Entregar Pet ➔</span>
+            </button>
+
+            <!-- Notificação no WhatsApp (quando pronto) -->
+            <button
+              *ngIf="item.status === 'pronto'"
+              type="button"
+              class="btn btn-sm btn-whatsapp"
+              (click)="openWhatsAppNotification(item)"
+              title="Avisar tutor no WhatsApp">
+              <i class="fab fa-whatsapp"></i> Avisar
+            </button>
+
+            <!-- Status de Entregue -->
+            <div class="delivered-badge" *ngIf="item.status === 'entregue'">
+              <i class="fas fa-check-double"></i> Entregue às {{ formatTime(item.deliveredAt) }}
+            </div>
+
+            <!-- Botão Remover -->
+            <button
+              *ngIf="item.status !== 'entregue'"
+              type="button"
+              class="btn btn-xs btn-link text-danger remove-btn"
+              (click)="deleteItem(item)"
+              title="Remover da fila">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Coluna Vazia -->
+        <div class="empty-column-placeholder" *ngIf="getItemsByStatus(col.key).length === 0">
+          <i class="fas fa-inbox"></i>
+          <span>Nenhum pet neste estágio</span>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Lista de Atendimentos da Fila -->
-  <div class="queue-list" *ngIf="filteredItems.length > 0">
-    <div class="queue-card" *ngFor="let item of filteredItems" [ngClass]="'status-' + item.status">
-      <!-- Coluna da Ordem na Fila -->
-      <div class="queue-position">
-        <span class="pos-badge">#{{ item.queueOrder }}</span>
-        <span class="time-in"><i class="far fa-clock"></i> {{ formatTime(item.checkinAt) }}</span>
-      </div>
+  <!-- ======================================================== -->
+  <!-- 2. MODO LISTA: TABELA / CARDS HORIZONTAIS                -->
+  <!-- ======================================================== -->
+  <div class="list-board" *ngIf="viewMode === 'list'">
+    <div class="filter-tabs">
+      <button type="button" class="tab-btn" [class.active]="activeFilter === 'todos'" (click)="setFilter('todos')">
+        Todos ({{ queueItems.length }})
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeFilter === 'aguardando'" (click)="setFilter('aguardando')">
+        Aguardando ({{ stats.waiting }})
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeFilter === 'em_atendimento'" (click)="setFilter('em_atendimento')">
+        Em Banho / Tosa ({{ stats.inProgress }})
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeFilter === 'pronto'" (click)="setFilter('pronto')">
+        Pronto para Retirada ({{ stats.ready }})
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeFilter === 'entregue'" (click)="setFilter('entregue')">
+        Entregues ({{ stats.delivered }})
+      </button>
+    </div>
 
-      <!-- Informações do Pet e Tutor -->
-      <div class="pet-tutor-info">
-        <div class="pet-header">
-          <h3 class="pet-name">
-            {{ item.petName }}
-            <span class="pet-breed" *ngIf="item.petBreed">({{ item.petBreed }})</span>
-          </h3>
-          <span class="status-tag" [ngClass]="item.status">
-            {{ item.status === 'aguardando' ? 'Aguardando' : (item.status === 'em_atendimento' ? 'Em Banho/Tosa' : (item.status === 'pronto' ? 'Pronto para Retirada' : (item.status === 'entregue' ? 'Entregue' : item.status))) }}
-          </span>
-          <span class="appointment-origin" *ngIf="item.appointmentId" title="Veio de Agendamento Prévio">
-            <i class="fas fa-calendar-check"></i> Agendado
-          </span>
+    <div class="queue-list" *ngIf="filteredItems.length > 0">
+      <div class="queue-card" *ngFor="let item of filteredItems" [ngClass]="'status-' + item.status">
+        <div class="queue-position">
+          <span class="pos-badge">#{{ item.queueOrder }}</span>
+          <span class="time-in"><i class="far fa-clock"></i> {{ formatTime(item.checkinAt) }}</span>
         </div>
 
-        <div class="tutor-contact">
-          <span><i class="fas fa-user"></i> Tutor: <strong>{{ item.customerName }}</strong></span>
-          <span *ngIf="item.phone" class="phone-link">
-            <i class="fas fa-phone-alt"></i> {{ item.phone }}
-          </span>
-          <span *ngIf="item.cageNumber" class="box-tag">
-            <i class="fas fa-home"></i> {{ item.cageNumber }}
-          </span>
-          <span *ngIf="item.groomerName" class="groomer-tag">
-            <i class="fas fa-cut"></i> {{ item.groomerName }}
-          </span>
+        <div class="pet-tutor-info">
+          <div class="pet-header">
+            <h3 class="pet-name">
+              {{ item.petName }}
+              <span class="pet-breed" *ngIf="item.petBreed">({{ item.petBreed }})</span>
+            </h3>
+            <span class="status-tag" [ngClass]="item.status">
+              {{ item.status === 'aguardando' ? 'Aguardando' : (item.status === 'em_atendimento' ? 'Em Banho/Tosa' : (item.status === 'pronto' ? 'Pronto para Retirada' : (item.status === 'entregue' ? 'Entregue' : item.status))) }}
+            </span>
+            <span class="appointment-origin" *ngIf="item.appointmentId">
+              <i class="fas fa-calendar-check"></i> Agendado
+            </span>
+          </div>
+
+          <div class="tutor-contact">
+            <span><i class="fas fa-user"></i> {{ item.customerName }}</span>
+            <span *ngIf="item.phone"><i class="fas fa-phone-alt"></i> {{ item.phone }}</span>
+            <span *ngIf="item.cageNumber" class="box-tag"><i class="fas fa-home"></i> {{ item.cageNumber }}</span>
+            <span *ngIf="item.groomerName" class="groomer-tag"><i class="fas fa-cut"></i> {{ item.groomerName }}</span>
+          </div>
+
+          <div class="health-alert-banner" *ngIf="hasHealthAlerts(item.healthChecklist)">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span><strong>Triagem:</strong> {{ getHealthSummary(item.healthChecklist) }}</span>
+          </div>
         </div>
 
-        <!-- Alertas de Saúde / Triagem do Check-in -->
-        <div class="health-alert-banner" *ngIf="hasHealthAlerts(item.healthChecklist)">
-          <i class="fas fa-exclamation-triangle"></i>
-          <span><strong>Triagem de Saúde:</strong> {{ getHealthSummary(item.healthChecklist) }}</span>
-          <span class="health-obs" *ngIf="item.healthChecklist.observations"> — {{ item.healthChecklist.observations }}</span>
+        <div class="service-price-block">
+          <span class="service-title">{{ item.serviceName }}</span>
+          <span class="service-price">R$ {{ formatPrice(item.finalPrice || item.estimatedPrice) }}</span>
         </div>
 
-        <!-- Validação de Tosa Pendente -->
-        <div class="validation-banner" *ngIf="item.requiresValidation && !item.validationConfirmed">
-          <i class="fas fa-info-circle"></i>
-          <span><strong>Validação com o Tutor:</strong> Procedimento de tosa exige confirmação prévia com o tutor.</span>
-          <button type="button" class="btn btn-xs btn-outline-success" (click)="confirmValidation(item)">
-            Confirmar Validação
-          </button>
-        </div>
-
-        <!-- Notas Gerais -->
-        <div class="item-notes" *ngIf="item.notes">
-          <small><i class="far fa-comment-alt"></i> {{ item.notes }}</small>
-        </div>
-      </div>
-
-      <!-- Preço e Serviço -->
-      <div class="service-price-block">
-        <span class="service-title">{{ item.serviceName }}</span>
-        <span class="service-price">R$ {{ formatPrice(item.finalPrice || item.estimatedPrice) }}</span>
-      </div>
-
-      <!-- Botões de Ação Rápida de Status -->
-      <div class="queue-actions">
-        <!-- Se aguardando: Iniciar -->
-        <button
-          *ngIf="item.status === 'aguardando'"
-          type="button"
-          class="btn btn-sm btn-primary action-btn"
-          (click)="changeStatus(item, 'em_atendimento')">
-          <i class="fas fa-play"></i> Iniciar
-        </button>
-
-        <!-- Se em atendimento: Marcar Pronto -->
-        <button
-          *ngIf="item.status === 'em_atendimento'"
-          type="button"
-          class="btn btn-sm btn-success action-btn"
-          (click)="changeStatus(item, 'pronto')">
-          <i class="fas fa-check"></i> Pronto!
-        </button>
-
-        <!-- Se pronto: Entregar ou Notificar WhatsApp -->
-        <div class="ready-actions-group" *ngIf="item.status === 'pronto'">
+        <div class="queue-actions">
           <button
+            *ngIf="item.status !== 'entregue'"
             type="button"
-            class="btn btn-sm btn-success action-btn"
-            (click)="changeStatus(item, 'entregue')">
-            <i class="fas fa-paw"></i> Entregar Pet
+            class="btn btn-sm btn-primary action-btn"
+            (click)="advanceStatus(item)">
+            <span *ngIf="item.status === 'aguardando'"><i class="fas fa-play"></i> Iniciar ➔</span>
+            <span *ngIf="item.status === 'em_atendimento'"><i class="fas fa-check"></i> Pronto ➔</span>
+            <span *ngIf="item.status === 'pronto'"><i class="fas fa-paw"></i> Entregar ➔</span>
           </button>
           <button
+            *ngIf="item.status === 'pronto'"
             type="button"
             class="btn btn-sm btn-whatsapp action-btn"
-            (click)="openWhatsAppNotification(item)"
-            title="Avisar tutor no WhatsApp que o pet está pronto">
-            <i class="fab fa-whatsapp"></i> Avisar Tutor
+            (click)="openWhatsAppNotification(item)">
+            <i class="fab fa-whatsapp"></i> Avisar
           </button>
         </div>
-
-        <!-- Se entregue: Concluído -->
-        <span class="delivered-label" *ngIf="item.status === 'entregue'">
-          <i class="fas fa-check-double"></i> Entregue às {{ formatTime(item.deliveredAt) }}
-        </span>
-
-        <!-- Botão excluir/cancelar -->
-        <button
-          *ngIf="item.status !== 'entregue'"
-          type="button"
-          class="btn btn-sm btn-link text-danger remove-btn"
-          (click)="deleteItem(item)"
-          title="Remover da fila">
-          <i class="fas fa-trash-alt"></i>
-        </button>
       </div>
     </div>
-  </div>
-
-  <!-- Empty State -->
-  <div class="empty-state" *ngIf="filteredItems.length === 0">
-    <i class="fas fa-clipboard-list empty-icon"></i>
-    <h3>Nenhum pet na fila do dia</h3>
-    <p>Clique em "+ Novo Check-in (Balcão)" ou envie um agendamento da agenda para dar entrada nos pets de hoje.</p>
-    <button type="button" class="btn btn-primary" (click)="openCheckinModal()" [disabled]="stats.isFull">
-      <i class="fas fa-plus"></i> Fazer Check-in Agora
-    </button>
   </div>
 
   <!-- Modal de Check-in de Balcão -->
@@ -228,7 +300,6 @@
 
         <form [formGroup]="checkinForm" (ngSubmit)="saveCheckin()">
           <div class="modal-body">
-            <!-- Dados do Pet e Tutor -->
             <div class="form-row">
               <div class="form-group col-6">
                 <label>Nome do Pet *</label>
@@ -251,7 +322,6 @@
               </div>
             </div>
 
-            <!-- Procedimento & Localização -->
             <div class="form-row">
               <div class="form-group col-6">
                 <label>Procedimento / Serviço *</label>
@@ -283,7 +353,6 @@
               </div>
             </div>
 
-            <!-- Checklist de Saúde na Triagem -->
             <div class="checklist-section">
               <label class="section-title"><i class="fas fa-notes-medical"></i> Checklist de Saúde (Triagem Inicial)</label>
               <div class="checklist-grid">
@@ -313,7 +382,7 @@
 
             <div class="form-group">
               <label>Observações do Atendimento</label>
-              <textarea formControlName="notes" rows="2" class="form-control" placeholder="Ex: Usar shampoo hipoalergênico, cuidado com nó nas orelhas"></textarea>
+              <textarea formControlName="notes" rows="2" class="form-control" placeholder="Ex: Usar shampoo neutro, cuidado com nós"></textarea>
             </div>
           </div>
 
