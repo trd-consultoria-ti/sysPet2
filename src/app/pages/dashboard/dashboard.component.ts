@@ -16,6 +16,23 @@ export class DashboardComponent implements OnDestroy {
   user: User | null = null;
   isAdmin = false;
 
+  // Controle de expansão/colapso dos setores com setas
+  sections: Record<string, boolean> = {
+    visaoGeral: true,
+    atendimento: true,
+    clinica: true,
+    cadastros: true,
+    financeiro: true
+  };
+
+  toggleSection(key: string): void {
+    this.sections[key] = !this.sections[key];
+  }
+
+  isSectionOpen(key: string): boolean {
+    return this.sections[key] !== false;
+  }
+
   constructor(
     private authService: AuthService,
     private globalNavService: GlobalNavService,

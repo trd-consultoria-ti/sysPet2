@@ -10,99 +10,139 @@
       </div>
       <ul class="sidebar-menu">
         <!-- VISÃO GERAL -->
-        <li class="sidebar-section-header">
+        <li class="sidebar-section-header"
+            (click)="toggleSection('visaoGeral')"
+            [class.collapsed]="!isSectionOpen('visaoGeral')"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="isSectionOpen('visaoGeral')">
           <span>Visão Geral</span>
+          <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
         </li>
-        <li class="sidebar-item">
-          <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-            <i class="fas fa-home" aria-hidden="true"></i> Painel
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a routerLink="/dashboard/rotas" routerLinkActive="active">
-            <i class="fas fa-sitemap" aria-hidden="true"></i> Mapa do Sistema
-          </a>
-        </li>
+        <ng-container *ngIf="isSectionOpen('visaoGeral')">
+          <li class="sidebar-item">
+            <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+              <i class="fas fa-home" aria-hidden="true"></i> Painel
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a routerLink="/dashboard/rotas" routerLinkActive="active">
+              <i class="fas fa-sitemap" aria-hidden="true"></i> Mapa do Sistema
+            </a>
+          </li>
+        </ng-container>
 
         <!-- ATENDIMENTO & BANHO -->
-        <li class="sidebar-section-header">
+        <li class="sidebar-section-header"
+            (click)="toggleSection('atendimento')"
+            [class.collapsed]="!isSectionOpen('atendimento')"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="isSectionOpen('atendimento')">
           <span>Atendimento & Banho</span>
+          <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
         </li>
-        <li class="sidebar-item">
-          <a routerLink="/dashboard/daily-queue" routerLinkActive="active">
-            <i class="fas fa-clipboard-list" aria-hidden="true"></i> Fila do Dia
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a routerLink="/dashboard/appointments" routerLinkActive="active">
-            <i class="fas fa-calendar-alt" aria-hidden="true"></i> Agendamentos
-          </a>
-        </li>
+        <ng-container *ngIf="isSectionOpen('atendimento')">
+          <li class="sidebar-item">
+            <a routerLink="/dashboard/daily-queue" routerLinkActive="active">
+              <i class="fas fa-clipboard-list" aria-hidden="true"></i> Fila do Dia
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a routerLink="/dashboard/appointments" routerLinkActive="active">
+              <i class="fas fa-calendar-alt" aria-hidden="true"></i> Agendamentos
+            </a>
+          </li>
+        </ng-container>
 
         <!-- CLÍNICA VETERINÁRIA -->
-        <li class="sidebar-section-header">
+        <li class="sidebar-section-header"
+            (click)="toggleSection('clinica')"
+            [class.collapsed]="!isSectionOpen('clinica')"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="isSectionOpen('clinica')">
           <span>Clínica Veterinária</span>
+          <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
         </li>
-        <li class="sidebar-item">
-          <a routerLink="/dashboard/consultations" routerLinkActive="active">
-            <i class="fas fa-stethoscope" aria-hidden="true"></i> Consultório
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a routerLink="/dashboard/vets" routerLinkActive="active">
-            <i class="fas fa-user-md" aria-hidden="true"></i> Médicos Veterinários
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a routerLink="/dashboard/medications" routerLinkActive="active">
-            <i class="fas fa-pills" aria-hidden="true"></i> Medicamentos
-          </a>
-        </li>
+        <ng-container *ngIf="isSectionOpen('clinica')">
+          <li class="sidebar-item">
+            <a routerLink="/dashboard/consultations" routerLinkActive="active">
+              <i class="fas fa-stethoscope" aria-hidden="true"></i> Consultório
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a routerLink="/dashboard/vets" routerLinkActive="active">
+              <i class="fas fa-user-md" aria-hidden="true"></i> Médicos Veterinários
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a routerLink="/dashboard/medications" routerLinkActive="active">
+              <i class="fas fa-pills" aria-hidden="true"></i> Medicamentos
+            </a>
+          </li>
+        </ng-container>
 
         <!-- CADASTROS & ESTOQUE -->
-        <li class="sidebar-section-header">
+        <li class="sidebar-section-header"
+            (click)="toggleSection('cadastros')"
+            [class.collapsed]="!isSectionOpen('cadastros')"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="isSectionOpen('cadastros')">
           <span>Cadastros & Estoque</span>
+          <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
         </li>
-        <li class="sidebar-item">
-          <a routerLink="/dashboard/customers" routerLinkActive="active">
-            <i class="fas fa-users" aria-hidden="true"></i> Clientes & Pets
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a routerLink="/dashboard/inventory" routerLinkActive="active">
-            <i class="fas fa-box" aria-hidden="true"></i> Produtos & Estoque
-          </a>
-        </li>
-        <li class="sidebar-item" *ngIf="isAdmin">
-          <a routerLink="/dashboard/services" routerLinkActive="active">
-            <i class="fas fa-concierge-bell" aria-hidden="true"></i> Serviços
-          </a>
-        </li>
-        <li class="sidebar-item" *ngIf="isAdmin">
-          <a routerLink="/dashboard/users" routerLinkActive="active">
-            <i class="fas fa-user-tie" aria-hidden="true"></i> Funcionários & Equipe
-          </a>
-        </li>
+        <ng-container *ngIf="isSectionOpen('cadastros')">
+          <li class="sidebar-item">
+            <a routerLink="/dashboard/customers" routerLinkActive="active">
+              <i class="fas fa-users" aria-hidden="true"></i> Clientes & Pets
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a routerLink="/dashboard/inventory" routerLinkActive="active">
+              <i class="fas fa-box" aria-hidden="true"></i> Produtos & Estoque
+            </a>
+          </li>
+          <li class="sidebar-item" *ngIf="isAdmin">
+            <a routerLink="/dashboard/services" routerLinkActive="active">
+              <i class="fas fa-concierge-bell" aria-hidden="true"></i> Serviços
+            </a>
+          </li>
+          <li class="sidebar-item" *ngIf="isAdmin">
+            <a routerLink="/dashboard/users" routerLinkActive="active">
+              <i class="fas fa-user-tie" aria-hidden="true"></i> Funcionários & Equipe
+            </a>
+          </li>
+        </ng-container>
 
         <!-- FINANCEIRO & GESTÃO -->
-        <li class="sidebar-section-header">
+        <li class="sidebar-section-header"
+            (click)="toggleSection('financeiro')"
+            [class.collapsed]="!isSectionOpen('financeiro')"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="isSectionOpen('financeiro')">
           <span>Financeiro & Gestão</span>
+          <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
         </li>
-        <li class="sidebar-item" *ngIf="isAdmin">
-          <a routerLink="/dashboard/cash" routerLinkActive="active">
-            <i class="fas fa-cash-register" aria-hidden="true"></i> Caixa
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a routerLink="/dashboard/orders" routerLinkActive="active">
-            <i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos
-          </a>
-        </li>
-        <li class="sidebar-item" *ngIf="isAdmin">
-          <a routerLink="/dashboard/reports" routerLinkActive="active">
-            <i class="fas fa-chart-line" aria-hidden="true"></i> Balanço
-          </a>
-        </li>
+        <ng-container *ngIf="isSectionOpen('financeiro')">
+          <li class="sidebar-item" *ngIf="isAdmin">
+            <a routerLink="/dashboard/cash" routerLinkActive="active">
+              <i class="fas fa-cash-register" aria-hidden="true"></i> Caixa
+            </a>
+          </li>
+          <li class="sidebar-item">
+            <a routerLink="/dashboard/orders" routerLinkActive="active">
+              <i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos
+            </a>
+          </li>
+          <li class="sidebar-item" *ngIf="isAdmin">
+            <a routerLink="/dashboard/reports" routerLinkActive="active">
+              <i class="fas fa-chart-line" aria-hidden="true"></i> Balanço
+            </a>
+          </li>
+        </ng-container>
 
         <li class="sidebar-item">
           <button type="button" class="sidebar-logout" (click)="logout()">

@@ -33,13 +33,86 @@
     </ng-container>
   </a>
 
-  <ng-container *ngIf="currentUser$ | async as user; else loginButton">
-    <a routerLink="/account" class="btn btn-outline-secondary" (click)="onAction()">Minha conta</a>
-    <span class="nav-user">{{ user.name }}</span>
-    <button type="button" class="btn btn-outline-secondary" (click)="logout()">Sair</button>
-  </ng-container>
+  <!-- Menu do Usuário (Dropdown Unificado) -->
+  <div class="user-menu-wrapper" *ngIf="currentUser$ | async as user; else loginButton">
+    <button type="button"
+            class="user-menu-btn"
+            (click)="toggleUserMenu()"
+            [attr.aria-expanded]="userMenuOpen"
+            aria-haspopup="true"
+            aria-label="Menu do usuário">
+      <span class="user-avatar" [attr.aria-label]="user.name">
+        {{ getInitials(user.name) }}
+      </span>
+      <span class="user-name">{{ user.name }}</span>
+      <i class="fas fa-chevron-down user-chevron" [class.rotated]="userMenuOpen" aria-hidden="true"></i>
+    </button>
+
+    <div class="user-dropdown-menu" *ngIf="userMenuOpen" role="menu" aria-label="Opções do usuário">
+      <!-- Cabeçalho do Usuário no Dropdown -->
+      <div class="user-dropdown-header">
+        <div class="user-dropdown-avatar">
+          {{ getInitials(user.name) }}
+        </div>
+        <div class="user-dropdown-info">
+          <div class="user-dropdown-name">{{ user.name }}</div>
+          <div class="user-dropdown-email">{{ user.email || 'Conta ativa' }}</div>
+          <span class="user-role-badge" [ngClass]="user.role">
+            {{ getRoleLabel(user.role) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="user-dropdown-divider"></div>
+
+      <!-- Links de Navegação Pessoal -->
+      <div class="user-dropdown-section">
+        <a routerLink="/account" class="user-dropdown-item" (click)="onAction()" role="menuitem">
+          <i class="fas fa-id-card user-dropdown-icon" aria-hidden="true"></i>
+          <span>Minha Conta</span>
+        </a>
+        <a routerLink="/orders" class="user-dropdown-item" (click)="onAction()" role="menuitem">
+          <i class="fas fa-box-open user-dropdown-icon" aria-hidden="true"></i>
+          <span>Meus Pedidos</span>
+        </a>
+        <a routerLink="/cart" class="user-dropdown-item" (click)="onAction()" role="menuitem">
+          <i class="fas fa-shopping-cart user-dropdown-icon" aria-hidden="true"></i>
+          <span>Meu Carrinho</span>
+        </a>
+      </div>
+
+      <!-- Links Administrativos (se staff) -->
+      <ng-container *ngIf="isStaff">
+        <div class="user-dropdown-divider"></div>
+        <div class="user-dropdown-label">ADMINISTRAÇÃO</div>
+        <div class="user-dropdown-section">
+          <a routerLink="/dashboard" class="user-dropdown-item" (click)="onAction()" role="menuitem">
+            <i class="fas fa-th-large user-dropdown-icon" aria-hidden="true"></i>
+            <span>Painel Administrativo</span>
+          </a>
+          <a routerLink="/dashboard/rotas" class="user-dropdown-item" (click)="onAction()" role="menuitem">
+            <i class="fas fa-sitemap user-dropdown-icon" aria-hidden="true"></i>
+            <span>Mapa do Sistema</span>
+          </a>
+        </div>
+      </ng-container>
+
+      <div class="user-dropdown-divider"></div>
+
+      <!-- Ação de Sair -->
+      <div class="user-dropdown-section">
+        <button type="button" class="user-dropdown-item logout-item" (click)="logout()" role="menuitem">
+          <i class="fas fa-sign-out-alt user-dropdown-icon" aria-hidden="true"></i>
+          <span>Sair da conta</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <ng-template #loginButton>
-    <a routerLink="/login" class="btn btn-primary" (click)="onAction()">Login</a>
+    <a routerLink="/login" class="btn btn-primary login-btn" (click)="onAction()">
+      <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+      <span>Entrar</span>
+    </a>
   </ng-template>
 </div>

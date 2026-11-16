@@ -70,13 +70,31 @@
 }
 
 .sidebar-section-header {
-  padding: 0.9rem 1.5rem 0.25rem;
+  padding: 0.85rem 1.5rem 0.35rem;
   margin-top: 0.25rem;
   border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
 
   &:first-of-type {
     border-top: none;
-    padding-top: 0.25rem;
+    padding-top: 0.35rem;
+  }
+
+  &:hover {
+    background-color: rgba(13, 148, 136, 0.04);
+
+    span {
+      color: #0d9488;
+    }
+
+    .section-arrow {
+      color: #0d9488;
+    }
   }
 
   span {
@@ -86,6 +104,17 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     display: block;
+    transition: color 0.15s ease;
+  }
+
+  .section-arrow {
+    font-size: 0.65rem;
+    color: #94a3b8;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+  }
+
+  &.collapsed .section-arrow {
+    transform: rotate(-90deg);
   }
 }
 

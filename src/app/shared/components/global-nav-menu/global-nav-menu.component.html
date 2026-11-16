@@ -22,164 +22,220 @@
     <ul class="sidebar-menu">
 
       <!-- SETOR 1: VISÃO GERAL -->
-      <li class="sidebar-section-header">
+      <li class="sidebar-section-header"
+          (click)="toggleSection('visaoGeral')"
+          [class.collapsed]="!isSectionOpen('visaoGeral')"
+          role="button"
+          tabindex="0"
+          [attr.aria-expanded]="isSectionOpen('visaoGeral')">
         <span>Visão Geral</span>
+        <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
       </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard')">
-          <i class="fas fa-home" aria-hidden="true"></i> Painel
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/rotas')">
-          <i class="fas fa-sitemap" aria-hidden="true"></i> Mapa do Sistema
-        </a>
-      </li>
+      <ng-container *ngIf="isSectionOpen('visaoGeral')">
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard')">
+            <i class="fas fa-home" aria-hidden="true"></i> Painel
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/rotas')">
+            <i class="fas fa-sitemap" aria-hidden="true"></i> Mapa do Sistema
+          </a>
+        </li>
+      </ng-container>
 
       <!-- SETOR 2: BANHO, TOSA & ATENDIMENTO -->
-      <li class="sidebar-section-header">
+      <li class="sidebar-section-header"
+          (click)="toggleSection('banhoTosa')"
+          [class.collapsed]="!isSectionOpen('banhoTosa')"
+          role="button"
+          tabindex="0"
+          [attr.aria-expanded]="isSectionOpen('banhoTosa')">
         <span>Banho, Tosa & Atendimento</span>
+        <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
       </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/daily-queue')">
-          <i class="fas fa-columns" aria-hidden="true"></i> Esteira Delivery (Kanban)
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/daily-queue')">
-          <i class="fas fa-clipboard-list" aria-hidden="true"></i> Fila do Dia & Gaiolas
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/appointments')">
-          <i class="fas fa-calendar-alt" aria-hidden="true"></i> Agendamentos
-        </a>
-      </li>
+      <ng-container *ngIf="isSectionOpen('banhoTosa')">
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/daily-queue')">
+            <i class="fas fa-columns" aria-hidden="true"></i> Esteira Delivery (Kanban)
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/daily-queue')">
+            <i class="fas fa-clipboard-list" aria-hidden="true"></i> Fila do Dia & Gaiolas
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/appointments')">
+            <i class="fas fa-calendar-alt" aria-hidden="true"></i> Agendamentos
+          </a>
+        </li>
+      </ng-container>
 
       <!-- SETOR 3: CLÍNICA VETERINÁRIA -->
-      <li class="sidebar-section-header">
+      <li class="sidebar-section-header"
+          (click)="toggleSection('clinica')"
+          [class.collapsed]="!isSectionOpen('clinica')"
+          role="button"
+          tabindex="0"
+          [attr.aria-expanded]="isSectionOpen('clinica')">
         <span>Clínica Veterinária</span>
+        <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
       </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/consultations')">
-          <i class="fas fa-stethoscope" aria-hidden="true"></i> Consultório & Prontuários
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/vets')">
-          <i class="fas fa-user-md" aria-hidden="true"></i> Médicos Veterinários
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/medications')">
-          <i class="fas fa-pills" aria-hidden="true"></i> Farmácia & Medicamentos
-        </a>
-      </li>
+      <ng-container *ngIf="isSectionOpen('clinica')">
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/consultations')">
+            <i class="fas fa-stethoscope" aria-hidden="true"></i> Consultório & Prontuários
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/vets')">
+            <i class="fas fa-user-md" aria-hidden="true"></i> Médicos Veterinários
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/medications')">
+            <i class="fas fa-pills" aria-hidden="true"></i> Farmácia & Medicamentos
+          </a>
+        </li>
+      </ng-container>
 
       <!-- SETOR 4: CADASTROS & ESTOQUE -->
-      <li class="sidebar-section-header">
+      <li class="sidebar-section-header"
+          (click)="toggleSection('cadastros')"
+          [class.collapsed]="!isSectionOpen('cadastros')"
+          role="button"
+          tabindex="0"
+          [attr.aria-expanded]="isSectionOpen('cadastros')">
         <span>Cadastros & Estoque</span>
+        <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
       </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/customers')">
-          <i class="fas fa-users" aria-hidden="true"></i> Clientes & Pets
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/inventory')">
-          <i class="fas fa-box" aria-hidden="true"></i> Produtos & Estoque
-        </a>
-      </li>
-      <li class="sidebar-item" *ngIf="isAdmin">
-        <a (click)="navigate('/dashboard/services')">
-          <i class="fas fa-concierge-bell" aria-hidden="true"></i> Serviços & Preços
-        </a>
-      </li>
-      <li class="sidebar-item" *ngIf="isAdmin">
-        <a (click)="navigate('/dashboard/users')">
-          <i class="fas fa-user-tie" aria-hidden="true"></i> Funcionários & Equipe
-        </a>
-      </li>
+      <ng-container *ngIf="isSectionOpen('cadastros')">
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/customers')">
+            <i class="fas fa-users" aria-hidden="true"></i> Clientes & Pets
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/inventory')">
+            <i class="fas fa-box" aria-hidden="true"></i> Produtos & Estoque
+          </a>
+        </li>
+        <li class="sidebar-item" *ngIf="isAdmin">
+          <a (click)="navigate('/dashboard/services')">
+            <i class="fas fa-concierge-bell" aria-hidden="true"></i> Serviços & Preços
+          </a>
+        </li>
+        <li class="sidebar-item" *ngIf="isAdmin">
+          <a (click)="navigate('/dashboard/users')">
+            <i class="fas fa-user-tie" aria-hidden="true"></i> Funcionários & Equipe
+          </a>
+        </li>
+      </ng-container>
 
       <!-- SETOR 5: FINANCEIRO & GESTÃO -->
-      <li class="sidebar-section-header">
+      <li class="sidebar-section-header"
+          (click)="toggleSection('financeiro')"
+          [class.collapsed]="!isSectionOpen('financeiro')"
+          role="button"
+          tabindex="0"
+          [attr.aria-expanded]="isSectionOpen('financeiro')">
         <span>Financeiro & Gestão</span>
+        <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
       </li>
-      <li class="sidebar-item" *ngIf="isAdmin">
-        <a (click)="navigate('/dashboard/cash')">
-          <i class="fas fa-cash-register" aria-hidden="true"></i> Caixa (PDV)
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/orders')">
-          <i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos da Loja
-        </a>
-      </li>
-      <li class="sidebar-item" *ngIf="isAdmin">
-        <a (click)="navigate('/dashboard/reports')">
-          <i class="fas fa-chart-line" aria-hidden="true"></i> Balanço & Faturamento
-        </a>
-      </li>
+      <ng-container *ngIf="isSectionOpen('financeiro')">
+        <li class="sidebar-item" *ngIf="isAdmin">
+          <a (click)="navigate('/dashboard/cash')">
+            <i class="fas fa-cash-register" aria-hidden="true"></i> Caixa (PDV)
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/orders')">
+            <i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos da Loja
+          </a>
+        </li>
+        <li class="sidebar-item" *ngIf="isAdmin">
+          <a (click)="navigate('/dashboard/reports')">
+            <i class="fas fa-chart-line" aria-hidden="true"></i> Balanço & Faturamento
+          </a>
+        </li>
+      </ng-container>
 
       <!-- SETOR 6: LOJA & TUTOR (PÚBLICO) -->
-      <li class="sidebar-section-header">
+      <li class="sidebar-section-header"
+          (click)="toggleSection('loja')"
+          [class.collapsed]="!isSectionOpen('loja')"
+          role="button"
+          tabindex="0"
+          [attr.aria-expanded]="isSectionOpen('loja')">
         <span>Área da Loja & Tutor</span>
+        <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
       </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/')">
-          <i class="fas fa-home" aria-hidden="true"></i> Home
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/services')">
-          <i class="fas fa-cut" aria-hidden="true"></i> Serviços
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/products')">
-          <i class="fas fa-box-open" aria-hidden="true"></i> Produtos
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/appointments')">
-          <i class="fas fa-calendar-check" aria-hidden="true"></i> Agendamentos
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/contact')">
-          <i class="fas fa-envelope" aria-hidden="true"></i> Contato
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/orders')">
-          <i class="fas fa-receipt" aria-hidden="true"></i> Meus Pedidos
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a (click)="navigate('/cart')">
-          <i class="fas fa-shopping-cart" aria-hidden="true"></i> Carrinho
-        </a>
-      </li>
-      <li class="sidebar-item" *ngIf="currentUser">
-        <a (click)="navigate('/account')">
-          <i class="fas fa-user-circle" aria-hidden="true"></i> Minha Conta
-        </a>
-      </li>
+      <ng-container *ngIf="isSectionOpen('loja')">
+        <li class="sidebar-item">
+          <a (click)="navigate('/')">
+            <i class="fas fa-home" aria-hidden="true"></i> Home
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/services')">
+            <i class="fas fa-cut" aria-hidden="true"></i> Serviços
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/products')">
+            <i class="fas fa-box-open" aria-hidden="true"></i> Produtos
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/appointments')">
+            <i class="fas fa-calendar-check" aria-hidden="true"></i> Agendamentos
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/contact')">
+            <i class="fas fa-envelope" aria-hidden="true"></i> Contato
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/orders')">
+            <i class="fas fa-receipt" aria-hidden="true"></i> Meus Pedidos
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a (click)="navigate('/cart')">
+            <i class="fas fa-shopping-cart" aria-hidden="true"></i> Carrinho
+          </a>
+        </li>
+        <li class="sidebar-item" *ngIf="currentUser">
+          <a (click)="navigate('/account')">
+            <i class="fas fa-user-circle" aria-hidden="true"></i> Minha Conta
+          </a>
+        </li>
+      </ng-container>
 
       <!-- SETOR 7: CONTA & ACESSO -->
-      <li class="sidebar-section-header">
+      <li class="sidebar-section-header"
+          (click)="toggleSection('acesso')"
+          [class.collapsed]="!isSectionOpen('acesso')"
+          role="button"
+          tabindex="0"
+          [attr.aria-expanded]="isSectionOpen('acesso')">
         <span>Acesso</span>
+        <i class="fas fa-chevron-down section-arrow" aria-hidden="true"></i>
       </li>
-      <li class="sidebar-item" *ngIf="currentUser">
-        <button type="button" class="sidebar-logout" (click)="logout()">
-          <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Sair
-        </button>
-      </li>
-      <li class="sidebar-item" *ngIf="!currentUser">
-        <a (click)="navigate('/login')">
-          <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Fazer Login
-        </a>
-      </li>
+      <ng-container *ngIf="isSectionOpen('acesso')">
+        <li class="sidebar-item" *ngIf="currentUser">
+          <button type="button" class="sidebar-logout" (click)="logout()">
+            <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Sair
+          </button>
+        </li>
+        <li class="sidebar-item" *ngIf="!currentUser">
+          <a (click)="navigate('/login')">
+            <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Fazer Login
+          </a>
+        </li>
+      </ng-container>
 
     </ul>
   </div>

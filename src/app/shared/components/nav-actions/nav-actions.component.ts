@@ -23,6 +23,7 @@ export class NavActionsComponent implements OnInit, OnDestroy {
 
   isStaff = false;
   notifOpen = false;
+  userMenuOpen = false;
   pendingOrders: Order[] = [];
   pendingAppointments: Appointment[] = [];
   private pollSub?: Subscription;
@@ -46,6 +47,7 @@ export class NavActionsComponent implements OnInit, OnDestroy {
     this.currentUser$.pipe(takeUntil(this.destroy$)).subscribe(user => {
       this.isStaff = !!user && user.role !== 'customer';
       this.notifOpen = false;
+      this.userMenuOpen = false;
       this.pollSub?.unsubscribe();
       if (!this.isStaff) {
         this.pendingOrders = [];
@@ -72,26 +74,62 @@ export class NavActionsComponent implements OnInit, OnDestroy {
 
   toggleNotif(): void {
     this.notifOpen = !this.notifOpen;
+    if (this.notifOpen) {
+      this.userMenuOpen = false;
+    }
   }
 
   closeNotif(): void {
     this.notifOpen = false;
   }
 
+  toggleUserMenu(): void {
+    this.userMenuOpen = !this.userMenuOpen;
+    if (this.userMenuOpen) {
+      this.notifOpen = false;
+    }
+  }
+
+  closeUserMenu(): void {
+    this.userMenuOpen = false;
+  }
+
+  getInitials(name?: string): string {
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  getRoleLabel(role?: string): string {
+    switch (role) {
+      case 'admin': return 'Administrador';
+      case 'collaborator': return 'Colaborador';
+      case 'customer': return 'Cliente';
+      default: return 'Usuário';
+    }
+  }
+
   onAction(): void {
     this.closeNotif();
+    this.closeUserMenu();
     this.actionClicked.emit();
   }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
     this.notifOpen = false;
+    this.userMenuOpen = false;
   }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
-    if (this.notifOpen && !this.el.nativeElement.querySelector('.notif')?.contains(event.target as Node)) {
+    const target = event.target as Node;
+    if (this.notifOpen && !this.el.nativeElement.querySelector('.notif')?.contains(target)) {
       this.notifOpen = false;
+    }
+    if (this.userMenuOpen && !this.el.nativeElement.querySelector('.user-menu-wrapper')?.contains(target)) {
+      this.userMenuOpen = false;
     }
   }
 
