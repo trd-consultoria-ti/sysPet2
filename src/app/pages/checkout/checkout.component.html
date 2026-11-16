@@ -49,10 +49,28 @@
           </select>
         </div>
 
+        <div class="coupon-group">
+          <label for="coupon-code">Cupom de desconto</label>
+          <div class="coupon-row">
+            <input type="text" id="coupon-code" name="couponCode" [(ngModel)]="couponCode"
+                   [ngModelOptions]="{standalone: true}"
+                   placeholder="Código do cupom" [disabled]="couponApplied !== ''">
+            <button type="button" class="btn btn-outline-secondary" (click)="applyCoupon()"
+                    *ngIf="!couponApplied" [disabled]="applyingCoupon || !couponCode.trim()">
+              {{ applyingCoupon ? 'Aplicando...' : 'Aplicar' }}
+            </button>
+            <button type="button" class="btn btn-outline-secondary" (click)="removeCoupon()"
+                    *ngIf="couponApplied">
+              Remover
+            </button>
+          </div>
+          <p class="coupon-message" *ngIf="couponMessage" role="status">{{ couponMessage }}</p>
+        </div>
+
         <p class="error-message" *ngIf="submitError" role="alert">{{ submitError }}</p>
 
         <button type="submit" class="btn btn-primary btn-block" [disabled]="checkoutForm.invalid">
-          Confirmar Pedido — R$ {{ formatPrice(cartTotal) }}
+          Confirmar Pedido — R$ {{ formatPrice(finalTotal) }}
         </button>
       </form>
     </div>
@@ -63,9 +81,13 @@
         <span>{{ item.name }} × {{ item.quantity }}</span>
         <span>R$ {{ formatPrice(item.price * item.quantity) }}</span>
       </div>
+      <div class="summary-item summary-discount" *ngIf="couponDiscount > 0">
+        <span>Desconto ({{ couponApplied }})</span>
+        <span>- R$ {{ formatPrice(couponDiscount) }}</span>
+      </div>
       <div class="summary-total">
         <span>Total</span>
-        <span>R$ {{ formatPrice(cartTotal) }}</span>
+        <span>R$ {{ formatPrice(finalTotal) }}</span>
       </div>
     </div>
   </div>

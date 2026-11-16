@@ -14,6 +14,10 @@ export class AppointmentService {
   private readonly url = `${environment.apiUrl}/appointments`;
 
   constructor(private http: HttpClient) {
+    this.refresh();
+  }
+
+  refresh(): void {
     this.http.get<Appointment[]>(this.url).subscribe({
       next: appointments => this.appointmentsSubject.next(appointments),
       error: err => console.error('Falha ao carregar agendamentos', err)

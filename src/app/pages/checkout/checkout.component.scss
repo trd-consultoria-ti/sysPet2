@@ -109,3 +109,36 @@
     position: static;
   }
 }
+
+.coupon-group {
+  margin-bottom: 1rem;
+
+  label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.375rem;
+  }
+}
+
+.coupon-row {
+  display: flex;
+  gap: 0.5rem;
+
+  input {
+    flex: 1;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+}
+
+.coupon-message {
+  font-size: 0.82rem;
+  color: var(--primary-text);
+  margin-top: 0.35rem;
+}
+
+.summary-discount {
+  color: var(--primary-text);
+}

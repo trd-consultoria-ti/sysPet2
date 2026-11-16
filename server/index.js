@@ -292,6 +292,10 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
   }
+  // LGPD: consentimento é obrigatório no auto-cadastro — sem ele não há base legal
+  if (req.body.consent !== true) {
+    return res.status(400).json({ error: 'É necessário aceitar os termos e a política de privacidade' });
+  }
   const pwErr = passwordError(password);
   if (pwErr) return res.status(400).json({ error: pwErr });
   const hash = hashPassword(password);
@@ -761,11 +765,14 @@ app.post('/api/orders', requireAuth, async (req, res) => {
        paymentMethod || null, JSON.stringify(serverItems), total,
        coupon ? coupon.code : null, discount]
     );
-    await client.query(
-      `INSERT INTO cash_movements (order_id, type, description, amount, payment_method)
-       VALUES ($1, 'entrada', $2, $3, $4)`,
-      [rows[0].id, `Pedido ${seq[0].order_number}`, total, paymentMethod || null]
-    );
+    // Pedido 100% descontado não gera movimento de caixa (CHECK amount > 0)
+    if (total > 0) {
+      await client.query(
+        `INSERT INTO cash_movements (order_id, type, description, amount, payment_method)
+         VALUES ($1, 'entrada', $2, $3, $4)`,
+        [rows[0].id, `Pedido ${seq[0].order_number}`, total, paymentMethod || null]
+      );
+    }
     // Baixa de estoque atômica: só decrementa onde há saldo suficiente (NULL = sem controle)
     for (const item of serverItems) {
       const dec = await client.query(
@@ -877,6 +884,20 @@ app.post('/api/upload', requireAuth, async (req, res) => {
   if (!buf.length || buf.length > 5 * 1024 * 1024) {
     return res.status(400).json({ error: 'Imagem vazia ou maior que 5MB' });
   }
+  // Magic bytes: o MIME do data URL sozinho não prova que o conteúdo é imagem de verdade
+  const isPng = buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47;
+  const isJpg = buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF;
+  const isGif = buf.slice(0, 3).toString('ascii') === 'GIF';
+  const isWebp = buf.slice(0, 4).toString('ascii') === 'RIFF' && buf.slice(8, 12).toString('ascii') === 'WEBP';
+  const mime = m[1].toLowerCase();
+  const mimeOk =
+    (mime === 'image/png' && isPng) ||
+    ((mime === 'image/jpeg' || mime === 'image/jpg') && isJpg) ||
+    (mime === 'image/gif' && isGif) ||
+    (mime === 'image/webp' && isWebp);
+  if (!mimeOk) {
+    return res.status(400).json({ error: 'O conteúdo do arquivo não corresponde a uma imagem válida' });
+  }
   const base = String(filename || 'foto').replace(/\.[^.]*$/, '').replace(/[^\w\-]/g, '').slice(-40) || 'foto';
   const name = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}-${base}.${MIME_EXT[m[1].toLowerCase()]}`;
   fs.writeFileSync(path.join(UPLOAD_DIR, name), buf);
@@ -909,6 +930,9 @@ app.post('/api/coupons', requireAuth, requireAdmin, async (req, res) => {
   if (!val || val <= 0 || (discountType === 'percent' && val > 100)) {
     return res.status(400).json({ error: discountType === 'percent' ? 'Percentual entre 0 e 100' : 'Valor deve ser maior que zero' });
   }
+  if (expiresAt && isNaN(Date.parse(expiresAt))) {
+    return res.status(400).json({ error: 'Data de expiração inválida' });
+  }
   const { rows } = await pool.query(
     `INSERT INTO coupons (code, discount_type, discount_value, min_order_total, active, max_uses, expires_at)
      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
@@ -929,6 +953,10 @@ app.put('/api/coupons/:id', requireAuth, requireAdmin, async (req, res) => {
   if (!val || val <= 0 || (type === 'percent' && val > 100)) {
     return res.status(400).json({ error: 'Valor de desconto inválido' });
   }
+  const expAt = expiresAt !== undefined ? (expiresAt || null) : old[0].expires_at;
+  if (expAt && isNaN(Date.parse(expAt))) {
+    return res.status(400).json({ error: 'Data de expiração inválida' });
+  }
   const { rows } = await pool.query(
     `UPDATE coupons SET code=$2, discount_type=$3, discount_value=$4, min_order_total=$5,
        active=$6, max_uses=$7, expires_at=$8 WHERE id=$1 RETURNING *`,
@@ -936,7 +964,7 @@ app.put('/api/coupons/:id', requireAuth, requireAdmin, async (req, res) => {
      minOrderTotal !== undefined ? Math.max(0, Number(minOrderTotal) || 0) : Number(old[0].min_order_total),
      active !== undefined ? !!active : old[0].active,
      maxUses !== undefined ? (maxUses ? Math.floor(Number(maxUses)) : null) : old[0].max_uses,
-     expiresAt !== undefined ? (expiresAt || null) : old[0].expires_at]
+     expAt]
   );
   audit('coupons', rows[0].id, 'update', { code: old[0].code }, { code: rows[0].code }, req.user.id);
   res.json(couponJson(rows[0]));
@@ -950,7 +978,8 @@ app.delete('/api/coupons/:id', requireAuth, requireAdmin, async (req, res) => {
   res.status(204).end();
 });
 
-// Preview do desconto no checkout — mesmo cálculo do POST /orders, sem consumir uso
+// Preview do desconto no checkout — mesmo cálculo do POST /orders, sem consumir uso.
+// Sempre 200 com {valid:false,message} em erro de negócio: o front trata como feedback, não falha.
 app.post('/api/coupons/validate', requireAuth, async (req, res) => {
   const { code, total } = req.body || {};
   const sub = Number(total);
@@ -964,15 +993,19 @@ app.post('/api/coupons/validate', requireAuth, async (req, res) => {
     [String(code).trim()]
   );
   const c = rows[0];
-  if (!c) return res.status(404).json({ error: 'Cupom inválido ou expirado' });
+  if (!c) return res.json({ valid: false, message: 'Cupom inválido ou expirado' });
   if (sub < Number(c.min_order_total)) {
-    return res.status(400).json({ error: `Pedido mínimo de R$ ${Number(c.min_order_total).toFixed(2)}` });
+    return res.json({ valid: false, message: `Pedido mínimo de R$ ${Number(c.min_order_total).toFixed(2)}` });
   }
   const discount = Math.min(
     c.discount_type === 'percent' ? sub * Number(c.discount_value) / 100 : Number(c.discount_value),
     sub
   );
-  res.json({ code: c.code, discount: Math.round(discount * 100) / 100, finalTotal: Math.round((sub - discount) * 100) / 100 });
+  const rounded = Math.round(discount * 100) / 100;
+  res.json({
+    valid: true, code: c.code, type: c.discount_type, value: num(c.discount_value),
+    discount: rounded, finalTotal: Math.round((sub - rounded) * 100) / 100
+  });
 });
 
 // ---------- auditoria (M23) ----------
@@ -1027,6 +1060,15 @@ app.delete('/api/me', requireAuth, async (req, res) => {
   if (req.user.role !== 'customer') {
     return res.status(403).json({ error: 'Apenas clientes podem excluir a própria conta por aqui' });
   }
+  // Re-autenticação: excluir conta é irreversível — exige a senha atual
+  const { password } = req.body || {};
+  if (!password) return res.status(400).json({ error: 'Informe sua senha para confirmar a exclusão' });
+  const { rows: uRows } = await pool.query('SELECT password_hash FROM users WHERE id=$1', [req.user.id]);
+  const stored = uRows[0] && uRows[0].password_hash;
+  const ok = stored && (isBcrypt(stored)
+    ? bcrypt.compareSync(String(password), stored)
+    : crypto.createHash('sha256').update(String(password)).digest('hex') === stored);
+  if (!ok) return res.status(403).json({ error: 'Senha incorreta' });
   const uid = req.user.id;
   const client = await pool.connect();
   try {

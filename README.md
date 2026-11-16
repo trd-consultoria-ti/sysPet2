@@ -86,3 +86,16 @@ Notas de segurança do MVP:
 - SCSS para estilos
 - Angular Router para navegação
 - Reactive Forms para formulários
+
+## Build de produção
+
+```bash
+NODE_OPTIONS=--openssl-legacy-provider npx ng build --configuration production
+```
+
+O build de produção:
+
+- usa `fileReplacements` para trocar `environment.ts` por `environment.prod.ts`
+- `apiUrl` vira `/api` (URL relativa — assume que a API Express serve o `docs/` na mesma origem)
+- saída em `docs/` com `baseHref=/sysPet/`; para servir pela própria API (mesma origem), ajuste `baseHref` ou o mount do `express.static` conforme o deploy
+- deploy "tudo-em-um": `node server/index.js` serve `docs/` estático + `/api` na porta 3100 — nesse cenário faça o build com `--base-href=/` ou sirva `docs/` sob `/sysPet`

@@ -15,6 +15,10 @@ export class OrderService {
   private readonly url = `${environment.apiUrl}/orders`;
 
   constructor(private http: HttpClient) {
+    this.refresh();
+  }
+
+  refresh(): void {
     this.http.get<Order[]>(this.url).subscribe({
       next: orders => this.ordersSubject.next(orders),
       error: err => console.error('Falha ao carregar pedidos', err)
@@ -33,6 +37,7 @@ export class OrderService {
     paymentMethod?: string;
     items: CartItem[];
     userId?: number;
+    couponCode?: string;
   }): Observable<Order> {
     return this.http.post<Order>(this.url, data).pipe(
       tap(created => this.ordersSubject.next([created, ...this.ordersSubject.value]))

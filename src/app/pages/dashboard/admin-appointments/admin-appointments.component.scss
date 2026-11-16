@@ -82,3 +82,107 @@
   padding: 0.3rem 0.7rem;
   font-size: 0.8rem;
 }
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h1 { margin-bottom: 0; }
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.week-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.day-column {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem;
+  min-height: 90px;
+
+  &.today {
+    border-color: var(--primary-text);
+    border-width: 2px;
+  }
+}
+
+.day-header {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.day-empty {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.day-appointment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.75rem;
+  padding: 0.35rem;
+  border-radius: var(--radius);
+  background: var(--input);
+  margin-bottom: 0.35rem;
+}
+
+.day-time {
+  font-weight: 700;
+}
+
+.day-service {
+  color: var(--muted);
+}
+
+.print-slip {
+  display: none;
+}
+
+@media print {
+  .admin-page {
+    display: none;
+  }
+
+  .print-slip {
+    display: block;
+    padding: 1rem;
+    font-family: inherit;
+
+    h1 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    dt {
+      font-weight: 700;
+      margin-top: 0.5rem;
+    }
+
+    dd {
+      margin: 0 0 0.25rem;
+    }
+  }
+}

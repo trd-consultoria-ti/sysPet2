@@ -1,57 +1,112 @@
 <div class="admin-page">
-  <h1>Agendamentos</h1>
+  <div class="page-header">
+    <h1>Agendamentos</h1>
+    <div class="view-toggle" role="group" aria-label="Modo de visualização">
+      <button type="button" class="btn btn-sm" [class.btn-primary]="viewMode === 'list'"
+              [class.btn-outline-secondary]="viewMode !== 'list'" (click)="viewMode = 'list'">
+        Lista
+      </button>
+      <button type="button" class="btn btn-sm" [class.btn-primary]="viewMode === 'week'"
+              [class.btn-outline-secondary]="viewMode !== 'week'" (click)="viewMode = 'week'">
+        Semana
+      </button>
+    </div>
+  </div>
 
   <div class="empty-state" *ngIf="appointments.length === 0">
     <p>Nenhum agendamento cadastrado ainda.</p>
   </div>
 
-  <div class="table-container" *ngIf="appointments.length > 0">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Pet</th>
-          <th>Serviço</th>
-          <th>Data</th>
-          <th>Horário</th>
-          <th>Cliente</th>
-          <th>Status</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let appointment of appointments">
-          <td>{{ appointment.petName }}</td>
-          <td>{{ appointment.serviceName || '—' }}</td>
-          <td>{{ formatDate(appointment.date) }}</td>
-          <td>{{ appointment.time }}</td>
-          <td>{{ appointment.customerName || '—' }}</td>
-          <td>
-            <span class="status-badge" [ngClass]="appointment.status">
-              {{ statusLabels[appointment.status] }}
-            </span>
-          </td>
-          <td class="actions-cell">
-            <button
-              *ngIf="appointment.status === 'solicitado'"
-              class="btn btn-sm btn-primary"
-              (click)="setStatus(appointment, 'confirmado')">
-              Confirmar
-            </button>
-            <button
-              *ngIf="appointment.status === 'confirmado'"
-              class="btn btn-sm btn-primary"
-              (click)="setStatus(appointment, 'concluido')">
-              Concluir
-            </button>
-            <button
-              *ngIf="appointment.status !== 'cancelado' && appointment.status !== 'concluido'"
-              class="btn btn-sm btn-outline-danger"
-              (click)="setStatus(appointment, 'cancelado')">
-              Cancelar
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <ng-container *ngIf="appointments.length > 0">
+    <!-- Visão semanal -->
+    <div class="week-view" *ngIf="viewMode === 'week'">
+      <div class="week-nav">
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="prevWeek()" aria-label="Semana anterior">←</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="currentWeek()">Hoje</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="nextWeek()" aria-label="Próxima semana">→</button>
+      </div>
+      <div class="week-grid">
+        <div class="day-column" *ngFor="let day of weekDays" [class.today]="day.isToday">
+          <h2 class="day-header">{{ day.label }}</h2>
+          <p class="day-empty" *ngIf="day.appointments.length === 0">—</p>
+          <div class="day-appointment" *ngFor="let a of day.appointments">
+            <span class="day-time">{{ a.time }}</span>
+            <span class="day-pet">{{ a.petName }}</span>
+            <span class="day-service">{{ a.serviceName || '—' }}</span>
+            <span class="status-badge" [ngClass]="a.status">{{ statusLabels[a.status] }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista em tabela -->
+    <div class="table-container" *ngIf="viewMode === 'list'">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Pet</th>
+            <th>Serviço</th>
+            <th>Data</th>
+            <th>Horário</th>
+            <th>Cliente</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let appointment of appointments">
+            <td>{{ appointment.petName }}</td>
+            <td>{{ appointment.serviceName || '—' }}</td>
+            <td>{{ formatDate(appointment.date) }}</td>
+            <td>{{ appointment.time }}</td>
+            <td>{{ appointment.customerName || '—' }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="appointment.status">
+                {{ statusLabels[appointment.status] }}
+              </span>
+            </td>
+            <td class="actions-cell">
+              <button
+                *ngIf="appointment.status === 'solicitado'"
+                class="btn btn-sm btn-primary"
+                (click)="setStatus(appointment, 'confirmado')">
+                Confirmar
+              </button>
+              <button
+                *ngIf="appointment.status === 'confirmado'"
+                class="btn btn-sm btn-primary"
+                (click)="setStatus(appointment, 'concluido')">
+                Concluir
+              </button>
+              <button
+                *ngIf="appointment.status !== 'cancelado' && appointment.status !== 'concluido'"
+                class="btn btn-sm btn-outline-danger"
+                (click)="setStatus(appointment, 'cancelado')">
+                Cancelar
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                      (click)="printSlip(appointment)">
+                Imprimir
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
 </div>
+
+<!-- Ficha de impressão (só visível em @media print) -->
+<article class="print-slip" *ngIf="printAppointment">
+  <h1>Animal World — Agendamento</h1>
+  <dl>
+    <dt>Pet</dt><dd>{{ printAppointment.petName }}</dd>
+    <dt>Serviço</dt><dd>{{ printAppointment.serviceName || '—' }}</dd>
+    <dt>Cliente</dt><dd>{{ printAppointment.customerName || '—' }}</dd>
+    <dt>Data</dt><dd>{{ formatDate(printAppointment.date) }}</dd>
+    <dt>Horário</dt><dd>{{ printAppointment.time }}</dd>
+    <dt>Status</dt><dd>{{ statusLabels[printAppointment.status] }}</dd>
+    <dt *ngIf="printAppointment.notes">Observações</dt>
+    <dd *ngIf="printAppointment.notes">{{ printAppointment.notes }}</dd>
+  </dl>
+</article>

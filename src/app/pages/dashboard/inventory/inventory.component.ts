@@ -24,6 +24,9 @@ export class InventoryComponent implements OnInit, OnDestroy {
   showCreateForm = false;
   createForm: FormGroup;
   canManage = false;
+  createPreview: string | null = null;
+  uploadError = '';
+  uploading = false;
 
   constructor(
     private productService: ProductService,
@@ -36,6 +39,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
       price: [0, [Validators.required, Validators.min(0)]],
       category: ['', Validators.required],
       description: [''],
+      image: [''],
       stock: [null, [Validators.min(0)]]
     });
   }
@@ -53,6 +57,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
       name: [product.name, [Validators.required]],
       price: [product.price, [Validators.required, Validators.min(0)]],
       category: [product.category, [Validators.required]],
+      image: [product.image || ''],
       stock: [product.stock ?? null, [Validators.min(0)]]
     });
   }
@@ -77,6 +82,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
         name: values.name,
         price,
         category: values.category,
+        image: values.image || product.image,
         stock: isNaN(stock as number) ? null : stock
       }).pipe(takeUntil(this.destroy$)).subscribe();
       this.editingId = null;
@@ -88,7 +94,9 @@ export class InventoryComponent implements OnInit, OnDestroy {
 
   openCreate(): void {
     if (!this.canManage) return;
-    this.createForm.reset({ name: '', price: 0, category: '', description: '', stock: null });
+    this.createForm.reset({ name: '', price: 0, category: '', description: '', image: '', stock: null });
+    this.createPreview = null;
+    this.uploadError = '';
     this.showCreateForm = true;
   }
 
@@ -105,12 +113,51 @@ export class InventoryComponent implements OnInit, OnDestroy {
       price: Number(values.price),
       rating: 0,
       reviews: 0,
-      image: '',
+      image: values.image || '',
       category: values.category,
       description: values.description || '',
       stock: isNaN(stock as number) ? null : stock
     }).pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.showCreateForm = false;
+    });
+  }
+
+  onImageUrlChange(): void {
+    const url = this.createForm.get('image')?.value;
+    this.createPreview = url || null;
+  }
+
+  onFileSelected(event: Event, target: 'create' | number): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files && input.files[0];
+    if (!file) {
+      return;
+    }
+    this.uploadError = '';
+    this.uploading = true;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (target === 'create') {
+        this.createPreview = reader.result as string;
+      }
+    };
+    reader.readAsDataURL(file);
+
+    this.productService.uploadImage(file).pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => {
+        this.uploading = false;
+        if (target === 'create') {
+          this.createForm.patchValue({ image: res.url });
+          this.createPreview = res.url;
+        } else {
+          this.editForms[target]?.patchValue({ image: res.url });
+        }
+      },
+      error: () => {
+        this.uploading = false;
+        this.uploadError = 'Upload de imagem ainda não disponível — use uma URL de imagem.';
+      }
     });
   }
 

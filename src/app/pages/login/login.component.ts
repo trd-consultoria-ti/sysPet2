@@ -15,6 +15,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   password: string = '';
   name: string = '';
   isRegisterMode = false;
+  acceptTerms = false;
   returnUrl: string = '/';
   loading: boolean = false;
   error: string = '';
@@ -63,11 +64,15 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   onSubmit(): void {
-    this.loading = true;
     this.error = '';
+    if (this.isRegisterMode && !this.acceptTerms) {
+      this.error = 'É necessário aceitar os termos e a política de privacidade.';
+      return;
+    }
+    this.loading = true;
 
     const request$ = this.isRegisterMode
-      ? this.authService.register(this.name, this.email, this.password)
+      ? this.authService.register(this.name, this.email, this.password, this.acceptTerms)
       : this.authService.login(this.email, this.password);
 
     request$.pipe(takeUntil(this.destroy$)).subscribe({

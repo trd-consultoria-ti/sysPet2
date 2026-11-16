@@ -1,0 +1,78 @@
+<div class="receipt-page">
+  <div class="receipt-actions no-print">
+    <a routerLink="/orders" class="btn btn-outline-secondary">← Voltar</a>
+    <button type="button" class="btn btn-primary" (click)="print()">
+      <i class="fas fa-print" aria-hidden="true"></i> Imprimir
+    </button>
+  </div>
+
+  <div class="empty-state" *ngIf="notFound">
+    <p>Pedido não encontrado.</p>
+  </div>
+
+  <article class="receipt" *ngIf="order">
+    <header class="receipt-header">
+      <h1 class="receipt-brand">Animal World</h1>
+      <p class="receipt-sub">Comprovante de pedido</p>
+    </header>
+
+    <section class="receipt-meta">
+      <div class="meta-row">
+        <span class="meta-label">Pedido</span>
+        <strong>{{ order.orderNumber }}</strong>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Data</span>
+        <span>{{ formatDateTime(order.createdAt) }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Status</span>
+        <span>{{ statusLabels[order.status] }}</span>
+      </div>
+    </section>
+
+    <section class="receipt-customer">
+      <h2>Cliente</h2>
+      <p>{{ order.customerName }}</p>
+      <p *ngIf="order.email">{{ order.email }}</p>
+      <p *ngIf="order.phone">{{ order.phone }}</p>
+      <p *ngIf="order.address">{{ order.address }}</p>
+    </section>
+
+    <section class="receipt-items">
+      <h2>Itens</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th class="num">Qtd.</th>
+            <th class="num">Unitário</th>
+            <th class="num">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of order.items">
+            <td>{{ item.name }}</td>
+            <td class="num">{{ item.quantity }}</td>
+            <td class="num">R$ {{ formatPrice(item.price) }}</td>
+            <td class="num">R$ {{ formatPrice(item.price * item.quantity) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="receipt-total">
+      <span>Total</span>
+      <strong>R$ {{ formatPrice(order.total) }}</strong>
+    </section>
+
+    <section class="receipt-payment">
+      <span class="meta-label">Pagamento:</span>
+      <span>{{ paymentLabel(order.paymentMethod) }}</span>
+    </section>
+
+    <footer class="receipt-footer">
+      <p>Obrigado pela preferência!</p>
+    </footer>
+  </article>
+</div>

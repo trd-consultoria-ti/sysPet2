@@ -43,6 +43,23 @@ export class ProductService {
     );
   }
 
+  uploadImage(file: File): Observable<{ url: string }> {
+    return new Observable<{ url: string }>(observer => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.http.post<{ imagePath: string }>(`${environment.apiUrl}/upload`, {
+          filename: file.name,
+          data: reader.result as string
+        }).subscribe({
+          next: res => { observer.next({ url: res.imagePath }); observer.complete(); },
+          error: err => observer.error(err)
+        });
+      };
+      reader.onerror = () => observer.error(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`).pipe(
       tap(() => this.productsSubject.next(this.productsSubject.value.filter(p => p.id !== id)))

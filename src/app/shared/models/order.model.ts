@@ -17,6 +17,8 @@ export interface Order {
   paymentMethod?: string;
   items: OrderItem[];
   total: number;
+  couponCode?: string;
+  discount?: number;
   status: OrderStatus;
   createdAt: string;
 }

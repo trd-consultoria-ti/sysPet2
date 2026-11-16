@@ -28,6 +28,13 @@
                [(ngModel)]="password" name="password" required>
       </div>
       
+      <div class="form-options" *ngIf="isRegisterMode">
+        <label class="remember-me" for="accept-terms">
+          <input type="checkbox" id="accept-terms" name="acceptTerms" [(ngModel)]="acceptTerms">
+          Aceito os termos e a política de privacidade
+        </label>
+      </div>
+
       <div class="form-options" *ngIf="!isRegisterMode">
         <div class="remember-me">
           <input type="checkbox" id="remember">
@@ -36,7 +43,7 @@
         <button type="button" class="forgot-password" (click)="forgot()">Esqueceu a senha?</button>
       </div>
 
-      <button type="submit" class="btn btn-primary btn-block" [disabled]="loading">
+      <button type="submit" class="btn btn-primary btn-block" [disabled]="loading || (isRegisterMode && !acceptTerms)">
         <i *ngIf="loading" class="fas fa-spinner fa-spin" aria-hidden="true"></i>
         {{ isRegisterMode ? 'Cadastrar' : 'Entrar' }}
       </button>

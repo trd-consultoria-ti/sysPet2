@@ -5,6 +5,7 @@ import { Order } from '../../shared/models/order.model';
 import { CartService } from '../../shared/services/cart.service';
 import { OrderService } from '../../shared/services/order.service';
 import { AuthService } from '../../shared/services/auth.service';
+import { CouponService } from '../../shared/services/coupon.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -18,13 +19,19 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   checkoutForm: FormGroup;
   completedOrder: Order | null = null;
   submitError = '';
+  couponCode = '';
+  couponDiscount = 0;
+  couponMessage = '';
+  couponApplied = '';
+  applyingCoupon = false;
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private cartService: CartService,
     private orderService: OrderService,
-    private authService: AuthService
+    private authService: AuthService,
+    private couponService: CouponService
   ) {
     this.checkoutForm = this.fb.group({
       name: ['', [Validators.required]],
@@ -56,6 +63,46 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     return this.cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
   }
 
+  get finalTotal(): number {
+    return Math.max(0, this.cartTotal - this.couponDiscount);
+  }
+
+  applyCoupon(): void {
+    const code = this.couponCode.trim();
+    if (!code) {
+      return;
+    }
+    this.applyingCoupon = true;
+    this.couponMessage = '';
+    this.couponService.validate(code, this.cartTotal).pipe(takeUntil(this.destroy$)).subscribe({
+      next: res => {
+        this.applyingCoupon = false;
+        if (res.valid && (res.discount ?? 0) > 0) {
+          this.couponDiscount = res.discount!;
+          this.couponApplied = code;
+          this.couponMessage = `Cupom ${code} aplicado.`;
+        } else {
+          this.couponDiscount = 0;
+          this.couponApplied = '';
+          this.couponMessage = res.message || 'Cupom inválido.';
+        }
+      },
+      error: () => {
+        this.applyingCoupon = false;
+        this.couponDiscount = 0;
+        this.couponApplied = '';
+        this.couponMessage = 'Cupons ainda não disponíveis no servidor.';
+      }
+    });
+  }
+
+  removeCoupon(): void {
+    this.couponCode = '';
+    this.couponDiscount = 0;
+    this.couponApplied = '';
+    this.couponMessage = '';
+  }
+
   formatPrice(value: number): string {
     return value.toFixed(2).replace('.', ',');
   }
@@ -71,7 +118,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         address: formValues.address,
         paymentMethod: formValues.paymentMethod,
         items: this.cartItems,
-        userId: user?.id
+        userId: user?.id,
+        couponCode: this.couponApplied || undefined
       }).pipe(takeUntil(this.destroy$)).subscribe({
         next: order => {
           this.submitError = '';

@@ -35,6 +35,32 @@
           </li>
         </ul>
         <div class="nav-actions">
+          <div class="notif" *ngIf="isStaff">
+            <button type="button" class="notif-btn" (click)="toggleNotif()"
+                    aria-label="Notificações"
+                    [attr.aria-expanded]="notifOpen"
+                    aria-haspopup="true">
+              <i class="fas fa-bell" aria-hidden="true"></i>
+              <span class="cart-badge" *ngIf="pendingCount > 0">{{ pendingCount }}</span>
+            </button>
+            <div class="notif-dropdown" *ngIf="notifOpen">
+              <p class="notif-empty" *ngIf="pendingCount === 0">Nenhuma pendência.</p>
+              <ng-container *ngIf="pendingAppointments.length > 0">
+                <p class="notif-group">Agendamentos solicitados</p>
+                <a class="notif-item" *ngFor="let a of pendingAppointments | slice:0:5"
+                   routerLink="/dashboard/appointments" (click)="closeNotif(); closeMenu()">
+                  {{ a.petName }} — {{ a.date }} {{ a.time }}
+                </a>
+              </ng-container>
+              <ng-container *ngIf="pendingOrders.length > 0">
+                <p class="notif-group">Pedidos pendentes</p>
+                <a class="notif-item" *ngFor="let o of pendingOrders | slice:0:5"
+                   routerLink="/dashboard/orders" (click)="closeNotif(); closeMenu()">
+                  {{ o.orderNumber }} — {{ o.customerName }}
+                </a>
+              </ng-container>
+            </div>
+          </div>
           <a routerLink="/cart" class="cart-link" (click)="closeMenu()" aria-label="Carrinho de compras">
             <i class="fas fa-shopping-cart" aria-hidden="true"></i>
             <ng-container *ngIf="cartCount$ | async as count">

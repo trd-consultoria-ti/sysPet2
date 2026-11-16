@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Order, OrderStatus } from '../../shared/models/order.model';
 import { OrderService } from '../../shared/services/order.service';
 import { AuthService } from '../../shared/services/auth.service';
+import { AuditService, AuditEntry } from '../../shared/services/audit.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -24,9 +25,14 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   statusOptions: OrderStatus[] = ['pendente', 'pago', 'entregue', 'cancelado'];
 
+  auditOpen: Record<number, boolean> = {};
+  auditEntries: Record<number, AuditEntry[]> = {};
+  auditError: Record<number, string> = {};
+
   constructor(
     private orderService: OrderService,
-    private authService: AuthService
+    private authService: AuthService,
+    private auditService: AuditService
   ) { }
 
   ngOnInit(): void {
@@ -45,6 +51,23 @@ export class OrdersComponent implements OnInit, OnDestroy {
     if (order.id && status !== order.status) {
       this.orderService.updateStatus(order.id, status).pipe(takeUntil(this.destroy$)).subscribe();
     }
+  }
+
+  toggleAudit(order: Order): void {
+    if (!order.id) {
+      return;
+    }
+    this.auditOpen[order.id] = !this.auditOpen[order.id];
+    if (this.auditOpen[order.id] && !this.auditEntries[order.id]) {
+      this.auditService.list('orders', order.id).pipe(takeUntil(this.destroy$)).subscribe({
+        next: entries => this.auditEntries[order.id!] = entries,
+        error: () => this.auditError[order.id!] = 'Histórico indisponível no momento.'
+      });
+    }
+  }
+
+  formatAuditDate(iso: string): string {
+    return new Date(iso).toLocaleString('pt-BR');
   }
 
   formatPrice(value: number): string {

@@ -175,3 +175,50 @@
   background: #fff5f5;
   color: #e53e3e;
 }
+
+.image-preview {
+  display: block;
+  max-width: 120px;
+  max-height: 90px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-top: 0.5rem;
+}
+
+.thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.no-image {
+  color: var(--muted);
+}
+
+.uploading-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-left: 0.5rem;
+}
+
+.file-mini {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-text);
+  cursor: pointer;
+
+  input[type="file"] {
+    display: none;
+  }
+}
+
+.error-text {
+  color: #e53e3e;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}

@@ -145,4 +145,37 @@
       </li>
     </ul>
   </section>
+
+  <!-- Privacidade / LGPD -->
+  <section class="account-section privacy-section" *ngIf="user?.role === 'customer'">
+    <h2>Privacidade</h2>
+    <p class="privacy-text">Você pode exportar seus dados pessoais ou excluir definitivamente sua conta.</p>
+    <p class="form-error" *ngIf="privacyError" role="alert">{{ privacyError }}</p>
+    <p class="privacy-ok" *ngIf="privacyMessage">{{ privacyMessage }}</p>
+    <div class="privacy-actions" *ngIf="!confirmingDelete">
+      <button type="button" class="btn btn-outline-secondary" (click)="exportData()" [disabled]="exportLoading">
+        <i *ngIf="exportLoading" class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+        {{ exportLoading ? 'Exportando...' : 'Exportar meus dados' }}
+      </button>
+      <button type="button" class="btn btn-outline-danger" (click)="startDeleteAccount()">
+        Excluir minha conta
+      </button>
+    </div>
+    <div class="delete-confirm" *ngIf="confirmingDelete">
+      <p class="privacy-text"><strong>Atenção:</strong> a exclusão é irreversível e remove seus dados pessoais.</p>
+      <label for="delete-account-password">Digite sua senha para confirmar:</label>
+      <input type="password" id="delete-account-password" name="deleteAccountPassword"
+             [(ngModel)]="deletePassword" autocomplete="current-password" class="form-control">
+      <div class="privacy-actions">
+        <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteAccount()"
+                [disabled]="!deletePassword || deletingAccount">
+          {{ deletingAccount ? 'Excluindo...' : 'Excluir definitivamente' }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelDeleteAccount()"
+                [disabled]="deletingAccount">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </section>
 </div>

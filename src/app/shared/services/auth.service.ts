@@ -73,8 +73,8 @@ export class AuthService {
     return this.http.put<{ ok: boolean }>(`${environment.apiUrl}/users/${id}/password`, { currentPassword, newPassword });
   }
 
-  register(name: string, email: string, password: string): Observable<User> {
-    return this.http.post<User>(`${environment.apiUrl}/auth/register`, { name, email, password }).pipe(
+  register(name: string, email: string, password: string, consent: boolean): Observable<User> {
+    return this.http.post<User>(`${environment.apiUrl}/auth/register`, { name, email, password, consent }).pipe(
       tap(user => this.setSession(user))
     );
   }
@@ -86,6 +86,14 @@ export class AuthService {
       this.http.post(`${environment.apiUrl}/auth/logout`, {}).subscribe({ error: () => {} });
     }
     this.clearSession();
+  }
+
+  exportMyData(): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/me/export`, { responseType: 'blob' });
+  }
+
+  deleteMyAccount(password: string): Observable<{ ok: boolean }> {
+    return this.http.delete<{ ok: boolean }>(`${environment.apiUrl}/me`, { body: { password } });
   }
 
   forgotPassword(email: string): Observable<{ ok: boolean }> {

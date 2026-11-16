@@ -32,6 +32,13 @@ export class AccountComponent implements OnInit, OnDestroy {
 
   petTypes = ['Cachorro', 'Gato', 'Pássaro', 'Coelho', 'Outro'];
 
+  exportLoading = false;
+  privacyError = '';
+  privacyMessage = '';
+  confirmingDelete = false;
+  deletePassword = '';
+  deletingAccount = false;
+
   orderStatusLabels: Record<OrderStatus, string> = {
     pendente: 'Pendente',
     pago: 'Pago',
@@ -195,6 +202,54 @@ export class AccountComponent implements OnInit, OnDestroy {
 
   formatPrice(value: number): string {
     return value.toFixed(2).replace('.', ',');
+  }
+
+  exportData(): void {
+    this.privacyError = '';
+    this.privacyMessage = '';
+    this.exportLoading = true;
+    this.authService.exportMyData().pipe(takeUntil(this.destroy$)).subscribe({
+      next: blob => {
+        this.exportLoading = false;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'meus-dados-animal-world.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.exportLoading = false;
+        this.privacyError = 'Exportação ainda não disponível no servidor.';
+      }
+    });
+  }
+
+  startDeleteAccount(): void {
+    this.privacyError = '';
+    this.confirmingDelete = true;
+    this.deletePassword = '';
+  }
+
+  cancelDeleteAccount(): void {
+    this.confirmingDelete = false;
+    this.deletePassword = '';
+  }
+
+  confirmDeleteAccount(): void {
+    if (!this.deletePassword || this.deletingAccount) return;
+    this.deletingAccount = true;
+    this.privacyError = '';
+    this.authService.deleteMyAccount(this.deletePassword).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.authService.logout();
+        window.location.href = '#/';
+      },
+      error: err => {
+        this.deletingAccount = false;
+        this.privacyError = err?.error?.error || 'Não foi possível excluir a conta. Tente novamente.';
+      }
+    });
   }
 
   formatDateTime(iso: string): string {

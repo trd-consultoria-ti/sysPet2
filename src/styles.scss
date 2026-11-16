@@ -207,3 +207,10 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
     display: grid;
   }
 }
+@media print {
+  app-navbar,
+  app-footer,
+  .no-print {
+    display: none !important;
+  }
+}

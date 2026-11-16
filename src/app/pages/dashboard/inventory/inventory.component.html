@@ -24,12 +24,23 @@
         <input type="number" id="create-stock" formControlName="stock" min="0" step="1" placeholder="Ilimitado">
       </div>
       <div class="form-group">
+        <label for="create-image">Imagem (URL)</label>
+        <input type="url" id="create-image" formControlName="image" placeholder="https://..." (input)="onImageUrlChange()">
+      </div>
+      <div class="form-group">
+        <label for="create-image-file">Ou enviar arquivo</label>
+        <input type="file" id="create-image-file" accept="image/*" (change)="onFileSelected($event, 'create')">
+        <img *ngIf="createPreview" [src]="createPreview" alt="Pré-visualização da imagem do produto" class="image-preview">
+        <span class="uploading-hint" *ngIf="uploading">Enviando...</span>
+      </div>
+      <div class="form-group">
         <label>Descrição</label>
         <input type="text" formControlName="description">
       </div>
     </div>
+    <p class="error-text" *ngIf="uploadError" role="alert">{{ uploadError }}</p>
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="createForm.invalid">Salvar</button>
+      <button type="submit" class="btn btn-primary" [disabled]="createForm.invalid || uploading">Salvar</button>
       <button type="button" class="btn btn-outline-secondary" (click)="cancelCreate()">Cancelar</button>
     </div>
   </form>
@@ -46,6 +57,7 @@
           <th>Categoria</th>
           <th>Preço</th>
           <th>Estoque</th>
+          <th>Imagem</th>
           <th>Avaliação</th>
           <th>Ações</th>
         </tr>
@@ -65,6 +77,13 @@
             <td>
               <input type="number" class="table-input table-input-sm" [formControl]="ctrl(product.id, 'stock')" min="0" step="1" placeholder="Ilimitado">
             </td>
+            <td>
+              <input type="url" class="table-input" [formControl]="ctrl(product.id, 'image')" placeholder="URL da imagem">
+              <label class="file-mini">
+                Arquivo
+                <input type="file" accept="image/*" (change)="onFileSelected($event, product.id)">
+              </label>
+            </td>
             <td>{{ product.rating }} ({{ product.reviews }})</td>
             <td class="actions-cell">
               <button class="btn btn-sm btn-primary" (click)="saveEdit(product)">Salvar</button>
@@ -81,6 +100,10 @@
               <span *ngIf="product.stock !== null && product.stock !== undefined && product.stock > 0" class="stock-badge" [class.stock-low]="product.stock <= 5">
                 {{ product.stock }} <span *ngIf="product.stock <= 5">— baixo</span>
               </span>
+            </td>
+            <td>
+              <img *ngIf="product.image" [src]="product.image" [alt]="product.name" class="thumb">
+              <span *ngIf="!product.image" class="no-image">—</span>
             </td>
             <td>{{ product.rating }} ({{ product.reviews }})</td>
             <td class="actions-cell" *ngIf="canManage">
