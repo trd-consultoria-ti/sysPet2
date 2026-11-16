@@ -959,8 +959,6 @@ export class DemoBackendInterceptor implements HttpInterceptor {
       }
       return of(new HttpResponse({ status: 404, body: { error: 'Não encontrado' } }));
     }
-      return of(new HttpResponse({ status: 404, body: { error: 'Não encontrado' } }));
-    }
 
     // Daily Services: DELETE /api/daily-services/:id
     if (path.startsWith('/api/daily-services/') && method === 'DELETE') {

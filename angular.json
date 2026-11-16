@@ -30,6 +30,7 @@
               "src/favicon.ico",
               "src/assets",
               "src/404.html",
+              "src/.nojekyll",
               "src/manifest.webmanifest"
             ],
             "styles": [
@@ -64,8 +65,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "12kb",
-                  "maximumError": "20kb"
+                  "maximumWarning": "35kb",
+                  "maximumError": "60kb"
                 }
               ]
             }

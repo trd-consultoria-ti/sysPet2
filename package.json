@@ -2,12 +2,12 @@
   "name": "pawtastic-angular",
   "version": "0.0.0",
   "scripts": {
-    "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build --configuration production --base-href /sysPet2/",
-    "build:gh-pages": "ng build --configuration production --base-href /sysPet2/",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "ng": "node --openssl-legacy-provider ./node_modules/@angular/cli/bin/ng",
+    "start": "node --openssl-legacy-provider ./node_modules/@angular/cli/bin/ng serve",
+    "build": "node --openssl-legacy-provider ./node_modules/@angular/cli/bin/ng build --configuration production --base-href /sysPet2/",
+    "build:gh-pages": "node --openssl-legacy-provider ./node_modules/@angular/cli/bin/ng build --configuration production --base-href /sysPet2/",
+    "watch": "node --openssl-legacy-provider ./node_modules/@angular/cli/bin/ng build --watch --configuration development",
+    "test": "node --openssl-legacy-provider ./node_modules/@angular/cli/bin/ng test",
     "db:up": "docker compose up -d db",
     "api": "node server/index.js"
   },

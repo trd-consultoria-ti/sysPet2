@@ -91,7 +91,7 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
   constructor(
     private dailyService: DailyServicesService,
     private catalogService: ServiceCatalogService,
-    private pricingService: PricingService,
+    public pricingService: PricingService,
     private fb: FormBuilder,
     private router: Router,
     private cashService: CashService,
