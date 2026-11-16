@@ -36,5 +36,6 @@ Duas frentes:
 - Infra disponível: **Evolution API rodando local** (`127.0.0.1:8080`, instância `thiago-job-hunter` = número dela 61 99207-8335). Webhook de mensagens recebidas + envio.
 - Cuidado: conta é WhatsApp comum não-oficial — risco de banimento em disparo massivo; volume aqui é baixo (1 loja), ok.
 - Mensagens dela chegam por **LID** (`@lid`) além do JID de telefone — tratar os dois.
+- Operador do auxílio humano: **recepcionista contratada** (confirmado por Thaina ~15:32 — não é a dona). Papel dela no sistema precisa existir antes desta tela fazer sentido.
 - Áudio: MVP = atendente usa transcrição nativa do WhatsApp (grátis, PT-BR). Fase 2 = Whisper API p/ sugestão automática ler áudio.
 - Compliance: mensagens transacionais (status) ok; marketing precisa opt-in (LGPD).

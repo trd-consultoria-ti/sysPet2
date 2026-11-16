@@ -27,3 +27,4 @@ O sistema passa a ser o estoque de verdade: cadastro do produto com quantidade, 
 - Faltam: endpoint de entrada/restock, campo `min_stock`, custo de compra (pra margem/financeiro), PDV rápido pro balcão (hoje orders é fluxo de e-commerce com carrinho).
 - Decidir se venda de balcão reusa `orders` ou vira `cash_movements` direto com itens.
 - Foto do produto já suportada (`image_path` + upload).
+- **Tabela de preços de produtos:** preço fixo por item (confirmado por Thaina ~15:32) — ela vai enviar a tabela; cadastrar quando chegar. Sem variação por cliente/condição.
