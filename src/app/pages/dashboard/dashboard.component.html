@@ -1,54 +1,54 @@
 <div class="dashboard-container">
   <div class="dashboard-content">
     <!-- Sidebar de navegação -->
-    <div class="dashboard-sidebar">
+    <nav class="dashboard-sidebar" aria-label="Navegação do painel">
       <div class="sidebar-header">
         <span class="sidebar-brand">Animal World</span>
       </div>
       <ul class="sidebar-menu">
         <li class="sidebar-item">
           <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-            <i class="fas fa-home"></i> Painel
+            <i class="fas fa-home" aria-hidden="true"></i> Painel
           </a>
         </li>
         <li class="sidebar-item">
           <a routerLink="/dashboard/customers" routerLinkActive="active">
-            <i class="fas fa-users"></i> Clientes & Pets
+            <i class="fas fa-users" aria-hidden="true"></i> Clientes & Pets
           </a>
         </li>
         <li class="sidebar-item">
           <a routerLink="/dashboard/appointments" routerLinkActive="active">
-            <i class="fas fa-calendar-alt"></i> Agendamentos
+            <i class="fas fa-calendar-alt" aria-hidden="true"></i> Agendamentos
           </a>
         </li>
         <li class="sidebar-item">
           <a routerLink="/dashboard/orders" routerLinkActive="active">
-            <i class="fas fa-shopping-bag"></i> Pedidos
+            <i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos
           </a>
         </li>
         <li class="sidebar-item">
           <a routerLink="/dashboard/inventory" routerLinkActive="active">
-            <i class="fas fa-box"></i> Estoque
+            <i class="fas fa-box" aria-hidden="true"></i> Estoque
           </a>
         </li>
         <li class="sidebar-item" *ngIf="isAdmin">
           <a routerLink="/dashboard/services" routerLinkActive="active">
-            <i class="fas fa-concierge-bell"></i> Serviços
+            <i class="fas fa-concierge-bell" aria-hidden="true"></i> Serviços
           </a>
         </li>
         <li class="sidebar-item" *ngIf="isAdmin">
           <a routerLink="/dashboard/users" routerLinkActive="active">
-            <i class="fas fa-user-cog"></i> Usuários
+            <i class="fas fa-user-cog" aria-hidden="true"></i> Usuários
           </a>
         </li>
         <li class="sidebar-item" *ngIf="isAdmin">
           <a routerLink="/dashboard/cash" routerLinkActive="active">
-            <i class="fas fa-cash-register"></i> Caixa
+            <i class="fas fa-cash-register" aria-hidden="true"></i> Caixa
           </a>
         </li>
         <li class="sidebar-item" *ngIf="isAdmin">
           <a routerLink="/dashboard/reports" routerLinkActive="active">
-            <i class="fas fa-chart-line"></i> Balanço
+            <i class="fas fa-chart-line" aria-hidden="true"></i> Balanço
           </a>
         </li>
         <li class="sidebar-item">
@@ -57,7 +57,7 @@
           </button>
         </li>
       </ul>
-    </div>
+    </nav>
 
     <!-- Conteúdo principal -->
     <div class="dashboard-main">

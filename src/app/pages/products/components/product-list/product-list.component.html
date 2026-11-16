@@ -49,8 +49,10 @@
         </div>
         <p class="product-description">{{ product.description }}</p>
         <div class="product-actions">
-          <button class="btn btn-primary">Adicionar ao Carrinho</button>
-          <button class="btn btn-icon btn-quick-view" (click)="openQuickView(product)" aria-label="Visualização rápida">
+          <button class="btn btn-primary" (click)="addToCart(product)" [attr.aria-label]="'Adicionar ' + product.name + ' ao carrinho'">
+            Adicionar ao Carrinho
+          </button>
+          <button class="btn btn-icon btn-quick-view" (click)="openQuickView(product)" [attr.aria-label]="'Visualização rápida de ' + product.name">
             <i class="icon-eye" aria-hidden="true"></i>
           </button>
         </div>

@@ -84,8 +84,8 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  background-color: var(--primary-text);
-  color: var(--foreground);
+  background-color: var(--primary-dark);
+  color: #ffffff;
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.25rem 0.75rem;
@@ -153,17 +153,21 @@
 .btn-primary {
   flex-grow: 1;
   padding: 0.625rem 1rem;
-  background-color: var(--primary-text);
-  color: var(--foreground);
+  background-color: var(--primary-dark);
+  color: #ffffff;
   border: none;
   border-radius: var(--radius);
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-dark);
+  background-color: var(--primary-text);
 }
 
 .btn-icon {

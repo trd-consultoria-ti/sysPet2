@@ -75,10 +75,10 @@
           <span class="pet-meta">{{ pet.type }}<span *ngIf="pet.breed"> · {{ pet.breed }}</span><span *ngIf="pet.age !== undefined && pet.age !== null"> · {{ pet.age }} {{ pet.age === 1 ? 'ano' : 'anos' }}</span></span>
         </div>
         <div class="pet-actions">
-          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="startEditPet(pet)">
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="startEditPet(pet)" [attr.aria-label]="'Editar pet ' + pet.name">
             <i class="fas fa-edit" aria-hidden="true"></i> Editar
           </button>
-          <button type="button" class="btn btn-outline-danger btn-sm" (click)="deletePet(pet)">
+          <button type="button" class="btn btn-outline-danger btn-sm" (click)="deletePet(pet)" [attr.aria-label]="'Excluir pet ' + pet.name">
             <i class="fas fa-trash" aria-hidden="true"></i> Excluir
           </button>
         </div>
@@ -161,8 +161,8 @@
         Excluir minha conta
       </button>
     </div>
-    <div class="delete-confirm" *ngIf="confirmingDelete">
-      <p class="privacy-text"><strong>Atenção:</strong> a exclusão é irreversível e remove seus dados pessoais.</p>
+    <div class="delete-confirm" *ngIf="confirmingDelete" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+      <p class="privacy-text" id="delete-confirm-title"><strong>Atenção:</strong> a exclusão é irreversível e remove seus dados pessoais.</p>
       <label for="delete-account-password">Digite sua senha para confirmar:</label>
       <input type="password" id="delete-account-password" name="deleteAccountPassword"
              [(ngModel)]="deletePassword" autocomplete="current-password" class="form-control">

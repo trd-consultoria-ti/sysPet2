@@ -13,23 +13,23 @@
     <h2>Novo lançamento</h2>
     <div class="form-row">
       <div class="form-group form-group-sm">
-        <label>Tipo *</label>
-        <select formControlName="type">
+        <label for="cash-type">Tipo *</label>
+        <select id="cash-type" formControlName="type">
           <option value="entrada">Entrada</option>
           <option value="saida">Saída</option>
         </select>
       </div>
       <div class="form-group">
-        <label>Descrição *</label>
-        <input type="text" formControlName="description" placeholder="Ex: Compra de ração">
+        <label for="cash-description">Descrição *</label>
+        <input id="cash-description" type="text" formControlName="description" placeholder="Ex: Compra de ração">
       </div>
       <div class="form-group form-group-sm">
-        <label>Valor (R$) *</label>
-        <input type="number" formControlName="amount" min="0.01" step="0.01">
+        <label for="cash-amount">Valor (R$) *</label>
+        <input id="cash-amount" type="number" formControlName="amount" min="0.01" step="0.01">
       </div>
       <div class="form-group">
-        <label>Forma de pagamento</label>
-        <input type="text" formControlName="paymentMethod" placeholder="Ex: dinheiro, pix">
+        <label for="cash-payment-method">Forma de pagamento</label>
+        <input id="cash-payment-method" type="text" formControlName="paymentMethod" placeholder="Ex: dinheiro, pix">
       </div>
     </div>
     <div class="form-actions">

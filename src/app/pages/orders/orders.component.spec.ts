@@ -27,7 +27,7 @@ describe('OrdersComponent', () => {
 
   function setup(user: User | null) {
     ordersSubject = new BehaviorSubject<Order[]>([order]);
-    orderServiceSpy = jasmine.createSpyObj('OrderService', ['getOrders', 'updateStatus']);
+    orderServiceSpy = jasmine.createSpyObj('OrderService', ['getOrders', 'updateStatus', 'refresh']);
     orderServiceSpy.getOrders.and.returnValue(ordersSubject.asObservable());
     orderServiceSpy.updateStatus.and.returnValue(of(order));
     authServiceSpy = jasmine.createSpyObj('AuthService', ['getCurrentUser']);

@@ -16,13 +16,13 @@
           <span class="cart-item-price">R$ {{ formatPrice(item.price) }}</span>
         </div>
         <div class="cart-item-qty">
-          <button class="qty-btn" (click)="decrement(item)" aria-label="Diminuir">−</button>
+          <button class="qty-btn" (click)="decrement(item)" [attr.aria-label]="'Diminuir quantidade de ' + item.name">−</button>
           <span class="qty-value">{{ item.quantity }}</span>
-          <button class="qty-btn" (click)="increment(item)" aria-label="Aumentar">+</button>
+          <button class="qty-btn" (click)="increment(item)" [attr.aria-label]="'Aumentar quantidade de ' + item.name">+</button>
         </div>
         <div class="cart-item-total">R$ {{ formatPrice(itemTotal(item)) }}</div>
-        <button class="cart-item-remove" (click)="remove(item)" aria-label="Remover">
-          <i class="fas fa-trash"></i>
+        <button class="cart-item-remove" (click)="remove(item)" [attr.aria-label]="'Remover ' + item.name + ' do carrinho'">
+          <i class="fas fa-trash" aria-hidden="true"></i>
         </button>
       </div>
     </div>

@@ -2,13 +2,13 @@
   <h1 class="orders-title">Meus Pedidos</h1>
 
   <div class="orders-empty" *ngIf="orders.length === 0">
-    <i class="fas fa-box-open"></i>
+    <i class="fas fa-box-open" aria-hidden="true"></i>
     <p>Você ainda não fez nenhum pedido.</p>
     <a routerLink="/products" class="btn btn-primary">Ver Produtos</a>
   </div>
 
   <div class="orders-list" *ngIf="orders.length !== 0">
-    <div class="order-card" *ngFor="let order of orders">
+    <div class="order-card" *ngFor="let order of orders; trackBy: trackById">
       <div class="order-header">
         <div class="order-id">
           <strong>{{ order.orderNumber }}</strong>
@@ -22,7 +22,7 @@
       </div>
 
       <div class="order-items">
-        <div class="order-item" *ngFor="let item of order.items">
+        <div class="order-item" *ngFor="let item of order.items; trackBy: trackByIndex">
           <span>{{ item.name }} × {{ item.quantity }}</span>
           <span>R$ {{ formatPrice(item.price * item.quantity) }}</span>
         </div>
@@ -31,7 +31,7 @@
       <div class="order-footer">
         <span class="order-items-count">{{ itemCount(order) }} {{ itemCount(order) === 1 ? 'item' : 'itens' }}</span>
         <span class="order-footer-right">
-          <a [routerLink]="['./', order.id, 'receipt']" class="receipt-link">Comprovante</a>
+          <a [routerLink]="['./', order.id, 'receipt']" class="receipt-link" [attr.aria-label]="'Ver comprovante do pedido ' + order.orderNumber">Comprovante</a>
           <span class="order-total">Total: R$ {{ formatPrice(order.total) }}</span>
         </span>
       </div>
@@ -44,16 +44,18 @@
           </option>
         </select>
         <button type="button" class="audit-toggle" (click)="toggleAudit(order)"
-                [attr.aria-expanded]="auditOpen[order.id!]">
+                [attr.aria-expanded]="auditOpen[order.id!]"
+                [attr.aria-label]="'Histórico do pedido ' + order.orderNumber">
           Histórico
         </button>
       </div>
 
       <div class="audit-panel" *ngIf="isStaff && auditOpen[order.id!]">
         <p class="audit-error" *ngIf="auditError[order.id!]" role="alert">{{ auditError[order.id!] }}</p>
-        <p class="audit-empty" *ngIf="!auditError[order.id!] && auditEntries[order.id!]?.length === 0">Sem registros.</p>
+        <p class="audit-empty" *ngIf="auditLoading[order.id!]">Carregando histórico...</p>
+        <p class="audit-empty" *ngIf="!auditLoading[order.id!] && !auditError[order.id!] && auditEntries[order.id!]?.length === 0">Sem registros.</p>
         <ul *ngIf="auditEntries[order.id!]?.length">
-          <li *ngFor="let e of auditEntries[order.id!]">
+          <li *ngFor="let e of auditEntries[order.id!]; trackBy: trackById">
             <span class="audit-when">{{ formatAuditDate(e.createdAt) }}</span>
             <span class="audit-what">{{ auditSummary(e) }}</span>
             <span class="audit-who" *ngIf="e.userName">{{ e.userName }}</span>

@@ -53,6 +53,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     if (this.cartService.getItems().length === 0 && !this.completedOrder) {
       this.router.navigate(['/cart']);
     }
+    // Cupom é validado contra o total do momento — se o carrinho mudar, invalida
+    this.cartService.items$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      if (this.couponApplied) {
+        this.removeCoupon();
+        this.couponMessage = 'Carrinho alterado — reaplique o cupom.';
+      }
+    });
   }
 
   get cartItems() {

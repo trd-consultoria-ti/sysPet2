@@ -77,12 +77,30 @@
 
 .receipt-total {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 1rem 0.25rem;
-  font-size: 1.15rem;
-  font-weight: 700;
   border-top: 2px solid var(--foreground);
   margin-top: 0.5rem;
+}
+
+.receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+
+  &.final-total-row {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-top: 0.25rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--border);
+  }
+
+  &.discount-row {
+    color: #16a34a;
+  }
 }
 
 .receipt-payment {

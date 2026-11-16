@@ -133,6 +133,17 @@ export class InventoryComponent implements OnInit, OnDestroy {
     if (!file) {
       return;
     }
+    // Validação client-side: tipo e tamanho antes de gastar upload
+    if (!file.type.startsWith('image/')) {
+      this.uploadError = 'O arquivo precisa ser uma imagem.';
+      input.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.uploadError = 'Imagem maior que 5MB.';
+      input.value = '';
+      return;
+    }
     this.uploadError = '';
     this.uploading = true;
 
@@ -156,7 +167,10 @@ export class InventoryComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.uploading = false;
-        this.uploadError = 'Upload de imagem ainda não disponível — use uma URL de imagem.';
+        // Falha no upload não pode deixar preview fingindo sucesso
+        if (target === 'create') this.createPreview = null;
+        this.editForms[target === 'create' ? -1 : target]?.patchValue({ image: '' });
+        this.uploadError = 'Falha no upload — use uma URL de imagem.';
       }
     });
   }

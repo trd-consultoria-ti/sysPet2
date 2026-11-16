@@ -9,7 +9,7 @@
   <div class="service-content">
     <div class="service-rating">
       <div class="rating-stars">
-        <i class="icon-star"></i>
+        <i class="icon-star" aria-hidden="true"></i>
         <span class="rating-value">{{ service.rating }}</span>
       </div>
       <span class="rating-divider">·</span>
@@ -21,15 +21,15 @@
     
     <div class="service-meta">
       <div class="service-duration">
-        <i class="icon-clock"></i>
+        <i class="icon-clock" aria-hidden="true"></i>
         <span>{{ service.duration }}</span>
       </div>
     </div>
     
     <div class="service-footer">
       <span class="service-price">R$ {{ service.price.toFixed(2).replace('.', ',') }}</span>
-      <button class="btn btn-primary btn-sm" (click)="bookService()">
-        <i class="icon-calendar"></i>
+      <button class="btn btn-primary btn-sm" (click)="bookService()" [attr.aria-label]="'Agendar ' + service.name">
+        <i class="icon-calendar" aria-hidden="true"></i>
         Agendar
       </button>
     </div>

@@ -2,16 +2,20 @@
   <app-section-heading 
     title="Produtos de Qualidade para Seu Pet" 
     subtitle="Oferecemos uma seleção premium de alimentos, acessórios e brinquedos para o bem-estar do seu animal de estimação."
+    [isMainHeading]="true"
   ></app-section-heading>
   
   <!-- Barra de busca -->
   <div class="search-container">
+    <label for="product-search-input" class="sr-only">Buscar produtos</label>
     <div class="search-icon">
-      <i class="icon-search"></i>
+      <i class="icon-search" aria-hidden="true"></i>
     </div>
     <input
+      id="product-search-input"
       type="text"
       placeholder="Buscar produtos..."
+      aria-label="Buscar produtos"
       [value]="searchQuery"
       (input)="onSearch($event)"
       class="search-input"

@@ -28,6 +28,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   auditOpen: Record<number, boolean> = {};
   auditEntries: Record<number, AuditEntry[]> = {};
   auditError: Record<number, string> = {};
+  auditLoading: Record<number, boolean> = {};
 
   constructor(
     private orderService: OrderService,
@@ -60,11 +61,26 @@ export class OrdersComponent implements OnInit, OnDestroy {
     }
     this.auditOpen[order.id] = !this.auditOpen[order.id];
     if (this.auditOpen[order.id] && !this.auditEntries[order.id]) {
+      this.auditLoading[order.id] = true;
       this.auditService.list('orders', order.id).pipe(takeUntil(this.destroy$)).subscribe({
-        next: entries => this.auditEntries[order.id!] = entries,
-        error: () => this.auditError[order.id!] = 'Histórico indisponível no momento.'
+        next: entries => {
+          this.auditEntries[order.id!] = entries;
+          this.auditLoading[order.id!] = false;
+        },
+        error: () => {
+          this.auditError[order.id!] = 'Histórico indisponível no momento.';
+          this.auditLoading[order.id!] = false;
+        }
       });
     }
+  }
+
+  trackById(index: number, item: { id?: number }): number {
+    return item.id ?? index;
+  }
+
+  trackByIndex(index: number): number {
+    return index;
   }
 
   formatAuditDate(iso: string): string {

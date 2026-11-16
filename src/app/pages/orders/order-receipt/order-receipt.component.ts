@@ -14,6 +14,7 @@ export class OrderReceiptComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   order: Order | null = null;
   notFound = false;
+  loading = true;
 
   statusLabels: Record<OrderStatus, string> = {
     pendente: 'Pendente',
@@ -36,9 +37,11 @@ export class OrderReceiptComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
+    this.orderService.refresh();
     this.orderService.getOrders().pipe(takeUntil(this.destroy$)).subscribe(orders => {
       this.order = orders.find(o => o.id === id) || null;
-      this.notFound = !this.order && orders.length > 0;
+      this.notFound = !this.order;
+      this.loading = false;
     });
   }
 

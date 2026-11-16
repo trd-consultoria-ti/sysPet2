@@ -10,6 +10,7 @@ export class SectionHeadingComponent implements OnInit {
   @Input() subtitle: string = '';
   @Input() centered: boolean = true;
   @Input() className: string = '';
+  @Input() isMainHeading: boolean = false;
 
   constructor() { }
 

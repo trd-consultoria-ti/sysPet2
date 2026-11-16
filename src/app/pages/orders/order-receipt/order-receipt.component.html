@@ -6,6 +6,8 @@
     </button>
   </div>
 
+  <p class="empty-state" *ngIf="loading">Carregando pedido...</p>
+
   <div class="empty-state" *ngIf="notFound">
     <p>Pedido não encontrado.</p>
   </div>
@@ -41,35 +43,41 @@
 
     <section class="receipt-items">
       <h2>Itens</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th class="num">Qtd.</th>
-            <th class="num">Unitário</th>
-            <th class="num">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of order.items">
-            <td>{{ item.name }}</td>
-            <td class="num">{{ item.quantity }}</td>
-            <td class="num">R$ {{ formatPrice(item.price) }}</td>
-            <td class="num">R$ {{ formatPrice(item.price * item.quantity) }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="num">Qtd.</th>
+              <th class="num">Unitário</th>
+              <th class="num">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of order.items">
+              <td>{{ item.name }}</td>
+              <td class="num">{{ item.quantity }}</td>
+              <td class="num">R$ {{ formatPrice(item.price) }}</td>
+              <td class="num">R$ {{ formatPrice(item.price * item.quantity) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section class="receipt-total">
-      <ng-container *ngIf="order.discount && order.discount > 0">
+      <div class="receipt-total-row" *ngIf="order.discount && order.discount > 0">
         <span>Subtotal</span>
         <span>R$ {{ formatPrice(order.total + order.discount) }}</span>
+      </div>
+      <div class="receipt-total-row discount-row" *ngIf="order.discount && order.discount > 0">
         <span>Desconto{{ order.couponCode ? ' (' + order.couponCode + ')' : '' }}</span>
         <span>- R$ {{ formatPrice(order.discount) }}</span>
-      </ng-container>
-      <span>Total</span>
-      <strong>R$ {{ formatPrice(order.total) }}</strong>
+      </div>
+      <div class="receipt-total-row final-total-row">
+        <span>Total</span>
+        <strong>R$ {{ formatPrice(order.total) }}</strong>
+      </div>
     </section>
 
     <section class="receipt-payment">

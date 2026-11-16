@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject, Observable } from 'rxjs';
 import { takeUntil, switchMap } from 'rxjs/operators';
@@ -64,7 +65,8 @@ export class AccountComponent implements OnInit, OnDestroy {
     private customerService: CustomerService,
     private orderService: OrderService,
     private appointmentService: AppointmentService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router
   ) {
     this.petForm = this.fb.group({
       name: ['', [Validators.required]],
@@ -245,7 +247,7 @@ export class AccountComponent implements OnInit, OnDestroy {
     this.authService.deleteMyAccount(this.deletePassword).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.authService.logout();
-        window.location.href = '#/';
+        this.router.navigate(['/']);
       },
       error: err => {
         this.deletingAccount = false;

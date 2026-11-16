@@ -6,7 +6,7 @@
     </div>
 
     <form class="login-form" (ngSubmit)="onSubmit()">
-      <div class="alert alert-danger" *ngIf="error">
+      <div class="alert alert-danger" *ngIf="error" role="alert" aria-live="polite">
         {{ error }}
       </div>
 

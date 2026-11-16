@@ -22,18 +22,25 @@
       <div>
         <h4 class="font-medium">Faixa de Preço</h4>
         <div class="price-slider-container mt-3">
+          <label for="price-range-slider" class="sr-only">Filtrar por preço máximo</label>
           <input 
+            id="price-range-slider"
             type="range" 
             [min]="minPrice" 
             [max]="maxPrice" 
             [value]="selectedPrice"
             (input)="onPriceChange($event)"
+            aria-label="Filtrar por preço máximo"
+            [attr.aria-valuemin]="minPrice"
+            [attr.aria-valuemax]="maxPrice"
+            [attr.aria-valuenow]="selectedPrice"
             class="price-slider w-full appearance-none cursor-pointer" 
           />
         </div>
         <div class="flex justify-between mt-2">
-          <span class="text-sm text-gray-600">R${{ minPrice }}</span>
-          <span class="text-sm text-gray-600">R${{ maxPrice }}</span>
+          <span class="text-sm text-gray-600">R$ {{ minPrice }}</span>
+          <span class="text-sm font-semibold text-primary">Até R$ {{ selectedPrice }}</span>
+          <span class="text-sm text-gray-600">R$ {{ maxPrice }}</span>
         </div>
       </div>
       

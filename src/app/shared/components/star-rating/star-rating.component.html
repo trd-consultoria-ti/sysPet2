@@ -1,5 +1,5 @@
-<div class="star-rating" [ngClass]="size">
-  <div class="stars">
+<div class="star-rating" [ngClass]="size" role="img" [attr.aria-label]="'Avaliação: ' + rating.toFixed(1) + ' de 5 estrelas'">
+  <div class="stars" aria-hidden="true">
     <span *ngFor="let star of stars; let i = index" class="star">
       <i class="icon-star" [ngClass]="{
         'filled': star.filled,
@@ -7,5 +7,5 @@
       }"></i>
     </span>
   </div>
-  <span *ngIf="showNumber" class="rating-number">{{ rating.toFixed(1) }}</span>
+  <span *ngIf="showNumber" class="rating-number" aria-hidden="true">{{ rating.toFixed(1) }}</span>
 </div>

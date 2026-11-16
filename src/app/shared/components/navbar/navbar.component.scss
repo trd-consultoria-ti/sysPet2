@@ -43,6 +43,9 @@
   color: var(--foreground);
   font-size: 1.5rem;
   cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem;
 }
 
 .nav {
@@ -83,21 +86,26 @@
   background-color: var(--primary);
 }
 
-@media (max-width: 767px) {
+@media (max-width: 991px) {
   .nav {
     position: fixed;
-    top: 4rem;
-    left: 0;
+    top: 4.5rem;
     right: 0;
+    left: auto;
+    width: min(85vw, 340px);
+    max-width: 100%;
     bottom: 0;
     background-color: var(--background);
     flex-direction: column;
     align-items: flex-start;
-    padding: 2rem;
+    padding: 2rem 1.5rem;
     transform: translateX(100%);
     visibility: hidden;
     transition: transform 0.3s ease, visibility 0s linear 0.3s;
-    z-index: 40;
+    z-index: 100;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.12);
+    overflow-y: auto;
+    box-sizing: border-box;
   }
 
   .nav-open {
@@ -109,6 +117,7 @@
   .nav-list {
     flex-direction: column;
     width: 100%;
+    gap: 0;
   }
 
   .nav-item {
@@ -117,17 +126,22 @@
 
   .nav-item a {
     display: block;
-    padding: 0.75rem 0;
+    padding: 0.875rem 0;
     border-bottom: 1px solid var(--border);
+    font-size: 1.05rem;
   }
 
   .nav-actions {
     margin-top: 1.5rem;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 
   .nav-actions .btn {
     width: 100%;
+    min-height: 44px;
   }
 }
 
@@ -135,10 +149,14 @@
   position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   color: var(--muted);
   font-size: 1.25rem;
   text-decoration: none;
-  margin-right: 1rem;
+  margin-right: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem;
 }
 
 .cart-link:hover {
@@ -147,8 +165,8 @@
 
 .cart-badge {
   position: absolute;
-  top: -8px;
-  right: -10px;
+  top: 4px;
+  right: 4px;
   background-color: var(--accent);
   color: var(--foreground);
   font-size: 0.7rem;
@@ -180,7 +198,12 @@
   color: var(--foreground);
   font-size: 1.15rem;
   cursor: pointer;
-  padding: 0.4rem;
+  padding: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .notif-dropdown {
@@ -188,6 +211,7 @@
   right: 0;
   top: calc(100% + 0.5rem);
   min-width: 260px;
+  max-width: calc(100vw - 2rem);
   background: var(--background);
   border: 1px solid var(--border);
   border-radius: var(--radius);

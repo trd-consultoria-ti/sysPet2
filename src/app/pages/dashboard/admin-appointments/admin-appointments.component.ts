@@ -32,6 +32,14 @@ export class AdminAppointmentsComponent implements OnInit, OnDestroy {
 
   constructor(private appointmentService: AppointmentService) { }
 
+  trackById(index: number, item: { id?: number }): number {
+    return item.id ?? index;
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+
   ngOnInit(): void {
     this.appointmentService.getAppointments().pipe(takeUntil(this.destroy$)).subscribe(appointments => {
       this.appointments = [...appointments].sort((a, b) =>

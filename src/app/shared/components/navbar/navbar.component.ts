@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject, interval, Subscription } from 'rxjs';
@@ -16,6 +16,7 @@ import { Appointment } from '../../models/appointment.model';
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
+  private resizeHandler = () => this.checkScreenSize();
   isMenuOpen = false;
   isMobile = false;
   cartCount$!: Observable<number>;
@@ -31,7 +32,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private router: Router,
     private cartService: CartService,
     private authService: AuthService,
-    private http: HttpClient
+    private http: HttpClient,
+    private el: ElementRef<HTMLElement>
   ) {}
 
   get pendingCount(): number {
@@ -40,7 +42,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.checkScreenSize();
-    window.addEventListener('resize', this.checkScreenSize.bind(this));
+    window.addEventListener('resize', this.resizeHandler);
     this.cartCount$ = this.cartService.count$;
     this.currentUser$ = this.authService.currentUser$;
 
@@ -81,14 +83,31 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.notifOpen = false;
   }
 
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.notifOpen = false;
+    this.isMenuOpen = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.notifOpen && !this.el.nativeElement.querySelector('.notif')?.contains(event.target as Node)) {
+      this.notifOpen = false;
+    }
+  }
+
+  trackById(index: number, item: { id?: number }): number {
+    return item.id ?? index;
+  }
+
   ngOnDestroy(): void {
-    window.removeEventListener('resize', this.checkScreenSize.bind(this));
+    window.removeEventListener('resize', this.resizeHandler);
     this.destroy$.next();
     this.destroy$.complete();
   }
 
   checkScreenSize(): void {
-    this.isMobile = window.innerWidth < 768;
+    this.isMobile = window.innerWidth < 992;
   }
 
   toggleMenu(): void {

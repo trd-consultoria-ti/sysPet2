@@ -1,10 +1,11 @@
 <div>
+  <h1 class="sr-only">Painel de Controle - Visão Geral</h1>
   <!-- Cards de estatísticas -->
   <div class="dashboard-stats">
     <div class="stat-card" *ngIf="isAdmin">
       <div class="stat-header">
         <span class="stat-title">Receita Total</span>
-        <i class="fas fa-dollar-sign stat-icon"></i>
+        <i class="fas fa-dollar-sign stat-icon" aria-hidden="true"></i>
       </div>
       <div class="stat-value">R$ {{ formatPrice(revenue) }}</div>
       <div class="stat-footer">
@@ -15,7 +16,7 @@
     <div class="stat-card">
       <div class="stat-header">
         <span class="stat-title">Clientes Ativos</span>
-        <i class="fas fa-users stat-icon"></i>
+        <i class="fas fa-users stat-icon" aria-hidden="true"></i>
       </div>
       <div class="stat-value">{{ totalCustomers }}</div>
       <div class="stat-footer">
@@ -26,7 +27,7 @@
     <div class="stat-card">
       <div class="stat-header">
         <span class="stat-title">Agendamentos</span>
-        <i class="fas fa-calendar-check stat-icon"></i>
+        <i class="fas fa-calendar-check stat-icon" aria-hidden="true"></i>
       </div>
       <div class="stat-value">{{ totalAppointments }}</div>
       <div class="stat-footer">
@@ -37,7 +38,7 @@
     <div class="stat-card">
       <div class="stat-header">
         <span class="stat-title">Pedidos</span>
-        <i class="fas fa-shopping-bag stat-icon"></i>
+        <i class="fas fa-shopping-bag stat-icon" aria-hidden="true"></i>
       </div>
       <div class="stat-value">{{ totalOrders }}</div>
       <div class="stat-footer">

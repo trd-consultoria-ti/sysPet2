@@ -26,10 +26,10 @@
         <button type="button" class="btn btn-sm btn-outline-secondary" (click)="nextWeek()" aria-label="Próxima semana">→</button>
       </div>
       <div class="week-grid">
-        <div class="day-column" *ngFor="let day of weekDays" [class.today]="day.isToday">
+        <div class="day-column" *ngFor="let day of weekDays; trackBy: trackByIndex" [class.today]="day.isToday">
           <h2 class="day-header">{{ day.label }}</h2>
           <p class="day-empty" *ngIf="day.appointments.length === 0">—</p>
-          <div class="day-appointment" *ngFor="let a of day.appointments">
+          <div class="day-appointment" *ngFor="let a of day.appointments; trackBy: trackById">
             <span class="day-time">{{ a.time }}</span>
             <span class="day-pet">{{ a.petName }}</span>
             <span class="day-service">{{ a.serviceName || '—' }}</span>
@@ -54,7 +54,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let appointment of appointments">
+          <tr *ngFor="let appointment of appointments; trackBy: trackById">
             <td>{{ appointment.petName }}</td>
             <td>{{ appointment.serviceName || '—' }}</td>
             <td>{{ formatDate(appointment.date) }}</td>
@@ -69,22 +69,26 @@
               <button
                 *ngIf="appointment.status === 'solicitado'"
                 class="btn btn-sm btn-primary"
+                [attr.aria-label]="'Confirmar agendamento de ' + (appointment.petName || 'pet')"
                 (click)="setStatus(appointment, 'confirmado')">
                 Confirmar
               </button>
               <button
                 *ngIf="appointment.status === 'confirmado'"
                 class="btn btn-sm btn-primary"
+                [attr.aria-label]="'Concluir agendamento de ' + (appointment.petName || 'pet')"
                 (click)="setStatus(appointment, 'concluido')">
                 Concluir
               </button>
               <button
                 *ngIf="appointment.status !== 'cancelado' && appointment.status !== 'concluido'"
                 class="btn btn-sm btn-outline-danger"
+                [attr.aria-label]="'Cancelar agendamento de ' + (appointment.petName || 'pet')"
                 (click)="setStatus(appointment, 'cancelado')">
                 Cancelar
               </button>
               <button type="button" class="btn btn-sm btn-outline-secondary"
+                      [attr.aria-label]="'Imprimir ficha de ' + (appointment.petName || 'pet')"
                       (click)="printSlip(appointment)">
                 Imprimir
               </button>

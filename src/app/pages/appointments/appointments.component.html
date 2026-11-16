@@ -1,9 +1,9 @@
 <div class="appointments-container">
-  <app-section-heading title="Agendar uma Consulta" subtitle="Marque uma visita para seu pet"></app-section-heading>
+  <app-section-heading title="Agendar uma Consulta" subtitle="Marque uma visita para seu pet" [isMainHeading]="true"></app-section-heading>
 
   <div class="appointment-form-container">
     <form class="appointment-form" [formGroup]="appointmentForm" (ngSubmit)="onSubmit()">
-      <div class="alert alert-success" *ngIf="confirmationMessage">
+      <div class="alert alert-success" *ngIf="confirmationMessage" role="status">
         {{ confirmationMessage }}
       </div>
 
@@ -16,7 +16,7 @@
               {{ customer.name }}
             </option>
           </select>
-          <div class="error-message" *ngIf="appointmentForm.get('customerId')?.invalid && appointmentForm.get('customerId')?.touched">
+          <div class="error-message" *ngIf="appointmentForm.get('customerId')?.invalid && appointmentForm.get('customerId')?.touched" role="alert">
             Selecione um cliente
           </div>
         </div>
@@ -29,7 +29,7 @@
               {{ pet.name }} ({{ pet.type }})
             </option>
           </select>
-          <div class="error-message" *ngIf="appointmentForm.get('petId')?.invalid && appointmentForm.get('petId')?.touched">
+          <div class="error-message" *ngIf="appointmentForm.get('petId')?.invalid && appointmentForm.get('petId')?.touched" role="alert">
             Selecione um pet
           </div>
           <small class="text-muted" *ngIf="petsOfSelectedCustomer.length === 0 && appointmentForm.get('customerId')?.value">
@@ -46,12 +46,12 @@
         <div class="pet-quick-form" *ngIf="showPetForm" [formGroup]="petForm">
           <div class="form-row">
             <div class="form-group">
-              <label>Nome do pet</label>
-              <input type="text" class="form-control" formControlName="name" placeholder="Nome">
+              <label for="quick-pet-name">Nome do pet</label>
+              <input id="quick-pet-name" type="text" class="form-control" formControlName="name" placeholder="Nome">
             </div>
             <div class="form-group">
-              <label>Tipo</label>
-              <select class="form-control" formControlName="type">
+              <label for="quick-pet-type">Tipo</label>
+              <select id="quick-pet-type" class="form-control" formControlName="type">
                 <option value="Cachorro">Cachorro</option>
                 <option value="Gato">Gato</option>
                 <option value="Ave">Ave</option>
@@ -62,12 +62,12 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Raça</label>
-              <input type="text" class="form-control" formControlName="breed" placeholder="Raça (opcional)">
+              <label for="quick-pet-breed">Raça</label>
+              <input id="quick-pet-breed" type="text" class="form-control" formControlName="breed" placeholder="Raça (opcional)">
             </div>
             <div class="form-group">
-              <label>Idade</label>
-              <input type="number" class="form-control" formControlName="age" placeholder="Anos" min="0">
+              <label for="quick-pet-age">Idade</label>
+              <input id="quick-pet-age" type="number" class="form-control" formControlName="age" placeholder="Anos" min="0">
             </div>
           </div>
           <button type="button" class="btn btn-primary btn-sm" [disabled]="petForm.invalid" (click)="savePet()">
@@ -84,7 +84,7 @@
             {{ service.name }} — R$ {{ service.price.toFixed(2).replace('.', ',') }}
           </option>
         </select>
-        <div class="error-message" *ngIf="appointmentForm.get('serviceId')?.invalid && appointmentForm.get('serviceId')?.touched">
+        <div class="error-message" *ngIf="appointmentForm.get('serviceId')?.invalid && appointmentForm.get('serviceId')?.touched" role="alert">
           Selecione um serviço
         </div>
       </div>
@@ -93,7 +93,7 @@
         <div class="form-group">
           <label for="appointmentDate">Data do Agendamento</label>
           <input type="date" id="appointmentDate" class="form-control" formControlName="date" [min]="minDate">
-          <div class="error-message" *ngIf="appointmentForm.get('date')?.invalid && appointmentForm.get('date')?.touched">
+          <div class="error-message" *ngIf="appointmentForm.get('date')?.invalid && appointmentForm.get('date')?.touched" role="alert">
             Data é obrigatória e deve ser futura
           </div>
         </div>
@@ -101,7 +101,7 @@
         <div class="form-group">
           <label for="appointmentTime">Horário do Agendamento</label>
           <input type="time" id="appointmentTime" class="form-control" formControlName="time">
-          <div class="error-message" *ngIf="appointmentForm.get('time')?.invalid && appointmentForm.get('time')?.touched">
+          <div class="error-message" *ngIf="appointmentForm.get('time')?.invalid && appointmentForm.get('time')?.touched" role="alert">
             Horário é obrigatório
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { Product } from 'src/app/shared/models/product.model';
+import { CartService } from 'src/app/shared/services/cart.service';
 
 @Component({
   selector: 'app-product-list',
@@ -97,7 +98,7 @@ export class ProductListComponent implements OnInit, OnChanges {
   sortOption: string = 'relevance';
   wishlistItems: number[] = [];
 
-  constructor() { }
+  constructor(private cartService: CartService) { }
 
   ngOnInit(): void {
     this.filterProducts();
@@ -178,5 +179,9 @@ export class ProductListComponent implements OnInit, OnChanges {
 
   closeQuickView(): void {
     this.quickViewVisible = false;
+  }
+
+  addToCart(product: Product): void {
+    this.cartService.add(product, 1);
   }
 }

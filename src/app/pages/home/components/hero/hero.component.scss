@@ -3,7 +3,8 @@
   padding-top: 7rem;
   padding-bottom: 5rem;
   overflow: hidden;
-  background-color: var(--foreground);
+  background-color: var(--background);
+  background: linear-gradient(135deg, #ffffff 0%, var(--secondary-light) 100%);
 
   @media (min-width: 768px) {
     padding-top: 9rem;
@@ -16,29 +17,43 @@
   margin: 0 auto;
   padding: 0 1.5rem;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3rem;
+  gap: 2rem;
+  text-align: center;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    text-align: left;
+    gap: 3rem;
+  }
 }
 
 .hero-image {
-  display: block;
+  display: flex;
+  justify-content: center;
   position: relative;
-  width: auto;
+  width: 100%;
+  max-width: 500px;
   height: auto;
 }
 
 .hero-logo {
-  max-width: 650px;
+  width: 100%;
+  max-width: 280px;
   height: auto;
-  margin-right: 1rem;
+  margin: 0 auto;
+
+  @media (min-width: 768px) {
+    max-width: 480px;
+    margin-right: 1rem;
+  }
 }
 
 .hero-content {
   max-width: 32rem;
   animation: fadeIn 1s ease-out;
-  text-align: left;
 }
 
 .hero-pretitle {
@@ -53,10 +68,11 @@
 }
 
 .hero-title {
-  font-size: 2.5rem;
+  font-size: 2.25rem;
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: 1.5rem;
+  color: var(--foreground);
 
   @media (min-width: 768px) {
     font-size: 3rem;
@@ -68,7 +84,7 @@
 }
 
 .hero-description {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   color: var(--muted-foreground);
   margin-bottom: 2rem;
   max-width: 28rem;
@@ -78,9 +94,14 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  justify-content: center;
 
   @media (min-width: 576px) {
     flex-direction: row;
+  }
+
+  @media (min-width: 768px) {
+    justify-content: flex-start;
   }
 }
 
@@ -100,6 +121,7 @@
   transition: all 0.2s ease-in-out;
   cursor: pointer;
   border: none;
+  min-height: 44px;
   
   i {
     font-size: 1.25rem;
@@ -107,20 +129,20 @@
 }
 
 .btn-primary {
-  background-color: var(--primary-text);
-  color: var(--foreground);
+  background-color: var(--primary-dark);
+  color: #ffffff;
   
   &:hover {
-    background-color: var(--primary-dark);
+    background-color: var(--primary-text);
   }
 }
 
 .btn-secondary {
-  background-color: var(--secondary);
+  background-color: var(--secondary-dark);
   color: var(--foreground);
   
   &:hover {
-    background-color: var(--secondary-dark);
+    background-color: var(--secondary);
   }
 }
 

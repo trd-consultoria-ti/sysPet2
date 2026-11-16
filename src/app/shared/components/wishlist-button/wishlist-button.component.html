@@ -1,8 +1,10 @@
 <button 
+  type="button"
   class="wishlist-button" 
   [class.active]="active" 
   (click)="toggleWishlist()"
-  aria-label="Adicionar à lista de desejos"
+  [attr.aria-label]="active ? 'Remover da lista de desejos' : 'Adicionar à lista de desejos'"
+  [attr.aria-pressed]="active"
 >
-  <i class="icon-heart"></i>
+  <i class="icon-heart" aria-hidden="true"></i>
 </button>
