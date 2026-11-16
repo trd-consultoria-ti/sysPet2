@@ -8,6 +8,9 @@
   background-color: var(--foreground);
   color: var(--background);
   padding: 4rem 0 2rem;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .footer-content {
@@ -15,6 +18,8 @@
   grid-template-columns: repeat(1, 1fr);
   gap: 2rem;
   margin-bottom: 3rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
