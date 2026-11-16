@@ -187,6 +187,11 @@ async function loadUser(req, res, next) {
 }
 
 const requireAuth = loadUser;
+// Todo :id das rotas é PK inteira — rejeita 'banana' com 400 em vez de estourar no Postgres (500)
+app.param('id', (req, res, next, val) => {
+  if (!/^\d+$/.test(val)) return res.status(400).json({ error: 'ID inválido' });
+  next();
+});
 const requireStaff = (req, res, next) =>
   (req.user.role === 'admin' || req.user.role === 'collaborator') ? next()
     : res.status(403).json({ error: 'Acesso restrito à equipe' });
@@ -1143,7 +1148,8 @@ const consultJson = r => ({
   vetId: r.vet_id, vetName: r.vet_name, vetCrmv: r.vet_crmv, vetSpecialty: r.vet_specialty,
   scheduledDate: r.scheduled_date instanceof Date ? r.scheduled_date.toISOString().split('T')[0] : r.scheduled_date,
   scheduledTime: r.scheduled_time, status: r.status, reason: r.reason,
-  weight: num(r.weight), temperature: num(r.temperature),
+  weight: r.weight == null ? null : Math.round(Number(r.weight) * 100) / 100,
+  temperature: r.temperature == null ? null : Math.round(Number(r.temperature) * 10) / 10,
   diagnosis: r.diagnosis, notes: r.notes,
   createdBy: r.created_by, createdAt: r.created_at, updatedAt: r.updated_at,
   prescriptionId: r.prescription_id || null
@@ -1223,7 +1229,15 @@ app.get('/api/consultations/:id', requireAuth, async (req, res) => {
 
 app.post('/api/consultations', requireAuth, requireStaff, async (req, res) => {
   const { petId, vetId, scheduledDate, scheduledTime, reason } = req.body;
-  if (!petId || !scheduledDate) return res.status(400).json({ error: 'Pet e data são obrigatórios' });
+  if (!Number.isInteger(Number(petId)) || !scheduledDate) {
+    return res.status(400).json({ error: 'Pet e data são obrigatórios' });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(scheduledDate)) || isNaN(new Date(scheduledDate).getTime())) {
+    return res.status(400).json({ error: 'Data inválida (use AAAA-MM-DD)' });
+  }
+  if (vetId && !Number.isInteger(Number(vetId))) {
+    return res.status(400).json({ error: 'Veterinário inválido' });
+  }
   const { rows: pet } = await pool.query('SELECT id FROM pets WHERE id=$1', [petId]);
   if (!pet.length) return res.status(400).json({ error: 'Pet não encontrado' });
   if (vetId) {
@@ -1244,6 +1258,18 @@ app.patch('/api/consultations/:id', requireAuth, requireStaff, async (req, res) 
   const { status, vetId, reason, weight, temperature, diagnosis, notes, scheduledDate, scheduledTime } = req.body;
   const validStatus = ['agendado', 'em_atendimento', 'concluido', 'cancelado'];
   if (status && !validStatus.includes(status)) return res.status(400).json({ error: 'Status inválido' });
+  if (weight !== undefined && weight !== null && weight !== '' && !Number.isFinite(Number(weight))) {
+    return res.status(400).json({ error: 'Peso inválido' });
+  }
+  if (temperature !== undefined && temperature !== null && temperature !== '' && !Number.isFinite(Number(temperature))) {
+    return res.status(400).json({ error: 'Temperatura inválida' });
+  }
+  if (scheduledDate && (!/^\d{4}-\d{2}-\d{2}$/.test(String(scheduledDate)) || isNaN(new Date(scheduledDate).getTime()))) {
+    return res.status(400).json({ error: 'Data inválida (use AAAA-MM-DD)' });
+  }
+  if (vetId !== undefined && vetId !== null && vetId !== '' && !Number.isInteger(Number(vetId))) {
+    return res.status(400).json({ error: 'Veterinário inválido' });
+  }
   const { rows: old } = await pool.query('SELECT * FROM consultations WHERE id=$1', [req.params.id]);
   if (!old.length) return res.status(404).json({ error: 'Consulta não encontrada' });
   const o = old[0];
@@ -1301,7 +1327,7 @@ const prescriptionJson = async r => {
 app.post('/api/prescriptions', requireAuth, requireStaff, async (req, res) => {
   const { consultationId, vetId, notes, items } = req.body;
   if (!consultationId) return res.status(400).json({ error: 'Consulta é obrigatória' });
-  const { rows: cons } = await pool.query('SELECT id, status FROM consultations WHERE id=$1', [consultationId]);
+  const { rows: cons } = await pool.query('SELECT id, status, vet_id FROM consultations WHERE id=$1', [consultationId]);
   if (!cons.length) return res.status(404).json({ error: 'Consulta não encontrada' });
   const list = Array.isArray(items) ? items.filter(i => i.medication && String(i.medication).trim()) : [];
   if (!list.length) return res.status(400).json({ error: 'Receita precisa de ao menos um medicamento' });
