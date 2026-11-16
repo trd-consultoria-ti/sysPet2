@@ -14,15 +14,15 @@ export class GlobalNavMenuComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   private subs = new Subscription();
 
-  // Controle de expansão/colapso dos setores com setas
+  // Controle de expansão/colapso dos setores com setas (inicia com todos recolhidos)
   sections: Record<string, boolean> = {
-    visaoGeral: true,
-    banhoTosa: true,
-    clinica: true,
-    cadastros: true,
-    financeiro: true,
-    loja: true,
-    acesso: true
+    visaoGeral: false,
+    banhoTosa: false,
+    clinica: false,
+    cadastros: false,
+    financeiro: false,
+    loja: false,
+    acesso: false
   };
 
   constructor(
@@ -36,7 +36,7 @@ export class GlobalNavMenuComponent implements OnInit, OnDestroy {
   }
 
   isSectionOpen(key: string): boolean {
-    return this.sections[key] !== false;
+    return !!this.sections[key];
   }
 
   ngOnInit(): void {
