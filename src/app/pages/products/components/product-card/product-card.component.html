@@ -24,7 +24,8 @@
 
     <div class="product-footer">
       <span class="product-price">R$ {{ product.price.toFixed(2).replace('.', ',') }}</span>
-      <button class="btn btn-primary btn-sm" (click)="addToCart()" [disabled]="outOfStock">
+      <button class="btn btn-primary btn-sm" (click)="addToCart()" [disabled]="outOfStock"
+              [attr.aria-label]="(outOfStock ? 'Esgotado: ' : 'Adicionar ao carrinho: ') + product.name">
         <i class="icon-shopping-cart" aria-hidden="true"></i>
         {{ outOfStock ? 'Esgotado' : 'Adicionar' }}
       </button>

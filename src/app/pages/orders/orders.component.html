@@ -55,7 +55,7 @@
         <ul *ngIf="auditEntries[order.id!]?.length">
           <li *ngFor="let e of auditEntries[order.id!]">
             <span class="audit-when">{{ formatAuditDate(e.createdAt) }}</span>
-            <span class="audit-what">{{ e.action }}<span *ngIf="e.detail"> — {{ e.detail }}</span></span>
+            <span class="audit-what">{{ auditSummary(e) }}</span>
             <span class="audit-who" *ngIf="e.userName">{{ e.userName }}</span>
           </li>
         </ul>

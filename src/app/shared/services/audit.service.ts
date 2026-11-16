@@ -8,8 +8,10 @@ export interface AuditEntry {
   entity: string;
   entityId: number;
   action: string;
-  detail?: string;
+  oldData?: Record<string, unknown> | null;
+  newData?: Record<string, unknown> | null;
   userName?: string;
+  userEmail?: string;
   createdAt: string;
 }
 
@@ -24,7 +26,7 @@ export class AuditService {
   list(entity: string, entityId: number): Observable<AuditEntry[]> {
     const params = new HttpParams()
       .set('entity', entity)
-      .set('id', String(entityId));
+      .set('entityId', String(entityId));
     return this.http.get<AuditEntry[]>(this.url, { params });
   }
 }

@@ -622,8 +622,12 @@ app.get('/api/appointments', requireAuth, async (req, res) => {
       );
   res.json(rows.map(a => ({
     ...a,
+    id: a.id,
     customerId: a.customer_id,
+    customerName: a.customer_name,
+    petName: a.pet_name,
     serviceId: a.service_id,
+    serviceName: a.service_name,
     date: a.date instanceof Date ? a.date.toISOString().split('T')[0] : a.date,
     createdAt: a.created_at
   })));
@@ -693,12 +697,14 @@ app.post('/api/orders', requireAuth, async (req, res) => {
   if (!requested.length) return res.status(400).json({ error: 'Carrinho vazio' });
 
   // Preço e nome vêm do banco — nunca do body do cliente
-  const ids = requested.map(i => Number(i && i.id)).filter(Number.isInteger);
+  // Aceita id (API) ou productId (CartItem do front) — mesmo campo, dois nomes históricos
+  const itemId = i => Number(i && (i.id ?? i.productId));
+  const ids = requested.map(itemId).filter(Number.isInteger);
   const { rows: prods } = await pool.query('SELECT id, name, price, stock FROM products WHERE id = ANY($1)', [ids]);
   const byId = new Map(prods.map(p => [p.id, p]));
   const serverItems = [];
   for (const i of requested) {
-    const p = byId.get(Number(i && i.id));
+    const p = byId.get(itemId(i));
     const qty = Math.floor(Number(i && i.quantity));
     if (!p || !qty || qty < 1 || qty > 999) {
       return res.status(400).json({ error: `Item inválido: ${(i && i.name) || (i && i.id)}` });
@@ -895,7 +901,14 @@ app.post('/api/upload', requireAuth, async (req, res) => {
     ((mime === 'image/jpeg' || mime === 'image/jpg') && isJpg) ||
     (mime === 'image/gif' && isGif) ||
     (mime === 'image/webp' && isWebp);
-  if (!mimeOk) {
+  // Trailer da assinatura: PNG termina com IEND, JPEG com FFD9, GIF com 0x3B —
+  // impede "PNG válido + HTML anexado" de passar como imagem
+  const trailerOk =
+    (mime === 'image/png' && buf.slice(-8).equals(Buffer.from([0x49,0x45,0x4E,0x44,0xAE,0x42,0x60,0x82]))) ||
+    ((mime === 'image/jpeg' || mime === 'image/jpg') && buf[buf.length - 2] === 0xFF && buf[buf.length - 1] === 0xD9) ||
+    (mime === 'image/gif' && buf[buf.length - 1] === 0x3B) ||
+    mime === 'image/webp';
+  if (!mimeOk || !trailerOk) {
     return res.status(400).json({ error: 'O conteúdo do arquivo não corresponde a uma imagem válida' });
   }
   const base = String(filename || 'foto').replace(/\.[^.]*$/, '').replace(/[^\w\-]/g, '').slice(-40) || 'foto';

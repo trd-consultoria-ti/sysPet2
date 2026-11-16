@@ -101,6 +101,7 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
       this.applyAppointmentFilter();
     });
 
+    this.appointmentService.refresh();
     this.appointmentService.getAppointments().pipe(takeUntil(this.destroy$)).subscribe(appointments => {
       this.allAppointments = [...appointments];
       this.applyAppointmentFilter();

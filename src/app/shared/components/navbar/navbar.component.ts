@@ -1,11 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, Subject, combineLatest, interval, Subscription } from 'rxjs';
-import { map, takeUntil } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Observable, Subject, interval, Subscription } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { CartService } from '../../services/cart.service';
 import { AuthService, User } from '../../services/auth.service';
-import { OrderService } from '../../services/order.service';
-import { AppointmentService } from '../../services/appointment.service';
+import { environment } from '../../../../environments/environment';
 import { Order } from '../../models/order.model';
 import { Appointment } from '../../models/appointment.model';
 
@@ -31,8 +31,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private router: Router,
     private cartService: CartService,
     private authService: AuthService,
-    private orderService: OrderService,
-    private appointmentService: AppointmentService
+    private http: HttpClient
   ) {}
 
   get pendingCount(): number {
@@ -49,30 +48,28 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.isStaff = !!user && user.role !== 'customer';
       this.notifOpen = false;
       this.pollSub?.unsubscribe();
-      if (this.isStaff) {
-        this.orderService.refresh();
-        this.appointmentService.refresh();
-        this.pollSub = interval(60000)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe(() => {
-            this.orderService.refresh();
-            this.appointmentService.refresh();
-          });
+      if (!this.isStaff) {
+        this.pendingOrders = [];
+        this.pendingAppointments = [];
+        return;
       }
+      this.loadPending();
+      this.pollSub = interval(60000)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(() => this.loadPending());
     });
+  }
 
-    combineLatest([
-      this.orderService.getOrders(),
-      this.appointmentService.getAppointments()
-    ]).pipe(
-      map(([orders, appointments]) => ({
-        orders: orders.filter(o => o.status === 'pendente'),
-        appointments: appointments.filter(a => a.status === 'solicitado')
-      })),
-      takeUntil(this.destroy$)
-    ).subscribe(({ orders, appointments }) => {
-      this.pendingOrders = orders;
-      this.pendingAppointments = appointments;
+  // Sino de pendências: fetch direto e somente para staff — não injeta OrderService/
+  // AppointmentService aqui para não disparar GETs 401 no bootstrap anônimo
+  private loadPending(): void {
+    this.http.get<Order[]>(`${environment.apiUrl}/orders`).pipe(takeUntil(this.destroy$)).subscribe({
+      next: orders => this.pendingOrders = orders.filter(o => o.status === 'pendente'),
+      error: () => {}
+    });
+    this.http.get<Appointment[]>(`${environment.apiUrl}/appointments`).pipe(takeUntil(this.destroy$)).subscribe({
+      next: appointments => this.pendingAppointments = appointments.filter(a => a.status === 'solicitado'),
+      error: () => {}
     });
   }
 

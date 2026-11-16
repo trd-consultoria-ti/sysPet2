@@ -62,6 +62,12 @@
     </section>
 
     <section class="receipt-total">
+      <ng-container *ngIf="order.discount && order.discount > 0">
+        <span>Subtotal</span>
+        <span>R$ {{ formatPrice(order.total + order.discount) }}</span>
+        <span>Desconto{{ order.couponCode ? ' (' + order.couponCode + ')' : '' }}</span>
+        <span>- R$ {{ formatPrice(order.discount) }}</span>
+      </ng-container>
       <span>Total</span>
       <strong>R$ {{ formatPrice(order.total) }}</strong>
     </section>

@@ -210,7 +210,8 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 @media print {
   app-navbar,
   app-footer,
-  .no-print {
+  .no-print,
+  .dashboard-sidebar {
     display: none !important;
   }
 }

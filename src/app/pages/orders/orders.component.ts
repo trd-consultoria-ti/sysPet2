@@ -40,6 +40,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     const isCustomer = user?.role === 'customer';
     this.isStaff = !!user && !isCustomer;
 
+    this.orderService.refresh();
     this.orderService.getOrders().pipe(takeUntil(this.destroy$)).subscribe(orders => {
       const visible = isCustomer ? orders.filter(o => o.userId === user?.id) : orders;
       this.orders = [...visible].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -68,6 +69,18 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   formatAuditDate(iso: string): string {
     return new Date(iso).toLocaleString('pt-BR');
+  }
+
+  auditSummary(e: AuditEntry): string {
+    const statusLabel = (s: unknown) => String(s || '');
+    if (e.action === 'status' && e.oldData?.status !== undefined) {
+      return `status: ${statusLabel(e.oldData?.status)} → ${statusLabel(e.newData?.status)}`;
+    }
+    if (e.newData?.orderNumber) return `pedido ${e.newData.orderNumber} criado`;
+    if (e.action === 'create') return 'criado';
+    if (e.action === 'update') return 'atualizado';
+    if (e.action === 'delete') return 'excluído';
+    return e.action;
   }
 
   formatPrice(value: number): string {

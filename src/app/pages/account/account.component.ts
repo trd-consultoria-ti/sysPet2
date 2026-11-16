@@ -84,6 +84,8 @@ export class AccountComponent implements OnInit, OnDestroy {
       this.customer = customers.find(c => c.userId === this.user!.id) || null;
     });
 
+    this.orderService.refresh();
+    this.appointmentService.refresh();
     this.orderService.getOrders().pipe(takeUntil(this.destroy$)).subscribe(orders => {
       this.orders = orders
         .filter(o => o.userId === this.user!.id)
