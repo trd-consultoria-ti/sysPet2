@@ -1076,7 +1076,10 @@ app.get('/api/audit', requireAuth, requireStaff, async (req, res) => {
   const params = [];
   let where = '';
   if (entity) { params.push(String(entity).slice(0, 60)); where += ` AND a.entity = $${params.length}`; }
-  if (entityId) { params.push(Number(entityId)); where += ` AND a.entity_id = $${params.length}`; }
+  if (entityId) {
+    if (!/^\d+$/.test(String(entityId))) return res.status(400).json({ error: 'entityId inválido' });
+    params.push(Number(entityId)); where += ` AND a.entity_id = $${params.length}`;
+  }
   const { rows } = await pool.query(
     `SELECT a.id, a.entity, a.entity_id, a.action, a.old_data, a.new_data, a.created_at,
             u.name AS user_name, u.email AS user_email

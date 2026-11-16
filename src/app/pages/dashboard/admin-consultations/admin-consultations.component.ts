@@ -196,8 +196,8 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
       vetId: this.editData.vetId || null,
       scheduledTime: this.editData.scheduledTime || undefined,
       reason: this.editData.reason,
-      weight: this.editData.weight ?? null,
-      temperature: this.editData.temperature ?? null,
+      weight: this.editData.weight == null ? null : Math.round(this.editData.weight * 100) / 100,
+      temperature: this.editData.temperature == null ? null : Math.round(this.editData.temperature * 10) / 10,
       notes: this.editData.notes
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => { this.step = 3; },

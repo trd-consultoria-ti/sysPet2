@@ -42,9 +42,9 @@ export class AuthService {
   }
 
   private setSession(user: User): void {
-    this.currentUserSubject.next(user);
     localStorage.setItem('currentUser', JSON.stringify(user));
     if (user.token) localStorage.setItem('authToken', user.token);
+    this.currentUserSubject.next(user);
   }
 
   private clearSession(): void {
