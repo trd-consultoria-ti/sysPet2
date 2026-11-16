@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
+import { GlobalNavService } from '../../services/global-nav.service';
 
 @Component({
   selector: 'app-navbar',
@@ -11,7 +12,14 @@ export class NavbarComponent implements OnInit, OnDestroy {
   isMenuOpen = false;
   isMobile = false;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private globalNavService: GlobalNavService
+  ) {}
+
+  openGlobalMenu(): void {
+    this.globalNavService.open();
+  }
 
   ngOnInit(): void {
     this.checkScreenSize();

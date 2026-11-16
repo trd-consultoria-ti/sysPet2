@@ -1,6 +1,7 @@
 import { Component, OnDestroy } from '@angular/core';
 import { User } from '../../shared/services/auth.service';
 import { AuthService } from '../../shared/services/auth.service';
+import { GlobalNavService } from '../../shared/services/global-nav.service';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -17,12 +18,17 @@ export class DashboardComponent implements OnDestroy {
 
   constructor(
     private authService: AuthService,
+    private globalNavService: GlobalNavService,
     private router: Router
   ) {
     this.authService.currentUser$.pipe(takeUntil(this.destroy$)).subscribe(user => {
       this.user = user;
       this.isAdmin = user?.role === 'admin';
     });
+  }
+
+  openGlobalMenu(): void {
+    this.globalNavService.open();
   }
 
   logout(): void {

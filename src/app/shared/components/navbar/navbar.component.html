@@ -1,7 +1,17 @@
 <header class="navbar">
   <div class="container">
     <div class="navbar-content">
-      <app-logo size="md"></app-logo>
+      <div class="navbar-brand-group">
+        <button type="button"
+                class="btn-global-menu"
+                (click)="openGlobalMenu()"
+                title="Menu Geral do Sistema (Ctrl+K)"
+                aria-label="Abrir Menu Geral do Sistema">
+          <i class="fas fa-bars" aria-hidden="true"></i>
+          <span class="btn-global-menu-label">Menu</span>
+        </button>
+        <app-logo size="md"></app-logo>
+      </div>
 
       <button type="button" class="menu-toggle" (click)="toggleMenu()" *ngIf="isMobile"
               [attr.aria-label]="isMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'"

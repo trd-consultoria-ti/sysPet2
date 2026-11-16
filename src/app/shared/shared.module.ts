@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { FooterComponent } from './components/footer/footer.component';
@@ -18,6 +19,7 @@ import { RatingFilterComponent } from './components/rating-filter/rating-filter.
 import { DurationFilterComponent } from './components/duration-filter/duration-filter.component';
 import { ItemCardComponent } from './components/item-card/item-card.component';
 import { ItemListComponent } from './components/item-list/item-list.component';
+import { GlobalNavMenuComponent } from './components/global-nav-menu/global-nav-menu.component';
 
 @NgModule({
   declarations: [
@@ -36,11 +38,13 @@ import { ItemListComponent } from './components/item-list/item-list.component';
     RatingFilterComponent,
     DurationFilterComponent,
     ItemCardComponent,
-    ItemListComponent
+    ItemListComponent,
+    GlobalNavMenuComponent
   ],
   imports: [
     CommonModule,
-    RouterModule
+    RouterModule,
+    FormsModule
   ],
   exports: [
     NavbarComponent,
@@ -58,7 +62,9 @@ import { ItemListComponent } from './components/item-list/item-list.component';
     RatingFilterComponent,
     DurationFilterComponent,
     ItemCardComponent,
-    ItemListComponent
+    ItemListComponent,
+    GlobalNavMenuComponent,
+    FormsModule
   ]
 })
 export class SharedModule { }

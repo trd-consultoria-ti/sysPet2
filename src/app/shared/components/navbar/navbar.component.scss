@@ -23,6 +23,53 @@
   width: 100%;
   box-sizing: border-box;
 
+  .navbar-brand-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+
+    .btn-global-menu {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.4rem 0.75rem;
+      background: #0d9488;
+      color: #ffffff;
+      border: 1px solid rgba(13, 148, 136, 0.2);
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #0f766e;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.3);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+
+      i {
+        font-size: 0.85rem;
+      }
+
+      .btn-global-menu-label {
+        font-size: 0.75rem;
+        letter-spacing: 0.02em;
+        display: none;
+
+        @media (min-width: 480px) {
+          display: inline;
+        }
+      }
+    }
+  }
+
   app-logo {
     flex-shrink: 0;
     white-space: nowrap;

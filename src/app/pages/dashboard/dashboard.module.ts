@@ -15,6 +15,7 @@ import { AdminVetsComponent } from './admin-vets/admin-vets.component';
 import { AdminDailyQueueComponent } from './admin-daily-queue/admin-daily-queue.component';
 import { DailyQueueHeaderComponent } from './admin-daily-queue/daily-queue-header/daily-queue-header.component';
 import { AdminMedicationsComponent } from './admin-medications/admin-medications.component';
+import { AdminSystemMapComponent } from './admin-system-map/admin-system-map.component';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 
 const routes: Routes = [
@@ -23,6 +24,7 @@ const routes: Routes = [
     component: DashboardComponent,
     children: [
       { path: '', component: DashboardHomeComponent },
+      { path: 'rotas', component: AdminSystemMapComponent },
       { path: 'customers', loadChildren: () => import('../customers/customers.module').then(m => m.CustomersModule) },
       { path: 'daily-queue', component: AdminDailyQueueComponent },
       { path: 'appointments', component: AdminAppointmentsComponent },
@@ -53,7 +55,8 @@ const routes: Routes = [
     AdminCashComponent,
     AdminReportsComponent,
     AdminConsultationsComponent,
-    AdminVetsComponent
+    AdminVetsComponent,
+    AdminSystemMapComponent
   ],
   imports: [
     CommonModule,

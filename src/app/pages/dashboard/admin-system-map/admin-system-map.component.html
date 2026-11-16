@@ -1,0 +1,129 @@
+<div class="sitemap-container">
+
+  <!-- Header da Página -->
+  <div class="sitemap-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <i class="fas fa-sitemap"></i> Mapa do Sistema & Rotas
+      </h1>
+      <p class="subtitle">
+        Visão panorâmica de todos os módulos, telas, níveis de acesso e fluxo operacional do Animal World.
+      </p>
+    </div>
+
+    <div class="header-right">
+      <button type="button" class="btn btn-primary btn-open-launcher" (click)="openGlobalNav()" title="Abrir menu suspenso rápido (Ctrl+K)">
+        <i class="fas fa-bars"></i> Abrir Menu Rápido (Ctrl+K)
+      </button>
+    </div>
+  </div>
+
+  <!-- Fluxo Operacional Recomendado do Pet Shop (Card Informativo) -->
+  <div class="workflow-banner">
+    <div class="workflow-title">
+      <i class="fas fa-route"></i> Fluxo de Atendimento Operacional do Pet Shop
+    </div>
+    <div class="workflow-steps">
+      <div class="step-card" (click)="navigate('/dashboard/customers')">
+        <span class="step-num">1</span>
+        <div class="step-content">
+          <strong>Recepção / Entrada</strong>
+          <span>Identifica o tutor e o pet</span>
+        </div>
+      </div>
+      <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+
+      <div class="step-card" (click)="navigate('/dashboard/daily-queue')">
+        <span class="step-num">2</span>
+        <div class="step-content">
+          <strong>Gaiola & Fila</strong>
+          <span>Alojamento e ordem de chegada</span>
+        </div>
+      </div>
+      <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+
+      <div class="step-card" (click)="navigate('/dashboard/daily-queue')">
+        <span class="step-num">3</span>
+        <div class="step-content">
+          <strong>Esteira Delivery</strong>
+          <span>Banho ➔ Secagem ➔ Tosa</span>
+        </div>
+      </div>
+      <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+
+      <div class="step-card" (click)="navigate('/dashboard/daily-queue')">
+        <span class="step-num">4</span>
+        <div class="step-content">
+          <strong>Pronto / Notificação</strong>
+          <span>Aviso ao tutor via WhatsApp</span>
+        </div>
+      </div>
+      <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+
+      <div class="step-card" (click)="navigate('/dashboard/cash')">
+        <span class="step-num">5</span>
+        <div class="step-content">
+          <strong>Frente de Caixa (PDV)</strong>
+          <span>Cobrança, Pix/Cartão & Liberação</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de Pesquisa Rápida na Página -->
+  <div class="sitemap-search-bar">
+    <i class="fas fa-search"></i>
+    <input type="text"
+           class="form-control"
+           placeholder="Pesquisar tela, módulo ou funcionalidade neste mapa (ex: medicamentos, tosa, caixa, comissão)..."
+           [(ngModel)]="searchFilter">
+    <button *ngIf="searchFilter" class="btn-clear" (click)="searchFilter = ''">✕</button>
+  </div>
+
+  <!-- Seções do Mapa -->
+  <div class="sitemap-sections">
+    <div class="section-card" *ngFor="let section of sections" [class]="section.colorClass">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <div class="section-icon">
+            <i [class]="section.icon"></i>
+          </div>
+          <div>
+            <h2 class="section-title">{{ section.title }}</h2>
+            <p class="section-desc">{{ section.description }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="items-grid">
+        <div class="route-box" *ngFor="let item of getFilteredItems(section)">
+          <div class="route-box-header">
+            <div class="route-icon-badge">
+              <i [class]="item.icon"></i>
+            </div>
+            <div class="badges-wrap">
+              <span class="badge" [class]="item.badgeClass">{{ item.badge }}</span>
+            </div>
+          </div>
+
+          <h3 class="item-title">{{ item.title }}</h3>
+          <p class="item-desc">{{ item.description }}</p>
+
+          <div class="item-meta">
+            <span class="item-permission">
+              <i class="fas fa-lock-open" aria-hidden="true"></i> {{ item.permission }}
+            </span>
+            <span class="item-path">{{ item.path }}</span>
+          </div>
+
+          <div class="item-action">
+            <button type="button" class="btn btn-outline-primary btn-sm btn-access" (click)="navigate(item.path)">
+              Acessar Módulo <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

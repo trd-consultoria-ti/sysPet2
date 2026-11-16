@@ -3,12 +3,20 @@
     <!-- Sidebar de navegação -->
     <nav class="dashboard-sidebar" aria-label="Navegação do painel">
       <div class="sidebar-header">
+        <button type="button" class="btn-sidebar-menu" (click)="openGlobalMenu()" title="Abrir Menu Geral de Telas (Ctrl+K)">
+          <i class="fas fa-bars"></i>
+        </button>
         <span class="sidebar-brand">Animal World</span>
       </div>
       <ul class="sidebar-menu">
         <li class="sidebar-item">
           <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
             <i class="fas fa-home" aria-hidden="true"></i> Painel
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a routerLink="/dashboard/rotas" routerLinkActive="active">
+            <i class="fas fa-sitemap" aria-hidden="true"></i> Mapa do Sistema
           </a>
         </li>
         <li class="sidebar-item">
@@ -83,6 +91,12 @@
     <div class="dashboard-main">
       <!-- Cabeçalho com informações do usuário -->
       <div class="dashboard-header">
+        <div class="header-left-actions">
+          <button type="button" class="btn-global-menu-trigger" (click)="openGlobalMenu()" title="Abrir Menu Geral de Telas (Ctrl+K)">
+            <i class="fas fa-bars"></i>
+            <span>Menu do Sistema</span>
+          </button>
+        </div>
         <div class="user-info">
           <span class="welcome-text">Olá, {{ user?.name || 'Visitante' }}</span>
           <span class="user-role">{{ user?.role === 'admin' ? 'Administrador' : (user?.role === 'collaborator' ? 'Colaborador' : 'Cliente') }}</span>
