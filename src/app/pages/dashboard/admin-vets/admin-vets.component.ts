@@ -23,7 +23,69 @@ export class AdminVetsComponent implements OnInit, OnDestroy {
   editingId: number | null = null;
   form = { name: '', crmv: '', specialty: '', phone: '', active: true };
 
+  // Filtros e busca em tempo real
+  searchTerm: string = '';
+  statusFilter: 'todos' | 'ativo' | 'inativo' = 'todos';
+
   constructor(private vetService: VetService, private authService: AuthService) {}
+
+  get totalVets(): number {
+    return this.vets.length;
+  }
+
+  get activeVets(): number {
+    return this.vets.filter(v => v.active).length;
+  }
+
+  get specialtiesCount(): number {
+    const set = new Set(this.vets.map(v => v.specialty?.trim()).filter(Boolean));
+    return set.size;
+  }
+
+  get filteredVets(): Vet[] {
+    const term = (this.searchTerm || '').toLowerCase().trim();
+    return this.vets.filter(v => {
+      const matchStatus = 
+        this.statusFilter === 'todos' ||
+        (this.statusFilter === 'ativo' && v.active) ||
+        (this.statusFilter === 'inativo' && !v.active);
+
+      if (!matchStatus) {
+        return false;
+      }
+
+      if (!term) {
+        return true;
+      }
+
+      const name = (v.name || '').toLowerCase();
+      const crmv = (v.crmv || '').toLowerCase();
+      const specialty = (v.specialty || '').toLowerCase();
+      const phone = (v.phone || '').toLowerCase();
+
+      return name.includes(term) || crmv.includes(term) || specialty.includes(term) || phone.includes(term);
+    });
+  }
+
+  getInitials(name: string): string {
+    if (!name) return 'V';
+    const parts = name.replace(/^(Dr\.|Dra\.|Médico|Médica)\s+/i, '').trim().split(/\s+/);
+    if (parts.length === 1) {
+      return parts[0].slice(0, 2).toUpperCase();
+    }
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  formatPhone(phone?: string): string {
+    if (!phone) return '—';
+    const clean = phone.replace(/\D/g, '');
+    if (clean.length === 11) {
+      return `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7)}`;
+    } else if (clean.length === 10) {
+      return `(${clean.slice(0, 2)}) ${clean.slice(2, 6)}-${clean.slice(6)}`;
+    }
+    return phone;
+  }
 
   ngOnInit(): void {
     this.isAdmin = this.authService.getCurrentUser()?.role === 'admin';

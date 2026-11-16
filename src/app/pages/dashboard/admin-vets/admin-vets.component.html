@@ -1,87 +1,184 @@
 <div class="admin-page">
+  <!-- Cabeçalho Padronizado -->
   <div class="page-header">
     <div class="header-left">
       <h1>Médicos Veterinários</h1>
       <p class="subtitle">Cadastro do corpo clínico veterinário, registro de CRMV, especialidades e contatos</p>
     </div>
     <div class="header-right">
-      <app-button variant="primary" size="sm" icon="fas fa-user-md" (btnClick)="openCreate()">
+      <app-button variant="primary" icon="fas fa-user-md" (btnClick)="openCreate()">
         Novo Veterinário
       </app-button>
     </div>
   </div>
 
-  <p class="form-success" *ngIf="success" role="status">{{ success }}</p>
-  <p class="form-error" *ngIf="error" role="alert">{{ error }}</p>
+  <!-- Alertas de Feedback -->
+  <p class="form-success" *ngIf="success" role="status">
+    <i class="fas fa-check-circle"></i> {{ success }}
+  </p>
+  <p class="form-error" *ngIf="error" role="alert">
+    <i class="fas fa-exclamation-circle"></i> {{ error }}
+  </p>
 
-  <form class="vet-form" *ngIf="showForm" (ngSubmit)="save()" aria-label="Dados do veterinário">
-    <h2>{{ editingId ? 'Editar veterinário' : 'Novo veterinário' }}</h2>
-    <div class="form-grid">
-      <div class="form-field">
-        <label for="vet-name">Nome *</label>
-        <input id="vet-name" type="text" class="form-control" [(ngModel)]="form.name" name="name" required maxlength="120">
-      </div>
-      <div class="form-field">
-        <label for="vet-crmv">CRMV</label>
-        <input id="vet-crmv" type="text" class="form-control" [(ngModel)]="form.crmv" name="crmv" maxlength="20">
-      </div>
-      <div class="form-field">
-        <label for="vet-specialty">Especialidade</label>
-        <input id="vet-specialty" type="text" class="form-control" [(ngModel)]="form.specialty" name="specialty" maxlength="80">
-      </div>
-      <div class="form-field">
-        <label for="vet-phone">Telefone</label>
-        <input id="vet-phone" type="tel" class="form-control" [(ngModel)]="form.phone" name="phone" maxlength="20">
-      </div>
-      <div class="form-field form-check">
-        <input id="vet-active" type="checkbox" [(ngModel)]="form.active" name="active">
-        <label for="vet-active">Ativo</label>
+  <!-- Métricas Rápidas do Corpo Clínico -->
+  <div class="vets-stats-grid">
+    <div class="vet-stat-card">
+      <div class="stat-icon icon-blue"><i class="fas fa-user-md"></i></div>
+      <div class="stat-body">
+        <span class="stat-num">{{ totalVets }}</span>
+        <span class="stat-lbl">Veterinários Cadastrados</span>
       </div>
     </div>
+    <div class="vet-stat-card">
+      <div class="stat-icon icon-green"><i class="fas fa-user-check"></i></div>
+      <div class="stat-body">
+        <span class="stat-num text-green">{{ activeVets }}</span>
+        <span class="stat-lbl">Corpo Clínico Ativo</span>
+      </div>
+    </div>
+    <div class="vet-stat-card">
+      <div class="stat-icon icon-purple"><i class="fas fa-stethoscope"></i></div>
+      <div class="stat-body">
+        <span class="stat-num text-purple">{{ specialtiesCount }}</span>
+        <span class="stat-lbl">Especialidades Atendidas</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulário de Cadastro / Edição -->
+  <form class="vet-form" *ngIf="showForm" (ngSubmit)="save()" aria-label="Dados do veterinário">
+    <div class="form-header">
+      <h2>
+        <i class="fas" [ngClass]="editingId ? 'fa-user-edit' : 'fa-user-plus'"></i>
+        {{ editingId ? 'Editar Veterinário' : 'Novo Médico Veterinário' }}
+      </h2>
+      <button type="button" class="close-btn" (click)="showForm = false" title="Fechar formulário">×</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-field col-span-2">
+        <label for="vet-name">Nome Completo *</label>
+        <input id="vet-name" type="text" class="form-control" [(ngModel)]="form.name" name="name" required maxlength="120" placeholder="Ex: Dra. Helena Rocha, Dr. Pedro Alves...">
+      </div>
+      <div class="form-field">
+        <label for="vet-crmv">Registro CRMV</label>
+        <input id="vet-crmv" type="text" class="form-control" [(ngModel)]="form.crmv" name="crmv" maxlength="20" placeholder="Ex: CRMV-SP 12345">
+      </div>
+      <div class="form-field">
+        <label for="vet-specialty">Especialidade Clínica</label>
+        <input id="vet-specialty" type="text" class="form-control" [(ngModel)]="form.specialty" name="specialty" maxlength="80" placeholder="Ex: Clínica Geral, Cirurgia, Dermatologia...">
+      </div>
+      <div class="form-field col-span-2">
+        <label for="vet-phone">Telefone / WhatsApp</label>
+        <input id="vet-phone" type="tel" class="form-control" [(ngModel)]="form.phone" name="phone" maxlength="20" placeholder="(11) 98888-7777">
+      </div>
+      <div class="form-field col-span-2 form-check">
+        <label class="custom-checkbox">
+          <input id="vet-active" type="checkbox" [(ngModel)]="form.active" name="active">
+          <span><strong>Veterinário Ativo para Consultas e Atendimentos</strong></span>
+        </label>
+      </div>
+    </div>
+
     <div class="form-actions">
-      <app-button type="submit" variant="primary" [disabled]="saving">{{ saving ? 'Salvando…' : 'Salvar' }}</app-button>
-      <app-button type="button" variant="outline-secondary" (btnClick)="showForm = false">Cancelar</app-button>
+      <app-button type="submit" variant="primary" [disabled]="saving">
+        <i class="fas fa-save"></i> {{ saving ? 'Salvando…' : 'Salvar Veterinário' }}
+      </app-button>
+      <app-button type="button" variant="outline-secondary" (btnClick)="showForm = false">
+        Cancelar
+      </app-button>
     </div>
   </form>
 
-  <div class="empty-state" *ngIf="vets.length === 0 && !showForm">
-    <p>Nenhum veterinário cadastrado.</p>
+  <!-- Filtro e Busca -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <i class="fas fa-search search-icon"></i>
+      <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar por nome, CRMV, especialidade ou telefone...">
+      <button type="button" class="clear-search" *ngIf="searchTerm" (click)="searchTerm = ''">×</button>
+    </div>
+
+    <div class="status-select-wrapper">
+      <select [(ngModel)]="statusFilter">
+        <option value="todos">Todos os Status ({{ vets.length }})</option>
+        <option value="ativo">Apenas Ativos ({{ activeVets }})</option>
+        <option value="inativo">Inativos ({{ totalVets - activeVets }})</option>
+      </select>
+    </div>
   </div>
 
-  <div class="table-container" *ngIf="vets.length > 0">
+  <!-- Estado Vazio -->
+  <div class="empty-state" *ngIf="filteredVets.length === 0">
+    <i class="fas fa-user-md empty-icon"></i>
+    <p *ngIf="vets.length === 0">Nenhum médico veterinário cadastrado ainda.</p>
+    <p *ngIf="vets.length > 0">Nenhum veterinário encontrado para os filtros selecionados.</p>
+    <button type="button" class="btn btn-sm btn-outline-primary" *ngIf="searchTerm || statusFilter !== 'todos'" (click)="searchTerm = ''; statusFilter = 'todos'">
+      Limpar Filtros
+    </button>
+  </div>
+
+  <!-- Tabela de Veterinários Padronizada -->
+  <div class="table-container" *ngIf="filteredVets.length > 0">
     <table class="data-table">
       <thead>
         <tr>
-          <th>Nome</th>
+          <th>Veterinário</th>
           <th>CRMV</th>
           <th>Especialidade</th>
-          <th>Telefone</th>
-          <th>Ativo</th>
+          <th>Telefone / Contato</th>
+          <th>Status</th>
           <th>Ações</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let vet of vets; trackBy: trackById">
-          <td>{{ vet.name }}</td>
-          <td>{{ vet.crmv || '—' }}</td>
-          <td>{{ vet.specialty || '—' }}</td>
-          <td>{{ vet.phone || '—' }}</td>
+        <tr *ngFor="let vet of filteredVets; trackBy: trackById">
           <td>
-            <span class="status-badge" [ngClass]="vet.active ? 'active' : 'inactive'">
+            <div class="vet-profile-cell">
+              <div class="vet-avatar" [class.avatar-inactive]="!vet.active">
+                {{ getInitials(vet.name) }}
+              </div>
+              <div class="vet-info">
+                <strong class="vet-name">{{ vet.name }}</strong>
+                <span class="vet-crmv-sub" *ngIf="vet.crmv">CRMV: {{ vet.crmv }}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="crmv-badge" *ngIf="vet.crmv">
+              <i class="fas fa-id-card"></i> {{ vet.crmv }}
+            </span>
+            <span class="text-muted" *ngIf="!vet.crmv">—</span>
+          </td>
+          <td>
+            <span class="specialty-badge" *ngIf="vet.specialty">
+              <i class="fas fa-stethoscope"></i> {{ vet.specialty }}
+            </span>
+            <span class="text-muted" *ngIf="!vet.specialty">Clínica Geral</span>
+          </td>
+          <td>
+            <div class="vet-phone-cell" *ngIf="vet.phone">
+              <i class="fas fa-phone-alt"></i> {{ formatPhone(vet.phone) }}
+            </div>
+            <span class="text-muted" *ngIf="!vet.phone">—</span>
+          </td>
+          <td>
+            <span class="status-pill" [ngClass]="vet.active ? 'status-active' : 'status-inactive'">
+              <i class="fas" [ngClass]="vet.active ? 'fa-check' : 'fa-ban'"></i>
               {{ vet.active ? 'Ativo' : 'Inativo' }}
             </span>
           </td>
           <td class="actions-cell">
-            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="openEdit(vet)"
-                    [attr.aria-label]="'Editar ' + vet.name">
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="openEdit(vet)"
+                    [attr.aria-label]="'Editar ' + vet.name" title="Editar dados">
               <i class="fas fa-edit"></i> Editar
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary" (click)="toggleActive(vet)"
-                    [attr.aria-label]="(vet.active ? 'Desativar ' : 'Reativar ') + vet.name">
+                    [attr.aria-label]="(vet.active ? 'Desativar ' : 'Reativar ') + vet.name"
+                    [title]="vet.active ? 'Desativar veterinário' : 'Reativar veterinário'">
               <i class="fas fa-power-off"></i> {{ vet.active ? 'Desativar' : 'Reativar' }}
             </button>
             <button type="button" class="btn btn-sm btn-outline-danger" *ngIf="isAdmin" (click)="remove(vet)"
-                    [attr.aria-label]="'Excluir ' + vet.name">
+                    [attr.aria-label]="'Excluir ' + vet.name" title="Excluir cadastro">
               <i class="fas fa-trash-alt"></i> Excluir
             </button>
           </td>
