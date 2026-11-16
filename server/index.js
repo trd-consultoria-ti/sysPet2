@@ -2,11 +2,21 @@ const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
 const path = require('path');
+const helmet = require('helmet');
 const bcrypt = require('bcryptjs');
 const { Pool } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 3100;
+
+// Oculta header de fingerprinting e adiciona proteções defensivas HTTP
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+app.use(helmet({
+  contentSecurityPolicy: false, // SPA front gerencia seu CSP
+  crossOriginEmbedderPolicy: false,
+  frameguard: { action: 'deny' } // Anti-Clickjacking
+}));
 
 // Express 4 não encaminha rejeição de handler/middleware async para o error handler —
 // sem isso qualquer exceção assíncrona vira unhandledRejection e pode derrubar o processo.
@@ -28,6 +38,7 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || 'animalworld',
   database: process.env.DB_NAME || 'animalworld'
 });
+pool.on('error', err => console.error('PostgreSQL idle client error:', err.message));
 
 // CORS: só as origens configuradas + a própria API (front estático servido de docs/)
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:4200')
@@ -64,7 +75,7 @@ const authLimiter = createRateLimiter(10 * 60 * 1000, 5, 'Muitas requisições. 
 // ---------- senhas ----------
 
 const BCRYPT_ROUNDS = 10;
-const hashPassword = pw => bcrypt.hashSync(String(pw), BCRYPT_ROUNDS);
+const hashPassword = async pw => bcrypt.hash(String(pw), BCRYPT_ROUNDS);
 const passwordError = pw => {
   const s = String(pw || '');
   if (s.length < 8) return 'Senha deve ter ao menos 8 caracteres';
@@ -111,7 +122,12 @@ async function getCustomersWithPets(userId = null) {
   const { rows: customers } = userId
     ? await pool.query('SELECT * FROM customers WHERE user_id=$1 ORDER BY id', [userId])
     : await pool.query('SELECT * FROM customers ORDER BY id');
-  const { rows: pets } = await pool.query('SELECT * FROM pets ORDER BY id');
+  if (!customers.length) return [];
+  const custIds = customers.map(c => c.id);
+  const { rows: pets } = await pool.query(
+    'SELECT * FROM pets WHERE customer_id = ANY($1) ORDER BY id',
+    [custIds]
+  );
   return customers.map(c => ({
     ...c,
     userId: c.user_id,
@@ -219,7 +235,7 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
   const valid = await verifyPassword(password, u ? u.password_hash : DUMMY_BCRYPT);
   if (!u || !valid) return res.status(401).json({ error: 'Credenciais inválidas' });
   if (!isBcrypt(u.password_hash)) {
-    await pool.query('UPDATE users SET password_hash=$2 WHERE id=$1', [u.id, hashPassword(password)]);
+    await pool.query('UPDATE users SET password_hash=$2 WHERE id=$1', [u.id, await hashPassword(password)]);
   }
   const sid = await createSession(u.id);
   res.json({
@@ -255,8 +271,10 @@ app.post('/api/auth/forgot', authLimiter, async (req, res) => {
     } finally {
       client.release();
     }
-    // TODO(M6): entregar por e-mail quando houver SMTP; por ora o link sai no log da API (dev)
-    console.log(`[password-reset] ${email}: /#/reset-password?token=${token}`);
+    // Entrega de token: não vaza o token em logs de produção
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[password-reset] Solicitação de redefinição processada para ${email}`);
+    }
   } catch (e) {
     console.error('forgot:', e);
   }
@@ -280,7 +298,7 @@ app.post('/api/auth/reset', authLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Token inválido ou expirado' });
     }
     await client.query('UPDATE password_reset_tokens SET used_at=now() WHERE id=$1', [rows[0].id]);
-    await client.query('UPDATE users SET password_hash=$2 WHERE id=$1', [rows[0].user_id, hashPassword(newPassword)]);
+    await client.query('UPDATE users SET password_hash=$2 WHERE id=$1', [rows[0].user_id, await hashPassword(newPassword)]);
     await client.query('UPDATE sessions SET revoked_at=now() WHERE user_id=$1', [rows[0].user_id]);
     await client.query('COMMIT');
     res.json({ ok: true });
@@ -303,7 +321,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
   }
   const pwErr = passwordError(password);
   if (pwErr) return res.status(400).json({ error: pwErr });
-  const hash = hashPassword(password);
+  const hash = await hashPassword(password);
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -319,12 +337,12 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       [name, email, hash, 'customer', req.body.consent === true]
     );
     const user = userRows[0];
-    // Vincula a um cadastro de cliente existente com o mesmo email, ou cria um novo
-    const { rows: custRows } = await client.query(
-      'UPDATE customers SET user_id=$1 WHERE email=$2 RETURNING id',
-      [user.id, email]
+    // Cria um cadastro de cliente próprio isolado para o novo usuário autenticado
+    const { rows: ownCust } = await client.query(
+      'SELECT id FROM customers WHERE user_id = $1',
+      [user.id]
     );
-    if (!custRows.length) {
+    if (!ownCust.length) {
       await client.query(
         'INSERT INTO customers (user_id, name, email, status) VALUES ($1,$2,$3,$4)',
         [user.id, name, email, 'active']
@@ -361,7 +379,7 @@ app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
   if (pwErr) return res.status(400).json({ error: pwErr });
   const validRoles = ['admin', 'collaborator', 'customer'];
   const userRole = validRoles.includes(role) ? role : 'collaborator';
-  const hash = hashPassword(password);
+  const hash = await hashPassword(password);
   try {
     const { rows } = await pool.query(
       'INSERT INTO users (name, email, password_hash, role, can_manage_products) VALUES ($1,$2,$3,$4,$5) RETURNING id, name, email, role, can_manage_products',
@@ -410,7 +428,7 @@ app.put('/api/users/:id/password', requireAuth, async (req, res) => {
       return res.status(401).json({ error: 'Senha atual incorreta' });
     }
   }
-  await pool.query('UPDATE users SET password_hash=$2 WHERE id=$1', [req.params.id, hashPassword(newPassword)]);
+  await pool.query('UPDATE users SET password_hash=$2 WHERE id=$1', [req.params.id, await hashPassword(newPassword)]);
   // Derruba as outras sessões do usuário (a atual, se for troca própria, continua valendo)
   await pool.query(
     'UPDATE sessions SET revoked_at=now() WHERE user_id=$1 AND id<>$2',
@@ -925,10 +943,16 @@ app.patch('/api/orders/:id/status', requireAuth, requireStaff, async (req, res) 
 
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-app.use('/uploads', express.static(UPLOAD_DIR));
+app.use('/uploads', express.static(UPLOAD_DIR, {
+  setHeaders: (res) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+  }
+}));
+
+const uploadLimiter = createRateLimiter(15 * 60 * 1000, 30, 'Limite de uploads excedido. Aguarde alguns minutos.');
 
 const MIME_EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
-app.post('/api/upload', requireAuth, async (req, res) => {
+app.post('/api/upload', requireAuth, requireProductManager, uploadLimiter, async (req, res) => {
   const { filename, data } = req.body || {};
   const m = /^data:(image\/[a-z]+);base64,(.+)$/is.exec(String(data || ''));
   if (!m || !MIME_EXT[m[1].toLowerCase()]) {
@@ -961,7 +985,7 @@ app.post('/api/upload', requireAuth, async (req, res) => {
   }
   const base = String(filename || 'foto').replace(/\.[^.]*$/, '').replace(/[^\w\-]/g, '').slice(-40) || 'foto';
   const name = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}-${base}.${MIME_EXT[m[1].toLowerCase()]}`;
-  fs.writeFileSync(path.join(UPLOAD_DIR, name), buf);
+  await fs.promises.writeFile(path.join(UPLOAD_DIR, name), buf);
   res.status(201).json({ imagePath: `/uploads/${name}` });
 });
 
@@ -1071,7 +1095,7 @@ app.post('/api/coupons/validate', requireAuth, async (req, res) => {
 
 // ---------- auditoria (M23) ----------
 
-app.get('/api/audit', requireAuth, requireStaff, async (req, res) => {
+app.get('/api/audit', requireAuth, requireAdmin, async (req, res) => {
   const { entity, entityId } = req.query;
   const params = [];
   let where = '';
@@ -1098,14 +1122,21 @@ app.get('/api/audit', requireAuth, requireStaff, async (req, res) => {
 
 app.get('/api/me/export', requireAuth, async (req, res) => {
   const uid = req.user.id;
-  const [user, customers, pets, orders, appointments] = await Promise.all([
+  const [user, customers, pets, orders, appointments, consultations] = await Promise.all([
     pool.query('SELECT id, name, email, role, consent_lgpd_at, consent_version FROM users WHERE id=$1', [uid]),
     pool.query('SELECT * FROM customers WHERE user_id=$1', [uid]),
     pool.query(
       `SELECT p.* FROM pets p JOIN customers c ON c.id = p.customer_id WHERE c.user_id=$1`, [uid]),
     pool.query('SELECT * FROM orders WHERE user_id=$1', [uid]),
     pool.query(
-      `SELECT a.* FROM appointments a JOIN customers c ON c.id = a.customer_id WHERE c.user_id=$1`, [uid])
+      `SELECT a.* FROM appointments a JOIN customers c ON c.id = a.customer_id WHERE c.user_id=$1`, [uid]),
+    pool.query(
+      `SELECT con.*, pr.notes as prescription_notes
+       FROM consultations con
+       JOIN pets p ON p.id = con.pet_id
+       JOIN customers c ON c.id = p.customer_id
+       LEFT JOIN prescriptions pr ON pr.consultation_id = con.id
+       WHERE c.user_id=$1`, [uid])
   ]);
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="meus-dados-animal-world.json"`);
@@ -1115,11 +1146,12 @@ app.get('/api/me/export', requireAuth, async (req, res) => {
     customers: customers.rows,
     pets: pets.rows,
     orders: orders.rows,
-    appointments: appointments.rows
+    appointments: appointments.rows,
+    consultations: consultations.rows
   });
 });
 
-// Exclusão = anonimização (pedido de titular LGPD): PII some, histórico financeiro é preservado sem identificação
+// Exclusão = anonimização (pedido de titular LGPD): PII some, histórico financeiro e clínico preservados sem identificação
 app.delete('/api/me', requireAuth, async (req, res) => {
   if (req.user.role !== 'customer') {
     return res.status(403).json({ error: 'Apenas clientes podem excluir a própria conta por aqui' });
@@ -1130,7 +1162,7 @@ app.delete('/api/me', requireAuth, async (req, res) => {
   const { rows: uRows } = await pool.query('SELECT password_hash FROM users WHERE id=$1', [req.user.id]);
   const stored = uRows[0] && uRows[0].password_hash;
   const ok = stored && (isBcrypt(stored)
-    ? bcrypt.compareSync(String(password), stored)
+    ? await bcrypt.compare(String(password), stored)
     : crypto.createHash('sha256').update(String(password)).digest('hex') === stored);
   if (!ok) return res.status(403).json({ error: 'Senha incorreta' });
   const uid = req.user.id;
@@ -1141,10 +1173,16 @@ app.delete('/api/me', requireAuth, async (req, res) => {
     const custIds = custs.map(c => c.id);
     if (custIds.length) {
       await client.query(
-        `UPDATE appointments SET customer_name='Excluído', pet_name='Pet'
+        `UPDATE appointments SET customer_name='Titular Anonimizado', pet_name='Pet Anonimizado'
+         WHERE customer_id = ANY($1) OR user_id = $2`, [custIds, uid]);
+      // Anonimização LGPD compatível com CFMV Res. 1321/2020:
+      // Preserva prontuários e receitas (guarda obrigatória de 5 anos) removendo dados pessoais
+      await client.query(
+        `UPDATE pets SET name='Pet Anonimizado', breed=NULL, age=NULL, image_path=NULL
          WHERE customer_id = ANY($1)`, [custIds]);
-      await client.query('DELETE FROM pets WHERE customer_id = ANY($1)', [custIds]);
-      await client.query('DELETE FROM customers WHERE user_id=$1', [uid]);
+      await client.query(
+        `UPDATE customers SET name='Titular Anonimizado', email='anonimizado-' || id || '@lgpd.invalid', phone='', status='inactive', user_id=NULL
+         WHERE user_id=$1`, [uid]);
     }
     await client.query(
       `UPDATE orders SET customer_name='Excluído', email=NULL, phone=NULL, address=NULL
@@ -1156,7 +1194,7 @@ app.delete('/api/me', requireAuth, async (req, res) => {
          email='deleted-' || id || '-' || floor(extract(epoch from now())) || '@anonymized.invalid',
          password_hash=$2, consent_lgpd_at=NULL, consent_version=NULL
        WHERE id=$1`,
-      [uid, hashPassword(crypto.randomBytes(24).toString('hex'))]
+      [uid, await hashPassword(crypto.randomBytes(24).toString('hex'))]
     );
     await client.query('COMMIT');
     audit('users', uid, 'delete-account', null, { anonymized: true }, null);
