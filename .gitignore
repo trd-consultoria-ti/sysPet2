@@ -4,3 +4,4 @@ dist
 server/.session-secret
 server/*.log
 .env
+server/uploads/

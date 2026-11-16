@@ -10,6 +10,10 @@ CREATE TABLE IF NOT EXISTS users (
   can_manage_products BOOLEAN NOT NULL DEFAULT FALSE
 );
 
+-- M25 LGPD: consentimento registrado no cadastro (versão do termo + data/hora)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS consent_lgpd_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS consent_version VARCHAR(20);
+
 CREATE TABLE IF NOT EXISTS products (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
@@ -23,6 +27,10 @@ CREATE TABLE IF NOT EXISTS products (
   stock INTEGER CHECK (stock IS NULL OR stock >= 0)
 );
 
+-- M17 fotos: upload vai para server/uploads e é servido em /uploads; image_path guarda o nome do arquivo local.
+-- precedência na API: image_path (arquivo local) > image (URL externa, legado/seeds)
+ALTER TABLE products ADD COLUMN IF NOT EXISTS image_path TEXT;
+
 CREATE TABLE IF NOT EXISTS catalog_services (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
@@ -34,6 +42,7 @@ CREATE TABLE IF NOT EXISTS catalog_services (
   duration TEXT NOT NULL DEFAULT '',
   description TEXT NOT NULL DEFAULT ''
 );
+ALTER TABLE catalog_services ADD COLUMN IF NOT EXISTS image_path TEXT;
 
 CREATE TABLE IF NOT EXISTS customers (
   id SERIAL PRIMARY KEY,
@@ -44,6 +53,7 @@ CREATE TABLE IF NOT EXISTS customers (
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE INDEX IF NOT EXISTS idx_customers_user ON customers(user_id);
 
 CREATE TABLE IF NOT EXISTS pets (
   id SERIAL PRIMARY KEY,
@@ -53,6 +63,7 @@ CREATE TABLE IF NOT EXISTS pets (
   breed TEXT,
   age INTEGER
 );
+ALTER TABLE pets ADD COLUMN IF NOT EXISTS image_path TEXT;
 CREATE INDEX IF NOT EXISTS idx_pets_customer ON pets(customer_id);
 
 CREATE TABLE IF NOT EXISTS appointments (
@@ -70,6 +81,8 @@ CREATE TABLE IF NOT EXISTS appointments (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
+CREATE INDEX IF NOT EXISTS idx_appointments_customer ON appointments(customer_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_service ON appointments(service_id);
 
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL PRIMARY KEY,
@@ -82,10 +95,14 @@ CREATE TABLE IF NOT EXISTS orders (
   payment_method TEXT,
   items JSONB NOT NULL DEFAULT '[]',
   total NUMERIC(10,2) NOT NULL DEFAULT 0,
+  coupon_code TEXT,
+  discount NUMERIC(10,2) NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'pendente'
     CHECK (status IN ('pendente', 'pago', 'cancelado', 'entregue')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
 
 -- ============ SEED ============
 
@@ -172,3 +189,32 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_prt_user ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_cash_movements_order ON cash_movements(order_id);
+
+-- M23 auditoria: trilha de alterações por entidade (INSERTs feitos na API)
+CREATE TABLE IF NOT EXISTS audit_log (
+  id SERIAL PRIMARY KEY,
+  entity VARCHAR(60) NOT NULL,
+  entity_id INTEGER NOT NULL,
+  action VARCHAR(30) NOT NULL,
+  old_data JSONB,
+  new_data JSONB,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(user_id);
+
+-- M26 cupons de desconto: code único; API deve normalizar caixa (UPPER) antes do lookup
+CREATE TABLE IF NOT EXISTS coupons (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(40) NOT NULL UNIQUE,
+  discount_type VARCHAR(10) NOT NULL CHECK (discount_type IN ('percent', 'fixed')),
+  discount_value NUMERIC(10,2) NOT NULL CHECK (discount_value > 0),
+  min_order_total NUMERIC(10,2) NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT true,
+  max_uses INTEGER CHECK (max_uses IS NULL OR max_uses > 0),
+  used_count INTEGER NOT NULL DEFAULT 0 CHECK (used_count >= 0),
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

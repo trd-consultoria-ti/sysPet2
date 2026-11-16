@@ -37,7 +37,7 @@ app.use(cors({
   origin: (origin, cb) =>
     cb(null, !origin || ALLOWED_ORIGINS.includes(origin) || SELF_ORIGINS.includes(origin))
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // uploads chegam em base64
 
 // Rate limit em memória (janela fixa por IP) para endpoints sensíveis de auth
 function createRateLimiter(windowMs, max, message) {
@@ -85,6 +85,28 @@ const num = v => (v === null || v === undefined ? null : Number(v));
 
 // ---------- helpers ----------
 
+// M23 auditoria: trilha de alterações (fire-and-forget — nunca quebra o fluxo principal)
+function audit(entity, entityId, action, oldData, newData, userId) {
+  pool.query(
+    'INSERT INTO audit_log (entity, entity_id, action, old_data, new_data, user_id) VALUES ($1,$2,$3,$4,$5,$6)',
+    [entity, entityId, action,
+     oldData ? JSON.stringify(oldData) : null,
+     newData ? JSON.stringify(newData) : null,
+     userId || null]
+  ).catch(e => console.error('audit:', e.message));
+}
+
+// M17: image_path guarda só o basename do arquivo em /uploads; 'image' segue como URL de exibição
+const imagePathOf = image => {
+  const m = /^\/uploads\/([\w.\-]+)$/.exec(String(image || ''));
+  return m ? m[1] : null;
+};
+const petJson = p => ({
+  id: p.id, name: p.name, type: p.type, breed: p.breed, age: p.age,
+  customerId: p.customer_id,
+  image: p.image_path ? `/uploads/${p.image_path}` : (p.image || '')
+});
+
 async function getCustomersWithPets(userId = null) {
   const { rows: customers } = userId
     ? await pool.query('SELECT * FROM customers WHERE user_id=$1 ORDER BY id', [userId])
@@ -93,9 +115,7 @@ async function getCustomersWithPets(userId = null) {
   return customers.map(c => ({
     ...c,
     userId: c.user_id,
-    pets: pets.filter(p => p.customer_id === c.id).map(p => ({
-      id: p.id, name: p.name, type: p.type, breed: p.breed, age: p.age, customerId: p.customer_id
-    }))
+    pets: pets.filter(p => p.customer_id === c.id).map(petJson)
   }));
 }
 
@@ -284,8 +304,10 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       return res.status(409).json({ error: 'Email já cadastrado' });
     }
     const { rows: userRows } = await client.query(
-      'INSERT INTO users (name, email, password_hash, role) VALUES ($1,$2,$3,$4) RETURNING id, name, email, role, can_manage_products',
-      [name, email, hash, 'customer']
+      `INSERT INTO users (name, email, password_hash, role, consent_lgpd_at, consent_version)
+       VALUES ($1,$2,$3,$4, CASE WHEN $5 THEN now() END, CASE WHEN $5 THEN '1.0' END)
+       RETURNING id, name, email, role, can_manage_products`,
+      [name, email, hash, 'customer', req.body.consent === true]
     );
     const user = userRows[0];
     // Vincula a um cadastro de cliente existente com o mesmo email, ou cria um novo
@@ -450,9 +472,9 @@ app.put('/api/products/:id', requireAuth, requireProductManager, async (req, res
   const { name, price, rating, reviews, image, category, description, stock } = req.body;
   const stockVal = stock === null || stock === undefined || stock === '' ? null : Math.max(0, Math.floor(Number(stock)) || 0);
   const { rows } = await pool.query(
-    `UPDATE products SET name=$2, price=$3, rating=$4, reviews=$5, image=$6, category=$7, description=$8, stock=$9
+    `UPDATE products SET name=$2, price=$3, rating=$4, reviews=$5, image=$6, category=$7, description=$8, stock=$9, image_path=$10
      WHERE id=$1 RETURNING *`,
-    [req.params.id, name, price, rating, reviews, image, category, description, stockVal]
+    [req.params.id, name, price, rating, reviews, image, category, description, stockVal, imagePathOf(image)]
   );
   if (!rows.length) return res.status(404).json({ error: 'Produto não encontrado' });
   res.json({ ...rows[0], price: num(rows[0].price), rating: num(rows[0].rating) });
@@ -463,9 +485,9 @@ app.post('/api/products', requireAuth, requireProductManager, async (req, res) =
   if (!name || price === undefined) return res.status(400).json({ error: 'Nome e preço são obrigatórios' });
   const stockVal = stock === null || stock === undefined || stock === '' ? null : Math.max(0, Math.floor(Number(stock)) || 0);
   const { rows } = await pool.query(
-    `INSERT INTO products (name, price, rating, reviews, image, category, description, stock)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-    [name, price, rating || 0, reviews || 0, image || '', category || '', description || '', stockVal]
+    `INSERT INTO products (name, price, rating, reviews, image, category, description, stock, image_path)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+    [name, price, rating || 0, reviews || 0, image || '', category || '', description || '', stockVal, imagePathOf(image)]
   );
   res.status(201).json({ ...rows[0], price: num(rows[0].price), rating: num(rows[0].rating) });
 });
@@ -487,9 +509,9 @@ app.post('/api/services', requireAuth, requireAdmin, async (req, res) => {
   const { name, price, rating, reviews, image, category, duration, description } = req.body;
   if (!name || price === undefined) return res.status(400).json({ error: 'Nome e preço são obrigatórios' });
   const { rows } = await pool.query(
-    `INSERT INTO catalog_services (name, price, rating, reviews, image, category, duration, description)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-    [name, price, rating || 0, reviews || 0, image || '', category || '', duration || '', description || '']
+    `INSERT INTO catalog_services (name, price, rating, reviews, image, category, duration, description, image_path)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+    [name, price, rating || 0, reviews || 0, image || '', category || '', duration || '', description || '', imagePathOf(image)]
   );
   res.status(201).json({ ...rows[0], price: num(rows[0].price), rating: num(rows[0].rating) });
 });
@@ -497,9 +519,9 @@ app.post('/api/services', requireAuth, requireAdmin, async (req, res) => {
 app.put('/api/services/:id', requireAuth, requireAdmin, async (req, res) => {
   const { name, price, rating, reviews, image, category, duration, description } = req.body;
   const { rows } = await pool.query(
-    `UPDATE catalog_services SET name=$2, price=$3, rating=$4, reviews=$5, image=$6, category=$7, duration=$8, description=$9
+    `UPDATE catalog_services SET name=$2, price=$3, rating=$4, reviews=$5, image=$6, category=$7, duration=$8, description=$9, image_path=$10
      WHERE id=$1 RETURNING *`,
-    [req.params.id, name, price, rating, reviews, image, category, duration, description]
+    [req.params.id, name, price, rating, reviews, image, category, duration, description, imagePathOf(image)]
   );
   if (!rows.length) return res.status(404).json({ error: 'Serviço não encontrado' });
   res.json({ ...rows[0], price: num(rows[0].price), rating: num(rows[0].rating) });
@@ -538,19 +560,16 @@ app.put('/api/customers/:id', requireAuth, requireStaff, async (req, res) => {
 });
 
 app.post('/api/pets', requireAuth, async (req, res) => {
-  const { customerId, name, type, breed, age } = req.body;
+  const { customerId, name, type, breed, age, image } = req.body;
   if (!isStaff(req.user)) {
     const { rows: own } = await pool.query('SELECT id FROM customers WHERE id=$1 AND user_id=$2', [customerId, req.user.id]);
     if (!own.length) return res.status(403).json({ error: 'Cliente não pode cadastrar pet para outro cliente' });
   }
   const { rows } = await pool.query(
-    'INSERT INTO pets (customer_id, name, type, breed, age) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-    [customerId, name, type, breed || null, age || null]
+    'INSERT INTO pets (customer_id, name, type, breed, age, image_path) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+    [customerId, name, type, breed || null, age || null, imagePathOf(image)]
   );
-  res.status(201).json({
-    id: rows[0].id, name: rows[0].name, type: rows[0].type,
-    breed: rows[0].breed, age: rows[0].age, customerId: rows[0].customer_id
-  });
+  res.status(201).json(petJson(rows[0]));
 });
 
 // Dono do pet = cliente cujo customer pertence ao usuário da sessão (staff passa direto)
@@ -568,13 +587,13 @@ app.put('/api/pets/:id', requireAuth, async (req, res) => {
   if (!(await ownsPet(req, req.params.id))) {
     return res.status(403).json({ error: 'Pet não pertence ao seu cadastro' });
   }
-  const { name, type, breed, age } = req.body;
+  const { name, type, breed, age, image } = req.body;
   const { rows } = await pool.query(
-    'UPDATE pets SET name=$2, type=$3, breed=$4, age=$5 WHERE id=$1 RETURNING *',
-    [req.params.id, name, type, breed || null, age || null]
+    'UPDATE pets SET name=$2, type=$3, breed=$4, age=$5, image_path=$6 WHERE id=$1 RETURNING *',
+    [req.params.id, name, type, breed || null, age || null, imagePathOf(image)]
   );
   if (!rows.length) return res.status(404).json({ error: 'Pet não encontrado' });
-  res.json(rows[0]);
+  res.json(petJson(rows[0]));
 });
 
 app.delete('/api/pets/:id', requireAuth, async (req, res) => {
@@ -634,11 +653,13 @@ app.patch('/api/appointments/:id/status', requireAuth, requireStaff, async (req,
   const { status } = req.body;
   const valid = ['solicitado', 'confirmado', 'concluido', 'cancelado'];
   if (!valid.includes(status)) return res.status(400).json({ error: 'Status inválido' });
+  const { rows: oldRows } = await pool.query('SELECT id, status FROM appointments WHERE id=$1', [req.params.id]);
+  if (!oldRows.length) return res.status(404).json({ error: 'Agendamento não encontrado' });
   const { rows } = await pool.query(
     'UPDATE appointments SET status=$2 WHERE id=$1 RETURNING *',
     [req.params.id, status]
   );
-  if (!rows.length) return res.status(404).json({ error: 'Agendamento não encontrado' });
+  audit('appointments', rows[0].id, 'status', { status: oldRows[0].status }, { status }, req.user.id);
   const a = rows[0];
   res.json({
     id: a.id, customerId: a.customer_id, customerName: a.customer_name,
@@ -657,12 +678,13 @@ app.get('/api/orders', requireAuth, async (req, res) => {
   res.json(rows.map(o => ({
     id: o.id, orderNumber: o.order_number, userId: o.user_id, customerName: o.customer_name,
     email: o.email, phone: o.phone, address: o.address, paymentMethod: o.payment_method,
-    items: o.items, total: num(o.total), status: o.status, createdAt: o.created_at
+    items: o.items, total: num(o.total), status: o.status, createdAt: o.created_at,
+    couponCode: o.coupon_code, discount: num(o.discount)
   })));
 });
 
 app.post('/api/orders', requireAuth, async (req, res) => {
-  const { customerName, email, phone, address, items, paymentMethod } = req.body;
+  const { customerName, email, phone, address, items, paymentMethod, couponCode } = req.body;
   const requested = Array.isArray(items) ? items : [];
   if (!requested.length) return res.status(400).json({ error: 'Carrinho vazio' });
 
@@ -682,7 +704,28 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     }
     serverItems.push({ id: p.id, name: p.name, price: num(p.price), quantity: qty });
   }
-  const total = serverItems.reduce((s, i) => s + Number(i.price) * i.quantity, 0);
+  const subtotal = serverItems.reduce((s, i) => s + Number(i.price) * i.quantity, 0);
+
+  // M26 cupom: valida e calcula desconto no servidor — nunca confia no valor do front
+  let coupon = null, discount = 0, total = subtotal;
+  if (couponCode) {
+    const { rows: cRows } = await pool.query(
+      `SELECT * FROM coupons WHERE UPPER(code) = UPPER($1) AND active
+         AND (expires_at IS NULL OR expires_at > now())
+         AND (max_uses IS NULL OR used_count < max_uses)`,
+      [String(couponCode).trim()]
+    );
+    coupon = cRows[0] || null;
+    if (!coupon) return res.status(400).json({ error: 'Cupom inválido ou expirado' });
+    if (subtotal < Number(coupon.min_order_total)) {
+      return res.status(400).json({ error: `Pedido mínimo de R$ ${Number(coupon.min_order_total).toFixed(2)} para este cupom` });
+    }
+    discount = coupon.discount_type === 'percent'
+      ? subtotal * Number(coupon.discount_value) / 100
+      : Number(coupon.discount_value);
+    discount = Math.min(Math.max(0, discount), subtotal);
+    total = Math.max(0, subtotal - discount);
+  }
 
   // Dono do pedido é sempre o usuário da sessão; nome do cliente vem do cadastro quando for cliente
   let ownerName = customerName;
@@ -697,11 +740,26 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     const { rows: seq } = await client.query(
       `SELECT 'AW-' || LPAD(nextval('orders_id_seq')::text, 4, '0') AS order_number`
     );
+    // Incremento atômico do uso do cupom — a cláusula WHERE garante que não estoure max_uses
+    if (coupon) {
+      const use = await client.query(
+        `UPDATE coupons SET used_count = used_count + 1
+         WHERE id = $1 AND active
+           AND (expires_at IS NULL OR expires_at > now())
+           AND (max_uses IS NULL OR used_count < max_uses)`,
+        [coupon.id]
+      );
+      if (!use.rowCount) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Cupom esgotado' });
+      }
+    }
     const { rows } = await client.query(
-      `INSERT INTO orders (order_number, user_id, customer_name, email, phone, address, payment_method, items, total)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      `INSERT INTO orders (order_number, user_id, customer_name, email, phone, address, payment_method, items, total, coupon_code, discount)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
       [seq[0].order_number, userId, ownerName, email || null, phone || null, address || null,
-       paymentMethod || null, JSON.stringify(serverItems), total]
+       paymentMethod || null, JSON.stringify(serverItems), total,
+       coupon ? coupon.code : null, discount]
     );
     await client.query(
       `INSERT INTO cash_movements (order_id, type, description, amount, payment_method)
@@ -724,10 +782,12 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     }
     await client.query('COMMIT');
     const o = rows[0];
+    audit('orders', o.id, 'create', null, { orderNumber: o.order_number, total: num(o.total), status: o.status }, req.user.id);
     res.status(201).json({
       id: o.id, orderNumber: o.order_number, userId: o.user_id, customerName: o.customer_name,
       email: o.email, phone: o.phone, address: o.address, paymentMethod: o.payment_method,
-      items: o.items, total: num(o.total), status: o.status, createdAt: o.created_at
+      items: o.items, total: num(o.total), status: o.status, createdAt: o.created_at,
+      couponCode: o.coupon_code, discount: num(o.discount)
     });
   } catch (e) {
     await client.query('ROLLBACK');
@@ -785,17 +845,222 @@ app.patch('/api/orders/:id/status', requireAuth, requireStaff, async (req, res) 
   const { status } = req.body;
   const valid = ['pendente', 'pago', 'cancelado', 'entregue'];
   if (!valid.includes(status)) return res.status(400).json({ error: 'Status inválido' });
+  const { rows: oldRows } = await pool.query('SELECT id, status FROM orders WHERE id=$1', [req.params.id]);
+  if (!oldRows.length) return res.status(404).json({ error: 'Pedido não encontrado' });
   const { rows } = await pool.query(
     'UPDATE orders SET status=$2 WHERE id=$1 RETURNING *',
     [req.params.id, status]
   );
-  if (!rows.length) return res.status(404).json({ error: 'Pedido não encontrado' });
+  audit('orders', rows[0].id, 'status', { status: oldRows[0].status }, { status }, req.user.id);
   const o = rows[0];
   res.json({
     id: o.id, orderNumber: o.order_number, userId: o.user_id, customerName: o.customer_name,
     email: o.email, phone: o.phone, address: o.address, paymentMethod: o.payment_method,
     items: o.items, total: num(o.total), status: o.status, createdAt: o.created_at
   });
+});
+
+// ---------- upload de imagens (M17) ----------
+
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+app.use('/uploads', express.static(UPLOAD_DIR));
+
+const MIME_EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
+app.post('/api/upload', requireAuth, async (req, res) => {
+  const { filename, data } = req.body || {};
+  const m = /^data:(image\/[a-z]+);base64,(.+)$/is.exec(String(data || ''));
+  if (!m || !MIME_EXT[m[1].toLowerCase()]) {
+    return res.status(400).json({ error: 'Envie uma imagem (PNG, JPG, WebP ou GIF) em base64' });
+  }
+  const buf = Buffer.from(m[2], 'base64');
+  if (!buf.length || buf.length > 5 * 1024 * 1024) {
+    return res.status(400).json({ error: 'Imagem vazia ou maior que 5MB' });
+  }
+  const base = String(filename || 'foto').replace(/\.[^.]*$/, '').replace(/[^\w\-]/g, '').slice(-40) || 'foto';
+  const name = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}-${base}.${MIME_EXT[m[1].toLowerCase()]}`;
+  fs.writeFileSync(path.join(UPLOAD_DIR, name), buf);
+  res.status(201).json({ imagePath: `/uploads/${name}` });
+});
+
+// ---------- cupons (M26) ----------
+
+const couponJson = c => ({
+  id: c.id, code: c.code, discountType: c.discount_type, discountValue: num(c.discount_value),
+  minOrderTotal: num(c.min_order_total), active: c.active, maxUses: c.max_uses,
+  usedCount: c.used_count, expiresAt: c.expires_at, createdAt: c.created_at
+});
+
+app.get('/api/coupons', requireAuth, requireAdmin, async (req, res) => {
+  const { rows } = await pool.query('SELECT * FROM coupons ORDER BY id DESC');
+  res.json(rows.map(couponJson));
+});
+
+app.post('/api/coupons', requireAuth, requireAdmin, async (req, res) => {
+  const { code, discountType, discountValue, minOrderTotal, maxUses, expiresAt, active } = req.body || {};
+  const cleanCode = String(code || '').trim().toUpperCase();
+  if (!/^[A-Z0-9_-]{3,40}$/.test(cleanCode)) {
+    return res.status(400).json({ error: 'Código deve ter 3-40 caracteres (A-Z, 0-9, _ ou -)' });
+  }
+  if (!['percent', 'fixed'].includes(discountType)) {
+    return res.status(400).json({ error: 'Tipo de desconto deve ser percent ou fixed' });
+  }
+  const val = Number(discountValue);
+  if (!val || val <= 0 || (discountType === 'percent' && val > 100)) {
+    return res.status(400).json({ error: discountType === 'percent' ? 'Percentual entre 0 e 100' : 'Valor deve ser maior que zero' });
+  }
+  const { rows } = await pool.query(
+    `INSERT INTO coupons (code, discount_type, discount_value, min_order_total, active, max_uses, expires_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+    [cleanCode, discountType, val, Math.max(0, Number(minOrderTotal) || 0),
+     active !== false, maxUses ? Math.floor(Number(maxUses)) : null, expiresAt || null]
+  );
+  audit('coupons', rows[0].id, 'create', null, { code: cleanCode }, req.user.id);
+  res.status(201).json(couponJson(rows[0]));
+});
+
+app.put('/api/coupons/:id', requireAuth, requireAdmin, async (req, res) => {
+  const { code, discountType, discountValue, minOrderTotal, maxUses, expiresAt, active } = req.body || {};
+  const { rows: old } = await pool.query('SELECT * FROM coupons WHERE id=$1', [req.params.id]);
+  if (!old.length) return res.status(404).json({ error: 'Cupom não encontrado' });
+  const cleanCode = code ? String(code).trim().toUpperCase() : old[0].code;
+  const type = discountType || old[0].discount_type;
+  const val = discountValue !== undefined ? Number(discountValue) : Number(old[0].discount_value);
+  if (!val || val <= 0 || (type === 'percent' && val > 100)) {
+    return res.status(400).json({ error: 'Valor de desconto inválido' });
+  }
+  const { rows } = await pool.query(
+    `UPDATE coupons SET code=$2, discount_type=$3, discount_value=$4, min_order_total=$5,
+       active=$6, max_uses=$7, expires_at=$8 WHERE id=$1 RETURNING *`,
+    [req.params.id, cleanCode, type, val,
+     minOrderTotal !== undefined ? Math.max(0, Number(minOrderTotal) || 0) : Number(old[0].min_order_total),
+     active !== undefined ? !!active : old[0].active,
+     maxUses !== undefined ? (maxUses ? Math.floor(Number(maxUses)) : null) : old[0].max_uses,
+     expiresAt !== undefined ? (expiresAt || null) : old[0].expires_at]
+  );
+  audit('coupons', rows[0].id, 'update', { code: old[0].code }, { code: rows[0].code }, req.user.id);
+  res.json(couponJson(rows[0]));
+});
+
+app.delete('/api/coupons/:id', requireAuth, requireAdmin, async (req, res) => {
+  const { rows: old } = await pool.query('SELECT * FROM coupons WHERE id=$1', [req.params.id]);
+  if (!old.length) return res.status(404).json({ error: 'Cupom não encontrado' });
+  await pool.query('DELETE FROM coupons WHERE id=$1', [req.params.id]);
+  audit('coupons', old[0].id, 'delete', { code: old[0].code }, null, req.user.id);
+  res.status(204).end();
+});
+
+// Preview do desconto no checkout — mesmo cálculo do POST /orders, sem consumir uso
+app.post('/api/coupons/validate', requireAuth, async (req, res) => {
+  const { code, total } = req.body || {};
+  const sub = Number(total);
+  if (!code || !Number.isFinite(sub) || sub < 0) {
+    return res.status(400).json({ error: 'Informe code e total' });
+  }
+  const { rows } = await pool.query(
+    `SELECT * FROM coupons WHERE UPPER(code) = UPPER($1) AND active
+       AND (expires_at IS NULL OR expires_at > now())
+       AND (max_uses IS NULL OR used_count < max_uses)`,
+    [String(code).trim()]
+  );
+  const c = rows[0];
+  if (!c) return res.status(404).json({ error: 'Cupom inválido ou expirado' });
+  if (sub < Number(c.min_order_total)) {
+    return res.status(400).json({ error: `Pedido mínimo de R$ ${Number(c.min_order_total).toFixed(2)}` });
+  }
+  const discount = Math.min(
+    c.discount_type === 'percent' ? sub * Number(c.discount_value) / 100 : Number(c.discount_value),
+    sub
+  );
+  res.json({ code: c.code, discount: Math.round(discount * 100) / 100, finalTotal: Math.round((sub - discount) * 100) / 100 });
+});
+
+// ---------- auditoria (M23) ----------
+
+app.get('/api/audit', requireAuth, requireStaff, async (req, res) => {
+  const { entity, entityId } = req.query;
+  const params = [];
+  let where = '';
+  if (entity) { params.push(String(entity).slice(0, 60)); where += ` AND a.entity = $${params.length}`; }
+  if (entityId) { params.push(Number(entityId)); where += ` AND a.entity_id = $${params.length}`; }
+  const { rows } = await pool.query(
+    `SELECT a.id, a.entity, a.entity_id, a.action, a.old_data, a.new_data, a.created_at,
+            u.name AS user_name, u.email AS user_email
+     FROM audit_log a LEFT JOIN users u ON u.id = a.user_id
+     WHERE 1=1 ${where} ORDER BY a.created_at DESC, a.id DESC LIMIT 200`,
+    params
+  );
+  res.json(rows.map(r => ({
+    id: r.id, entity: r.entity, entityId: r.entity_id, action: r.action,
+    oldData: r.old_data, newData: r.new_data, createdAt: r.created_at,
+    userName: r.user_name, userEmail: r.user_email
+  })));
+});
+
+// ---------- LGPD (M25): exportar e excluir dados do titular ----------
+
+app.get('/api/me/export', requireAuth, async (req, res) => {
+  const uid = req.user.id;
+  const [user, customers, pets, orders, appointments] = await Promise.all([
+    pool.query('SELECT id, name, email, role, consent_lgpd_at, consent_version FROM users WHERE id=$1', [uid]),
+    pool.query('SELECT * FROM customers WHERE user_id=$1', [uid]),
+    pool.query(
+      `SELECT p.* FROM pets p JOIN customers c ON c.id = p.customer_id WHERE c.user_id=$1`, [uid]),
+    pool.query('SELECT * FROM orders WHERE user_id=$1', [uid]),
+    pool.query(
+      `SELECT a.* FROM appointments a JOIN customers c ON c.id = a.customer_id WHERE c.user_id=$1`, [uid])
+  ]);
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="meus-dados-animal-world.json"`);
+  res.json({
+    exportedAt: new Date().toISOString(),
+    user: user.rows[0] || null,
+    customers: customers.rows,
+    pets: pets.rows,
+    orders: orders.rows,
+    appointments: appointments.rows
+  });
+});
+
+// Exclusão = anonimização (pedido de titular LGPD): PII some, histórico financeiro é preservado sem identificação
+app.delete('/api/me', requireAuth, async (req, res) => {
+  if (req.user.role !== 'customer') {
+    return res.status(403).json({ error: 'Apenas clientes podem excluir a própria conta por aqui' });
+  }
+  const uid = req.user.id;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows: custs } = await client.query('SELECT id FROM customers WHERE user_id=$1', [uid]);
+    const custIds = custs.map(c => c.id);
+    if (custIds.length) {
+      await client.query(
+        `UPDATE appointments SET customer_name='Excluído', pet_name='Pet'
+         WHERE customer_id = ANY($1)`, [custIds]);
+      await client.query('DELETE FROM pets WHERE customer_id = ANY($1)', [custIds]);
+      await client.query('DELETE FROM customers WHERE user_id=$1', [uid]);
+    }
+    await client.query(
+      `UPDATE orders SET customer_name='Excluído', email=NULL, phone=NULL, address=NULL
+       WHERE user_id=$1`, [uid]);
+    await client.query('DELETE FROM sessions WHERE user_id=$1', [uid]);
+    await client.query('DELETE FROM password_reset_tokens WHERE user_id=$1', [uid]);
+    await client.query(
+      `UPDATE users SET name='Conta excluída',
+         email='deleted-' || id || '-' || floor(extract(epoch from now())) || '@anonymized.invalid',
+         password_hash=$2, consent_lgpd_at=NULL, consent_version=NULL
+       WHERE id=$1`,
+      [uid, hashPassword(crypto.randomBytes(24).toString('hex'))]
+    );
+    await client.query('COMMIT');
+    audit('users', uid, 'delete-account', null, { anonymized: true }, null);
+    res.json({ ok: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
 });
 
 // ---------- health & static ----------

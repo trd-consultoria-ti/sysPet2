@@ -18,5 +18,24 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    build: ./server
+    container_name: animalworld_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3100
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: animalworld
+      DB_PASSWORD: animalworld
+      DB_NAME: animalworld
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:4200}
+    ports:
+      - "3100:3100"
+
 volumes:
   animalworld_pgdata:

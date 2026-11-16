@@ -1,0 +1,6 @@
+node_modules
+session-secret
+.session-secret
+*.log
+.env
+uploads/

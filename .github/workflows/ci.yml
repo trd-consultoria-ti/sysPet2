@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install front deps
+        run: npm ci
+
+      - name: Build Angular
+        run: npm run build -- --configuration production || NODE_OPTIONS=--openssl-legacy-provider npx ng build
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
+
+      - name: Install server deps
+        working-directory: server
+        run: npm ci
+
+      - name: Syntax check API
+        working-directory: server
+        run: node --check index.js
+
+  api-smoke:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: animalworld
+          POSTGRES_PASSWORD: animalworld
+          POSTGRES_DB: animalworld
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U animalworld"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install server deps
+        working-directory: server
+        run: npm ci
+      - name: Init schema
+        working-directory: server
+        run: docker run --rm -v "$PWD:/sql" --network host -e PGPASSWORD=animalworld postgres:15 psql -h localhost -p 5433 -U animalworld -d animalworld -f /sql/schema.sql
+      - name: Boot API and smoke test
+        working-directory: server
+        run: |
+          node index.js &
+          API_PID=$!
+          sleep 3
+          curl -sf http://localhost:3100/api/health
+          curl -sf -X POST http://localhost:3100/api/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"admin@animalworld.com","password":"animal123"}' | grep -q '"role":"admin"'
+          kill $API_PID
+        env:
+          DB_PORT: 5433
