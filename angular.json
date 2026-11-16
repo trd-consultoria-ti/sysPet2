@@ -41,7 +41,7 @@
             "production": {
               "serviceWorker": true,
               "ngswConfigPath": "ngsw-config.json",
-              "baseHref": "/sysPet/",
+              "baseHref": "/sysPet2/",
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",

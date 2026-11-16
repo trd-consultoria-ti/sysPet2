@@ -4,8 +4,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
-    "build:gh-pages": "ng build --configuration production --base-href /pawtastic-angular/",
+    "build": "ng build --configuration production --base-href /sysPet2/",
+    "build:gh-pages": "ng build --configuration production --base-href /sysPet2/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "db:up": "docker compose up -d db",
