@@ -18,6 +18,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
+
+  app-logo {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
 }
 
 .menu-toggle {
