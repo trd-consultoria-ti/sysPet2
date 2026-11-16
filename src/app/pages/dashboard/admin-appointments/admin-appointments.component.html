@@ -103,11 +103,18 @@
                 (click)="setStatus(appointment, 'cancelado')">
                 <i class="fas fa-times"></i> Cancelar
               </button>
-              <button type="button" class="btn btn-sm btn-outline-secondary"
-                      [attr.aria-label]="'Imprimir ficha de ' + (appointment.petName || 'pet')"
-                      (click)="printSlip(appointment)">
-                <i class="fas fa-print"></i> Imprimir
-              </button>
+              <div class="print-btn-group">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                        [attr.aria-label]="'Imprimir cupom de ' + (appointment.petName || 'pet')"
+                        (click)="printSlip(appointment, 'cupom')" title="Imprimir Cupom 80mm">
+                  <i class="fas fa-receipt"></i> Cupom
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                        [attr.aria-label]="'Imprimir ficha A4 de ' + (appointment.petName || 'pet')"
+                        (click)="printSlip(appointment, 'a4')" title="Imprimir Ficha A4">
+                  <i class="fas fa-file-alt"></i> A4
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -116,17 +123,62 @@
   </ng-container>
 </div>
 
-<!-- Ficha de impressão (só visível em @media print) -->
-<article class="print-slip" *ngIf="printAppointment">
-  <h1>Animal World — Agendamento</h1>
-  <dl>
-    <dt>Pet</dt><dd>{{ printAppointment.petName }}</dd>
-    <dt>Serviço</dt><dd>{{ printAppointment.serviceName || '—' }}</dd>
-    <dt>Cliente</dt><dd>{{ printAppointment.customerName || '—' }}</dd>
-    <dt>Data</dt><dd>{{ formatDate(printAppointment.date) }}</dd>
-    <dt>Horário</dt><dd>{{ printAppointment.time }}</dd>
-    <dt>Status</dt><dd>{{ statusLabels[printAppointment.status] }}</dd>
-    <dt *ngIf="printAppointment.notes">Observações</dt>
-    <dd *ngIf="printAppointment.notes">{{ printAppointment.notes }}</dd>
-  </dl>
+<!-- Ficha de impressão responsiva A4 ou Cupom (só visível em @media print) -->
+<article class="print-slip" *ngIf="printAppointment" [ngClass]="'format-' + printFormat">
+  <!-- Layout Cupom Fiscal / 80mm -->
+  <div class="thermal-ticket" *ngIf="printFormat === 'cupom'">
+    <header class="cupom-header">
+      <h2>ANIMAL WORLD PET SHOP</h2>
+      <p class="sub">TICKET DE AGENDAMENTO</p>
+      <div class="divider">================================</div>
+    </header>
+    <div class="cupom-body">
+      <div>PET: <strong>{{ printAppointment.petName }}</strong></div>
+      <div>SERVIÇO: <strong>{{ printAppointment.serviceName || '—' }}</strong></div>
+      <div>CLIENTE: {{ printAppointment.customerName || '—' }}</div>
+      <div>DATA: {{ formatDate(printAppointment.date) }}</div>
+      <div>HORÁRIO: <strong>{{ printAppointment.time }}</strong></div>
+      <div>STATUS: {{ statusLabels[printAppointment.status] }}</div>
+      <div *ngIf="printAppointment.notes">OBS: {{ printAppointment.notes }}</div>
+    </div>
+    <div class="divider">================================</div>
+    <footer>
+      <p>Guarde este comprovante!</p>
+      <p class="tag">sysPet2 - Animal World</p>
+    </footer>
+  </div>
+
+  <!-- Layout Folha A4 -->
+  <div class="a4-sheet" *ngIf="printFormat === 'a4'">
+    <header class="a4-header">
+      <div class="brand">
+        <h1>Animal World</h1>
+        <p>Ficha de Agendamento & Atendimento</p>
+      </div>
+      <div class="doc-info">
+        <span class="badge">AGENDAMENTO</span>
+        <div>Data: {{ formatDate(printAppointment.date) }} às {{ printAppointment.time }}</div>
+        <div>Status: <strong>{{ statusLabels[printAppointment.status] }}</strong></div>
+      </div>
+    </header>
+
+    <section class="a4-section">
+      <h2>Dados do Pet & Tutor</h2>
+      <dl class="a4-grid">
+        <dt>Pet</dt><dd><strong>{{ printAppointment.petName }}</strong></dd>
+        <dt>Tutor / Cliente</dt><dd>{{ printAppointment.customerName || '—' }}</dd>
+        <dt>Serviço Solicitado</dt><dd><strong>{{ printAppointment.serviceName || '—' }}</strong></dd>
+        <dt>Data e Hora</dt><dd>{{ formatDate(printAppointment.date) }} às {{ printAppointment.time }}</dd>
+        <dt *ngIf="printAppointment.notes">Observações</dt><dd *ngIf="printAppointment.notes">{{ printAppointment.notes }}</dd>
+      </dl>
+    </section>
+
+    <footer class="a4-footer">
+      <div class="sign-block">
+        <div class="line"></div>
+        <span>Assinatura do Responsável</span>
+      </div>
+      <p>Animal World Clínica & Pet Shop — Tel: (11) 4002-8922</p>
+    </footer>
+  </div>
 </article>

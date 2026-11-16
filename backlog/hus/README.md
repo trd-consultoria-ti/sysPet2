@@ -84,3 +84,8 @@ Formato: narrativa (Como/Quero/Para) + critérios de aceite + notas técnicas.
 | HU-27 | [Consulta presencial por ordem de chegada](HU-27-consulta-presencial-fila.md) | ⚪ |
 | HU-28 | [Consulta a domicílio agendada](HU-28-consulta-domicilio-agendada.md) | ⚪ |
 | HU-29 | [Carteira de vacinas do pet](HU-29-carteira-vacinas.md) | ⚪ |
+
+### Dados da empresa (card 12)
+| HU | História | Pri |
+|---|---|---|
+| HU-30 | [Cadastro dos dados da empresa](HU-30-dados-empresa.md) | ⚪ |

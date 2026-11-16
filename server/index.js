@@ -114,6 +114,7 @@ const imagePathOf = image => {
 };
 const petJson = p => ({
   id: p.id, name: p.name, type: p.type, breed: p.breed, age: p.age,
+  weightKg: p.weight_kg !== null && p.weight_kg !== undefined ? Number(p.weight_kg) : null,
   customerId: p.customer_id,
   image: p.image_path ? `/uploads/${p.image_path}` : (p.image || '')
 });
@@ -587,14 +588,15 @@ app.put('/api/customers/:id', requireAuth, requireStaff, async (req, res) => {
 });
 
 app.post('/api/pets', requireAuth, async (req, res) => {
-  const { customerId, name, type, breed, age, image } = req.body;
+  const { customerId, name, type, breed, age, weightKg, weight_kg, image } = req.body;
+  const petWeight = weightKg !== undefined ? weightKg : (weight_kg !== undefined ? weight_kg : null);
   if (!isStaff(req.user)) {
     const { rows: own } = await pool.query('SELECT id FROM customers WHERE id=$1 AND user_id=$2', [customerId, req.user.id]);
     if (!own.length) return res.status(403).json({ error: 'Cliente não pode cadastrar pet para outro cliente' });
   }
   const { rows } = await pool.query(
-    'INSERT INTO pets (customer_id, name, type, breed, age, image_path) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-    [customerId, name, type, breed || null, age || null, imagePathOf(image)]
+    'INSERT INTO pets (customer_id, name, type, breed, age, weight_kg, image_path) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+    [customerId, name, type, breed || null, age || null, petWeight, imagePathOf(image)]
   );
   res.status(201).json(petJson(rows[0]));
 });
@@ -614,10 +616,11 @@ app.put('/api/pets/:id', requireAuth, async (req, res) => {
   if (!(await ownsPet(req, req.params.id))) {
     return res.status(403).json({ error: 'Pet não pertence ao seu cadastro' });
   }
-  const { name, type, breed, age, image } = req.body;
+  const { name, type, breed, age, weightKg, weight_kg, image } = req.body;
+  const petWeight = weightKg !== undefined ? weightKg : (weight_kg !== undefined ? weight_kg : null);
   const { rows } = await pool.query(
-    'UPDATE pets SET name=$2, type=$3, breed=$4, age=$5, image_path=$6 WHERE id=$1 RETURNING *',
-    [req.params.id, name, type, breed || null, age || null, imagePathOf(image)]
+    'UPDATE pets SET name=$2, type=$3, breed=$4, age=$5, weight_kg=$6, image_path=$7 WHERE id=$1 RETURNING *',
+    [req.params.id, name, type, breed || null, age || null, petWeight, imagePathOf(image)]
   );
   if (!rows.length) return res.status(404).json({ error: 'Pet não encontrado' });
   res.json(petJson(rows[0]));
@@ -750,6 +753,10 @@ function dailyServiceJson(r) {
   if (typeof hl === 'string') {
     try { hl = JSON.parse(hl); } catch { hl = {}; }
   }
+  let extras = r.selected_extras;
+  if (typeof extras === 'string') {
+    try { extras = JSON.parse(extras); } catch { extras = []; }
+  }
   return {
     id: r.id,
     appointmentId: r.appointment_id,
@@ -759,24 +766,34 @@ function dailyServiceJson(r) {
     petId: r.pet_id,
     petName: r.pet_name,
     petBreed: r.pet_breed || '',
+    petWeightKg: r.pet_weight_kg !== null && r.pet_weight_kg !== undefined ? Number(r.pet_weight_kg) : null,
+    petSizeTier: r.pet_size_tier || '',
     petImage: r.pet_image || null,
     serviceId: r.service_id,
     serviceName: r.service_name,
+    selectedExtras: Array.isArray(extras) ? extras : [],
     date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : (typeof r.date === 'string' ? r.date.split('T')[0] : r.date),
     queueOrder: Number(r.queue_order) || 1,
     status: r.status,
     healthChecklist: hl || {},
     notes: r.notes || '',
+    tosaNotes: r.tosa_notes || '',
     estimatedPrice: Number(r.estimated_price) || 0,
     finalPrice: r.final_price !== null && r.final_price !== undefined ? Number(r.final_price) : null,
     cageNumber: r.cage_number || '',
     groomerName: r.groomer_name || '',
     requiresValidation: !!r.requires_validation,
     validationConfirmed: !!r.validation_confirmed,
+    validatedBy: r.validated_by || null,
+    validatedAt: r.validated_at || null,
     checkinAt: r.checkin_at,
     startedAt: r.started_at,
     readyAt: r.ready_at,
     deliveredAt: r.delivered_at,
+    estimatedReadyAt: r.estimated_ready_at || null,
+    paid: !!r.paid,
+    paidAt: r.paid_at || null,
+    paymentMethod: r.payment_method || null,
     createdAt: r.created_at
   };
 }
@@ -848,8 +865,10 @@ app.get('/api/daily-services', requireAuth, requireStaff, async (req, res) => {
   );
 
   const d = new Date(targetDate + 'T12:00:00Z');
-  const isSaturday = d.getUTCDay() === 6;
-  const capacity = isSaturday ? 32 : 50;
+  const dayOfWeek = d.getUTCDay();
+  const isSunday = dayOfWeek === 0;
+  const isSaturday = dayOfWeek === 6;
+  const capacity = isSunday ? 0 : (isSaturday ? 32 : 50);
 
   const items = rows.map(dailyServiceJson);
   const waiting = items.filter(i => i.status === 'aguardando').length;
@@ -857,6 +876,7 @@ app.get('/api/daily-services', requireAuth, requireStaff, async (req, res) => {
   const ready = items.filter(i => i.status === 'pronto').length;
   const delivered = items.filter(i => i.status === 'entregue').length;
   const canceled = items.filter(i => i.status === 'cancelado').length;
+  const activeCount = items.length - canceled;
 
   res.json({
     items,
@@ -869,8 +889,9 @@ app.get('/api/daily-services', requireAuth, requireStaff, async (req, res) => {
       ready,
       delivered,
       canceled,
-      remainingSpots: Math.max(0, capacity - (items.length - canceled)),
-      isFull: (items.length - canceled) >= capacity
+      remainingSpots: isSunday ? 0 : Math.max(0, capacity - activeCount),
+      isFull: isSunday || activeCount >= capacity,
+      isClosed: isSunday
     }
   });
 });
@@ -879,9 +900,10 @@ app.get('/api/daily-services', requireAuth, requireStaff, async (req, res) => {
 app.post('/api/daily-services', requireAuth, requireStaff, async (req, res) => {
   const {
     appointmentId, customerId, customerName, phone,
-    petId, petName, petBreed, serviceId, serviceName,
-    healthChecklist, notes, estimatedPrice, cageNumber, groomerName,
-    requiresValidation, validationConfirmed, date
+    petId, petName, petBreed, petWeightKg, petSizeTier, serviceId, serviceName,
+    selectedExtras, healthChecklist, notes, tosaNotes, estimatedPrice,
+    cageNumber, groomerName, requiresValidation, validationConfirmed, date,
+    estimatedReadyAt
   } = req.body;
 
   if (!customerName || !petName || !serviceName) {
@@ -889,6 +911,23 @@ app.post('/api/daily-services', requireAuth, requireStaff, async (req, res) => {
   }
 
   const targetDate = date || new Date().toISOString().split('T')[0];
+  const d = new Date(targetDate + 'T12:00:00Z');
+  const dayOfWeek = d.getUTCDay();
+  const isSunday = dayOfWeek === 0;
+  if (isSunday) {
+    return res.status(400).json({ error: 'O pet shop está fechado aos domingos. A fila de atendimento não opera.' });
+  }
+  const isSaturday = dayOfWeek === 6;
+  const capacity = isSaturday ? 32 : 50;
+
+  const { rows: countRows } = await pool.query(
+    "SELECT COUNT(*) FROM daily_services WHERE date = $1 AND status != 'cancelado'",
+    [targetDate]
+  );
+  if (Number(countRows[0].count) >= capacity) {
+    return res.status(400).json({ error: `Vagas do dia encerradas! Capacidade máxima de ${capacity} atendimentos já foi atingida hoje.` });
+  }
+
   const { rows: maxOrder } = await pool.query(
     'SELECT COALESCE(MAX(queue_order), 0) + 1 AS next_order FROM daily_services WHERE date = $1',
     [targetDate]
@@ -902,18 +941,20 @@ app.post('/api/daily-services', requireAuth, requireStaff, async (req, res) => {
   const { rows } = await pool.query(
     `INSERT INTO daily_services (
       appointment_id, customer_id, customer_name, phone,
-      pet_id, pet_name, pet_breed, service_id, service_name,
-      date, queue_order, status, health_checklist, notes,
+      pet_id, pet_name, pet_breed, pet_weight_kg, pet_size_tier, service_id, service_name,
+      selected_extras, date, queue_order, status, health_checklist, notes, tosa_notes,
       estimated_price, cage_number, groomer_name,
-      requires_validation, validation_confirmed, checkin_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'aguardando',$12,$13,$14,$15,$16,$17,$18,now())
+      requires_validation, validation_confirmed, estimated_ready_at, checkin_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'aguardando',$15,$16,$17,$18,$19,$20,$21,$22,$23,now())
     RETURNING *`,
     [
       appointmentId || null, customerId || null, String(customerName).trim(), phone || '',
-      petId || null, String(petName).trim(), petBreed || '', serviceId || null, String(serviceName).trim(),
-      targetDate, nextOrder, JSON.stringify(healthChecklist || {}), notes || '',
+      petId || null, String(petName).trim(), petBreed || '', petWeightKg ? Number(petWeightKg) : null,
+      petSizeTier || '', serviceId || null, String(serviceName).trim(),
+      JSON.stringify(selectedExtras || []), targetDate, nextOrder,
+      JSON.stringify(healthChecklist || {}), notes || '', tosaNotes || '',
       Number(estimatedPrice) || 0, cageNumber || '', groomerName || '',
-      reqVal, valConf
+      reqVal, valConf, estimatedReadyAt || null
     ]
   );
 
@@ -934,6 +975,13 @@ app.patch('/api/daily-services/:id/status', requireAuth, requireStaff, async (re
   const { rows: oldRows } = await pool.query('SELECT * FROM daily_services WHERE id = $1', [req.params.id]);
   if (!oldRows.length) return res.status(404).json({ error: 'Atendimento não encontrado' });
   const old = oldRows[0];
+
+  // HU-06: Bloqueio estrito — tosa NUNCA avança para pronto ou entregue sem confirmação humana
+  if (['pronto', 'entregue'].includes(status) && old.requires_validation && !old.validation_confirmed) {
+    return res.status(400).json({
+      error: 'Bloqueio de segurança: este procedimento de tosa requer validação humana confirmada com o tutor antes de ser concluído.'
+    });
+  }
 
   let setClause = 'status = $2';
   if (status === 'em_atendimento' && !old.started_at) {
@@ -960,35 +1008,57 @@ app.patch('/api/daily-services/:id/status', requireAuth, requireStaff, async (re
 // Atualização de detalhes do atendimento
 app.put('/api/daily-services/:id', requireAuth, requireStaff, async (req, res) => {
   const {
-    cageNumber, groomerName, notes, finalPrice, estimatedPrice,
-    healthChecklist, validationConfirmed, queueOrder
+    cageNumber, groomerName, notes, tosaNotes, finalPrice, estimatedPrice,
+    healthChecklist, validationConfirmed, validatedBy, queueOrder,
+    petWeightKg, petSizeTier, selectedExtras, estimatedReadyAt,
+    paid, paymentMethod
   } = req.body;
 
   const { rows: oldRows } = await pool.query('SELECT * FROM daily_services WHERE id = $1', [req.params.id]);
   if (!oldRows.length) return res.status(404).json({ error: 'Atendimento não encontrado' });
   const old = oldRows[0];
 
+  const nowValidatedAt = (validationConfirmed && !old.validation_confirmed) ? new Date() : null;
+
   const { rows } = await pool.query(
     `UPDATE daily_services SET
       cage_number = COALESCE($2, cage_number),
       groomer_name = COALESCE($3, groomer_name),
       notes = COALESCE($4, notes),
-      final_price = COALESCE($5, final_price),
-      estimated_price = COALESCE($6, estimated_price),
-      health_checklist = COALESCE($7, health_checklist),
-      validation_confirmed = COALESCE($8, validation_confirmed),
-      queue_order = COALESCE($9, queue_order)
+      tosa_notes = COALESCE($5, tosa_notes),
+      final_price = COALESCE($6, final_price),
+      estimated_price = COALESCE($7, estimated_price),
+      health_checklist = COALESCE($8, health_checklist),
+      validation_confirmed = COALESCE($9, validation_confirmed),
+      validated_by = COALESCE($10, validated_by),
+      validated_at = COALESCE($11, validated_at),
+      queue_order = COALESCE($12, queue_order),
+      pet_weight_kg = COALESCE($13, pet_weight_kg),
+      pet_size_tier = COALESCE($14, pet_size_tier),
+      selected_extras = COALESCE($15, selected_extras),
+      estimated_ready_at = COALESCE($16, estimated_ready_at),
+      paid = COALESCE($17, paid),
+      payment_method = COALESCE($18, payment_method)
      WHERE id = $1 RETURNING *`,
     [
       req.params.id,
       cageNumber !== undefined ? cageNumber : null,
       groomerName !== undefined ? groomerName : null,
       notes !== undefined ? notes : null,
+      tosaNotes !== undefined ? tosaNotes : null,
       finalPrice !== undefined ? Number(finalPrice) : null,
       estimatedPrice !== undefined ? Number(estimatedPrice) : null,
       healthChecklist !== undefined ? JSON.stringify(healthChecklist) : null,
       validationConfirmed !== undefined ? !!validationConfirmed : null,
-      queueOrder !== undefined ? Number(queueOrder) : null
+      validatedBy !== undefined ? validatedBy : null,
+      nowValidatedAt,
+      queueOrder !== undefined ? Number(queueOrder) : null,
+      petWeightKg !== undefined ? Number(petWeightKg) : null,
+      petSizeTier !== undefined ? petSizeTier : null,
+      selectedExtras !== undefined ? JSON.stringify(selectedExtras) : null,
+      estimatedReadyAt !== undefined ? estimatedReadyAt : null,
+      paid !== undefined ? !!paid : null,
+      paymentMethod !== undefined ? paymentMethod : null
     ]
   );
 
@@ -1132,23 +1202,74 @@ app.post('/api/orders', requireAuth, async (req, res) => {
   const requested = Array.isArray(items) ? items : [];
   if (!requested.length) return res.status(400).json({ error: 'Carrinho vazio' });
 
-  // Preço e nome vêm do banco — nunca do body do cliente
-  // Aceita id (API) ou productId (CartItem do front) — mesmo campo, dois nomes históricos
+  // Preço e nome validados no servidor
+  // Suporta: Produtos, Serviços do Catálogo, Medicamentos da Farmácia, Consultas e Atendimentos da Esteira
   const itemId = i => Number(i && (i.id ?? i.productId));
   const ids = requested.map(itemId).filter(Number.isInteger);
+
+  // 1. Produtos
   const { rows: prods } = await pool.query('SELECT id, name, price, stock FROM products WHERE id = ANY($1)', [ids]);
-  const byId = new Map(prods.map(p => [p.id, p]));
+  const prodsById = new Map(prods.map(p => [p.id, p]));
+
+  // 2. Serviços de catálogo (ids >= 5000 && < 7000)
+  const serviceIds = ids.filter(id => id >= 5000 && id < 7000).map(id => id - 5000);
+  const { rows: servs } = serviceIds.length
+    ? await pool.query('SELECT id, name, price FROM catalog_services WHERE id = ANY($1)', [serviceIds])
+    : { rows: [] };
+  const servsById = new Map(servs.map(s => [5000 + s.id, s]));
+
+  // 3. Medicamentos (ids >= 8000 && < 9000)
+  const medIds = ids.filter(id => id >= 8000 && id < 9000).map(id => id - 8000);
+  const { rows: meds } = medIds.length
+    ? await pool.query('SELECT id, name, price, stock FROM medications WHERE id = ANY($1)', [medIds])
+    : { rows: [] };
+  const medsById = new Map(meds.map(m => [8000 + m.id, m]));
+
+  // 4. Atendimentos da fila diária / esteira (ids >= 9000)
+  const dailyIds = ids.filter(id => id >= 9000).map(id => id - 9000);
+  const { rows: dailyServices } = dailyIds.length
+    ? await pool.query('SELECT id, pet_name, service_name, price FROM daily_services WHERE id = ANY($1)', [dailyIds])
+    : { rows: [] };
+  const dailyById = new Map(dailyServices.map(d => [9000 + d.id, d]));
+
   const serverItems = [];
   for (const i of requested) {
-    const p = byId.get(itemId(i));
+    const rawId = itemId(i);
     const qty = Math.floor(Number(i && i.quantity));
-    if (!p || !qty || qty < 1 || qty > 999) {
-      return res.status(400).json({ error: `Item inválido: ${(i && i.name) || (i && i.id)}` });
+    if (!qty || qty < 1 || qty > 999) {
+      return res.status(400).json({ error: `Quantidade inválida: ${(i && i.name) || rawId}` });
     }
-    if (p.stock !== null && p.stock !== undefined && qty > Number(p.stock)) {
-      return res.status(400).json({ error: `Estoque insuficiente: ${p.name} (disponível: ${p.stock})` });
+
+    const prod = prodsById.get(rawId);
+    const serv = servsById.get(rawId);
+    const med = medsById.get(rawId);
+    const daily = dailyById.get(rawId);
+
+    if (prod) {
+      if (prod.stock !== null && prod.stock !== undefined && qty > Number(prod.stock)) {
+        return res.status(400).json({ error: `Estoque insuficiente: ${prod.name} (disponível: ${prod.stock})` });
+      }
+      serverItems.push({ id: prod.id, name: prod.name, price: num(prod.price), quantity: qty, isProduct: true });
+    } else if (serv) {
+      serverItems.push({ id: rawId, name: i.name || `Serviço: ${serv.name}`, price: num(serv.price), quantity: qty });
+    } else if (med) {
+      if (med.stock !== null && med.stock !== undefined && qty > Number(med.stock)) {
+        return res.status(400).json({ error: `Estoque insuficiente: ${med.name} (disponível: ${med.stock})` });
+      }
+      serverItems.push({ id: rawId, name: i.name || `Medicamento: ${med.name}`, price: num(med.price), quantity: qty, isMedication: true, medId: med.id });
+    } else if (daily) {
+      const price = daily.price ? num(daily.price) : (Number(i.price) || 79.90);
+      serverItems.push({ id: rawId, name: i.name || `${daily.service_name} — Pet ${daily.pet_name}`, price, quantity: qty, dailyId: daily.id });
+    } else if ((rawId >= 7000 && rawId < 8000) || (i && i.name && i.name.includes('Consulta'))) {
+      // Consulta veterinária
+      const price = Number(i && i.price) > 0 ? num(i.price) : 150.00;
+      serverItems.push({ id: rawId, name: i.name || 'Consulta Veterinária', price, quantity: qty });
+    } else if (i && i.name && Number(i.price) > 0) {
+      // Qualquer outro serviço ou item customizado legítimo do sistema
+      serverItems.push({ id: rawId || 9999, name: String(i.name), price: num(i.price), quantity: qty });
+    } else {
+      return res.status(400).json({ error: `Item inválido: ${(i && i.name) || rawId}` });
     }
-    serverItems.push({ id: p.id, name: p.name, price: num(p.price), quantity: qty });
   }
   const subtotal = serverItems.reduce((s, i) => s + Number(i.price) * i.quantity, 0);
 
@@ -1215,18 +1336,31 @@ app.post('/api/orders', requireAuth, async (req, res) => {
         [rows[0].id, `Pedido ${seq[0].order_number}`, total, paymentMethod || null]
       );
     }
-    // Baixa de estoque atômica: só decrementa onde há saldo suficiente (NULL = sem controle)
+    // Baixa de estoque atômica: só decrementa produtos físicos com controle de estoque
     for (const item of serverItems) {
-      const dec = await client.query(
-        'UPDATE products SET stock = stock - $2 WHERE id = $1 AND stock IS NOT NULL AND stock >= $2',
-        [item.id, item.quantity]
-      );
-      if (dec.rowCount === 0) {
-        const chk = await client.query('SELECT stock FROM products WHERE id=$1', [item.id]);
-        if (chk.rows.length && chk.rows[0].stock !== null && Number(chk.rows[0].stock) < item.quantity) {
-          await client.query('ROLLBACK');
-          return res.status(400).json({ error: `Estoque insuficiente: ${item.name}` });
+      if (item.isProduct) {
+        const dec = await client.query(
+          'UPDATE products SET stock = stock - $2 WHERE id = $1 AND stock IS NOT NULL AND stock >= $2',
+          [item.id, item.quantity]
+        );
+        if (dec.rowCount === 0) {
+          const chk = await client.query('SELECT stock FROM products WHERE id=$1', [item.id]);
+          if (chk.rows.length && chk.rows[0].stock !== null && Number(chk.rows[0].stock) < item.quantity) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Estoque insuficiente: ${item.name}` });
+          }
         }
+      } else if (item.isMedication && item.medId) {
+        await client.query(
+          'UPDATE medications SET stock = stock - $2 WHERE id = $1 AND stock IS NOT NULL AND stock >= $2',
+          [item.medId, item.quantity]
+        );
+      }
+      if (item.dailyId) {
+        await client.query(
+          "UPDATE daily_services SET status = 'entregue' WHERE id = $1",
+          [item.dailyId]
+        );
       }
     }
     await client.query('COMMIT');

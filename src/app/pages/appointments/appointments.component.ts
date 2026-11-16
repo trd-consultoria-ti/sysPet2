@@ -3,7 +3,7 @@ import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/fo
 import { ActivatedRoute } from '@angular/router';
 import { Service } from '../../shared/models/service.model';
 import { Customer } from '../../shared/models/customer.model';
-import { Pet } from '../../shared/models/pet.model';
+import { Pet, getPetSizeTier, getPetSizeLabel } from '../../shared/models/pet.model';
 import { Appointment, AppointmentStatus } from '../../shared/models/appointment.model';
 import { AppointmentService } from '../../shared/services/appointment.service';
 import { ServiceCatalogService } from '../../shared/services/service-catalog.service';
@@ -64,7 +64,8 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
       name: ['', [Validators.required]],
       type: ['Cachorro', [Validators.required]],
       breed: [''],
-      age: [null]
+      age: [null],
+      weightKg: [null, [Validators.min(0.1)]]
     });
 
     this.appointmentForm.get('customerId')!.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
@@ -129,13 +130,20 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
         name: v.name,
         type: v.type,
         breed: v.breed || undefined,
-        age: v.age || undefined
+        age: v.age || undefined,
+        weightKg: v.weightKg ? Number(v.weightKg) : undefined
       }).pipe(takeUntil(this.destroy$)).subscribe(() => {
         this.customerService.refresh();
         this.petForm.reset({ type: 'Cachorro' });
         this.showPetForm = false;
       });
     }
+  }
+
+  getPetSizeInfo(weightKg?: number | null): string {
+    if (!weightKg) return '';
+    const tier = getPetSizeTier(weightKg);
+    return getPetSizeLabel(tier);
   }
 
   private applyAppointmentFilter(): void {

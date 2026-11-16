@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Consultation, ConsultationStatus } from '../../../shared/models/consultation.model';
@@ -11,6 +12,7 @@ import { PrescriptionService } from '../../../shared/services/prescription.servi
 import { CustomerService } from '../../../shared/services/customer.service';
 import { MedicationService } from '../../../shared/services/medication.service';
 import { Medication } from '../../../shared/models/medication.model';
+import { CartService } from '../../../shared/services/cart.service';
 
 interface PetOption {
   pet: Pet;
@@ -85,7 +87,9 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     private vetService: VetService,
     private prescriptionService: PrescriptionService,
     private customerService: CustomerService,
-    private medicationService: MedicationService
+    private medicationService: MedicationService,
+    private cartService: CartService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -111,6 +115,97 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     this.medicationService.list().pipe(takeUntil(this.destroy$)).subscribe(meds => {
       this.availableMedications = meds.filter(m => m.active !== false);
     });
+  }
+
+  get totalConsultations(): number {
+    return this.consultations.length;
+  }
+
+  get scheduledCount(): number {
+    return this.consultations.filter(c => c.status === 'agendado').length;
+  }
+
+  get inProgressCount(): number {
+    return this.consultations.filter(c => c.status === 'em_atendimento').length;
+  }
+
+  get completedCount(): number {
+    return this.consultations.filter(c => c.status === 'concluido').length;
+  }
+
+  getInitials(name: string): string {
+    if (!name) return 'PT';
+    return name.trim().split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  }
+
+  addConsultationToCart(c: Consultation): void {
+    // 1. Adiciona a Consulta Veterinária
+    this.cartService.addCustomItem({
+      id: 7000 + c.id,
+      name: `Consulta Veterinária — Pet ${c.petName} (Dr(a). ${c.vetName || 'Clínico'})`,
+      price: 150.00,
+      image: 'assets/images/logo.png',
+      quantity: 1
+    });
+
+    // 2. Se houver receita emitida ou itens no rxItems da sessão atual, adiciona ao carrinho
+    const rx = this.prescriptionFor(c);
+    const itemsToAdd = rx?.items && rx.items.length > 0 
+      ? rx.items 
+      : this.rxItems.filter(i => i.medication && i.medication.trim());
+
+    if (itemsToAdd && itemsToAdd.length > 0) {
+      itemsToAdd.forEach((item, idx) => {
+        if (!item.medication || !item.medication.trim()) return;
+        const found = this.availableMedications.find(
+          m => m.name.toLowerCase() === item.medication.trim().toLowerCase()
+        );
+        const medPrice = found?.price || 45.00;
+        const medId = found ? 8000 + found.id : 8500 + c.id * 10 + idx;
+
+        this.cartService.addCustomItem({
+          id: medId,
+          name: `Medicamento: ${item.medication}${item.dosage ? ' (' + item.dosage + ')' : ''}`,
+          price: medPrice,
+          image: 'assets/images/logo.png',
+          quantity: 1
+        });
+      });
+    }
+
+    this.success = `Consulta e prescrições de ${c.petName} adicionadas ao Carrinho!`;
+    this.router.navigate(['/cart']);
+  }
+
+  emitPrescriptionAndGoToCart(): void {
+    if (!this.current) return;
+    this.error = '';
+    const items = this.rxItems.filter(i => i.medication && i.medication.trim());
+    if (!items.length) {
+      this.addConsultationToCart(this.current);
+      return;
+    }
+    this.rxSaving = true;
+    this.prescriptionService.save({
+      consultationId: this.current.id,
+      vetId: this.current.vetId || undefined,
+      notes: this.rxNotes || undefined,
+      items
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.rxSaving = false;
+        this.addConsultationToCart(this.current!);
+      },
+      error: err => {
+        this.rxSaving = false;
+        this.error = err.error?.error || 'Erro ao emitir receita.';
+      }
+    });
+  }
+
+  skipPrescriptionAndGoToCart(): void {
+    if (!this.current) return;
+    this.addConsultationToCart(this.current);
   }
 
   get queue(): Consultation[] {

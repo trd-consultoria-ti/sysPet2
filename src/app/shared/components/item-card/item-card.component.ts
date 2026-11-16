@@ -73,4 +73,19 @@ export class ItemCardComponent {
       this.action.emit(this.item);
     }
   }
+
+  addServiceToCart(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!this.isService) return;
+    this.cartService.addCustomItem({
+      id: 5000 + this.item.id,
+      name: `Serviço: ${this.item.name}`,
+      price: this.item.price,
+      image: this.displayImage,
+      quantity: 1
+    });
+    this.action.emit({ type: 'added-to-cart', item: this.item });
+  }
 }

@@ -8,7 +8,7 @@ import { CustomerService } from '../../shared/services/customer.service';
 import { OrderService } from '../../shared/services/order.service';
 import { AppointmentService } from '../../shared/services/appointment.service';
 import { Customer } from '../../shared/models/customer.model';
-import { Pet } from '../../shared/models/pet.model';
+import { Pet, getPetSizeTier, getPetSizeLabel } from '../../shared/models/pet.model';
 import { Order, OrderStatus } from '../../shared/models/order.model';
 import { Appointment, AppointmentStatus } from '../../shared/models/appointment.model';
 import { Consultation, ConsultationStatus } from '../../shared/models/consultation.model';
@@ -88,7 +88,8 @@ export class AccountComponent implements OnInit, OnDestroy {
       name: ['', [Validators.required]],
       type: ['Cachorro', [Validators.required]],
       breed: [''],
-      age: [null]
+      age: [null],
+      weightKg: [null, [Validators.min(0.1)]]
     });
   }
 
@@ -169,7 +170,7 @@ export class AccountComponent implements OnInit, OnDestroy {
     this.showPetForm = true;
     this.editingPetId = null;
     this.petError = '';
-    this.petForm.reset({ name: '', type: 'Cachorro', breed: '', age: null });
+    this.petForm.reset({ name: '', type: 'Cachorro', breed: '', age: null, weightKg: null });
   }
 
   startEditPet(pet: Pet): void {
@@ -183,7 +184,8 @@ export class AccountComponent implements OnInit, OnDestroy {
       name: pet.name,
       type: pet.type,
       breed: pet.breed || '',
-      age: pet.age ?? null
+      age: pet.age ?? null,
+      weightKg: pet.weightKg ?? null
     });
   }
 
@@ -227,6 +229,7 @@ export class AccountComponent implements OnInit, OnDestroy {
   }
 
   private savePetForCustomer(customerId: number, value: Partial<Pet>): Observable<Pet> {
+    const weightVal = value.weightKg ? Number(value.weightKg) : undefined;
     if (this.editingPetId) {
       return this.customerService.updatePet(customerId, {
         id: this.editingPetId,
@@ -234,15 +237,23 @@ export class AccountComponent implements OnInit, OnDestroy {
         name: value.name!,
         type: value.type!,
         breed: value.breed,
-        age: value.age
+        age: value.age,
+        weightKg: weightVal
       });
     }
     return this.customerService.addPet(customerId, {
       name: value.name!,
       type: value.type!,
       breed: value.breed,
-      age: value.age
+      age: value.age,
+      weightKg: weightVal
     });
+  }
+
+  getPetSizeInfo(weightKg?: number | null): string {
+    if (!weightKg) return '';
+    const tier = getPetSizeTier(weightKg);
+    return getPetSizeLabel(tier);
   }
 
   deletePet(pet: Pet): void {

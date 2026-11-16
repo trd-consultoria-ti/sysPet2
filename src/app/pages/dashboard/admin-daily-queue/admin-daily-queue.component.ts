@@ -1,10 +1,15 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { DailyServicesService } from '../../../shared/services/daily-services.service';
 import { DailyService, DailyQueueStats, DailyServiceStatus, HealthChecklist } from '../../../shared/models/daily-service.model';
 import { ServiceCatalogService } from '../../../shared/services/service-catalog.service';
 import { Service } from '../../../shared/models/service.model';
+import { CashService } from '../../../shared/services/cash.service';
+import { CartService } from '../../../shared/services/cart.service';
+import { PricingService, PricingQuote, ExtraServiceOption, BusinessDayConfig } from '../../../shared/services/pricing.service';
+import { getPetSizeTier, getPetSizeLabel } from '../../../shared/models/pet.model';
 
 export interface KanbanColumn {
   key: DailyServiceStatus;
@@ -32,16 +37,18 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     delivered: 0,
     canceled: 0,
     remainingSpots: 50,
-    isFull: false
+    isFull: false,
+    isClosed: false
   };
 
   viewMode: 'kanban' | 'list' = 'kanban';
   currentDate: string = new Date().toISOString().split('T')[0];
   activeFilter: 'todos' | DailyServiceStatus = 'todos';
   availableServices: Service[] = [];
+  availableExtras: ExtraServiceOption[] = [];
 
   readonly columns: KanbanColumn[] = [
-    { key: 'aguardando', label: '1. Gaiola', icon: 'fas fa-clock', actionLabel: 'Iniciar Banho', badgeClass: 'waiting' },
+    { key: 'aguardando', label: '1. Gaiola / Espera', icon: 'fas fa-clock', actionLabel: 'Iniciar Banho', badgeClass: 'waiting' },
     { key: 'em_atendimento', label: '2. Em Banho & Tosa', icon: 'fas fa-bath', actionLabel: 'Marcar Pronto', badgeClass: 'in-progress' },
     { key: 'pronto', label: '3. Pronto para Retirada', icon: 'fas fa-check-circle', actionLabel: 'Entregar ao Tutor', badgeClass: 'ready' },
     { key: 'entregue', label: '4. Entregue / Concluído', icon: 'fas fa-paw', actionLabel: '', badgeClass: 'delivered' }
@@ -55,25 +62,56 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
   editingId: number | null = null;
   checkinForm!: FormGroup;
 
+  // Cotação e Matriz de Preço (HU-08 / HU-09)
+  currentQuote: PricingQuote | null = null;
+  selectedExtras: string[] = [];
+
+  // Validação Humana de Tosa Bloqueante (HU-06)
+  showTosaValidationModal: boolean = false;
+  tosaTargetItem: DailyService | null = null;
+  tosaPendingNextStatus: DailyServiceStatus | null = null;
+  tosaValidationForm!: FormGroup;
+
+  // Expediente & Capacidade (HU-04 e HU-26)
+  isClosed: boolean = false;
+  showCapacityModal: boolean = false;
+  businessHoursList: BusinessDayConfig[] = [];
+
   toastMessage: string | null = null;
   toastType: 'success' | 'warning' | 'info' = 'info';
+
+  // Modal de Encaminhamento ao Caixa (Fim da Esteira)
+  showCashModal: boolean = false;
+  cashTargetItem: DailyService | null = null;
+  selectedPaymentMethod: 'pix' | 'cartao_credito' | 'cartao_debito' | 'dinheiro' = 'pix';
+  isProcessingPayment: boolean = false;
 
   private sub: Subscription = new Subscription();
 
   constructor(
     private dailyService: DailyServicesService,
     private catalogService: ServiceCatalogService,
-    private fb: FormBuilder
+    private pricingService: PricingService,
+    private fb: FormBuilder,
+    private router: Router,
+    private cashService: CashService,
+    private cartService: CartService
   ) {}
 
   ngOnInit(): void {
+    this.availableExtras = this.pricingService.availableExtras;
+    this.businessHoursList = this.pricingService.getBusinessHours();
+    this.checkIfDateIsClosed();
+
     this.initForm();
+    this.initTosaValidationForm();
     this.loadCatalog();
 
     this.sub.add(
       this.dailyService.queue$.subscribe(res => {
         this.queueItems = res.items || [];
         this.stats = res.stats;
+        this.checkIfDateIsClosed();
         this.applyFilter();
       })
     );
@@ -83,17 +121,30 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     this.sub.unsubscribe();
   }
 
+  private checkIfDateIsClosed(): void {
+    this.isClosed = this.pricingService.isDayClosed(this.currentDate);
+    if (this.stats) {
+      this.stats.isClosed = this.isClosed;
+      if (this.isClosed) {
+        this.stats.isFull = true;
+        this.stats.remainingSpots = 0;
+      }
+    }
+  }
+
   private initForm(): void {
     this.checkinForm = this.fb.group({
       customerName: ['', Validators.required],
       phone: ['', Validators.required],
       petName: ['', Validators.required],
       petBreed: [''],
-      serviceName: ['', Validators.required],
-      estimatedPrice: [79.90, [Validators.required, Validators.min(0)]],
+      petWeightKg: [null, [Validators.min(0.1)]],
+      serviceName: ['Banho Completo', Validators.required],
+      estimatedPrice: [50.00, [Validators.required, Validators.min(0)]],
       cageNumber: [''],
       groomerName: [''],
       notes: [''],
+      tosaNotes: [''],
       health_skin: [false],
       health_parasites: [false],
       health_paw: [false],
@@ -104,14 +155,17 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       validationConfirmed: [true]
     });
 
-    this.checkinForm.get('serviceName')?.valueChanges.subscribe(name => {
-      const isTosa = String(name || '').toLowerCase().includes('tosa');
-      if (isTosa) {
-        this.checkinForm.patchValue({
-          requiresValidation: true,
-          validationConfirmed: false
-        }, { emitEvent: false });
-      }
+    // Recálculo dinâmico da matriz de preços ao alterar serviço, raça ou peso
+    this.checkinForm.get('serviceName')?.valueChanges.subscribe(() => this.recalculateQuote());
+    this.checkinForm.get('petBreed')?.valueChanges.subscribe(() => this.recalculateQuote());
+    this.checkinForm.get('petWeightKg')?.valueChanges.subscribe(() => this.recalculateQuote());
+  }
+
+  private initTosaValidationForm(): void {
+    this.tosaValidationForm = this.fb.group({
+      confirmedWithTutor: [true, Validators.requiredTrue],
+      validatedBy: ['', Validators.required],
+      tosaNotes: ['', Validators.required]
     });
   }
 
@@ -121,27 +175,69 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     });
   }
 
-  onServiceSelected(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const selectedName = select.value;
-    const s = this.availableServices.find(srv => srv.name === selectedName);
-    if (s) {
+  // -------------------------------------------------------------
+  // Precificação Automática & Cotação (HU-08 / HU-09 / HU-07)
+  // -------------------------------------------------------------
+  recalculateQuote(): void {
+    const sName = this.checkinForm.get('serviceName')?.value || 'Banho Completo';
+    const breed = this.checkinForm.get('petBreed')?.value || '';
+    const weight = this.checkinForm.get('petWeightKg')?.value || null;
+
+    const isTosa = String(sName).toLowerCase().includes('tosa');
+    if (isTosa) {
       this.checkinForm.patchValue({
-        estimatedPrice: s.price,
-        serviceName: s.name
-      });
+        requiresValidation: true,
+        validationConfirmed: false
+      }, { emitEvent: false });
     }
+
+    this.currentQuote = this.pricingService.calculateQuote(sName, weight, breed, this.selectedExtras);
+
+    this.checkinForm.patchValue({
+      estimatedPrice: this.currentQuote.totalPrice
+    }, { emitEvent: false });
   }
 
+  toggleExtra(extraId: string): void {
+    const idx = this.selectedExtras.indexOf(extraId);
+    if (idx >= 0) {
+      this.selectedExtras.splice(idx, 1);
+    } else {
+      this.selectedExtras.push(extraId);
+    }
+    this.recalculateQuote();
+  }
+
+  isExtraSelected(extraId: string): boolean {
+    return this.selectedExtras.includes(extraId);
+  }
+
+  getCalculatedSizeTier(): string {
+    const w = this.checkinForm.get('petWeightKg')?.value;
+    if (!w) return 'Informe o peso';
+    return getPetSizeLabel(getPetSizeTier(w));
+  }
+
+  onServiceSelected(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.checkinForm.patchValue({ serviceName: select.value });
+    this.recalculateQuote();
+  }
+
+  // -------------------------------------------------------------
+  // Navegação de Datas & Filtros
+  // -------------------------------------------------------------
   changeDate(delta: number): void {
     const d = new Date(this.currentDate + 'T12:00:00Z');
     d.setUTCDate(d.getUTCDate() + delta);
     this.currentDate = d.toISOString().split('T')[0];
+    this.checkIfDateIsClosed();
     this.dailyService.refresh(this.currentDate).subscribe();
   }
 
   setToday(): void {
     this.currentDate = new Date().toISOString().split('T')[0];
+    this.checkIfDateIsClosed();
     this.dailyService.refresh(this.currentDate).subscribe();
   }
 
@@ -162,6 +258,9 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     return this.queueItems.filter(item => item.status === status);
   }
 
+  // -------------------------------------------------------------
+  // Avanço e Regresso de Estágios com Bloqueio HU-06
+  // -------------------------------------------------------------
   advanceStatus(item: DailyService): void {
     let next: DailyServiceStatus | null = null;
     if (item.status === 'aguardando') {
@@ -173,7 +272,17 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     }
 
     if (next) {
+      // HU-06: Bloqueio estrito — Tosa NUNCA avança para pronto ou entregue sem confirmação humana!
+      if (['pronto', 'entregue'].includes(next) && item.requiresValidation && !item.validationConfirmed) {
+        this.showToast(`⛔ A tosa de ${item.petName} exige conferência humana com o tutor antes de concluir!`, 'warning');
+        this.openTosaValidationModal(item, next);
+        return;
+      }
+
       this.changeStatus(item, next);
+      if (next === 'entregue') {
+        this.openCashForwardModal(item);
+      }
     }
   }
 
@@ -217,24 +326,237 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     event.preventDefault();
     this.dragOverColumn = null;
     if (this.draggedItem && this.draggedItem.status !== targetStatus) {
-      this.changeStatus(this.draggedItem, targetStatus);
+      const item = this.draggedItem;
+
+      // HU-06: Bloqueio no Drag & Drop
+      if (['pronto', 'entregue'].includes(targetStatus) && item.requiresValidation && !item.validationConfirmed) {
+        this.showToast(`⛔ Tosa de ${item.petName} não confirmada. Validação com o tutor é obrigatória!`, 'warning');
+        this.openTosaValidationModal(item, targetStatus);
+        this.draggedItem = null;
+        return;
+      }
+
+      this.changeStatus(item, targetStatus);
+      if (targetStatus === 'entregue') {
+        this.openCashForwardModal(item);
+      }
     }
     this.draggedItem = null;
   }
 
+  // -------------------------------------------------------------
+  // Modal de Validação de Tosa (HU-06)
+  // -------------------------------------------------------------
+  openTosaValidationModal(item: DailyService, pendingNextStatus?: DailyServiceStatus): void {
+    this.tosaTargetItem = item;
+    this.tosaPendingNextStatus = pendingNextStatus || null;
+    this.tosaValidationForm.reset({
+      confirmedWithTutor: true,
+      validatedBy: item.groomerName || 'Recepção Animal World',
+      tosaNotes: item.tosaNotes || item.notes || 'Tosa alinhada conforme padrão da raça e orientação do tutor'
+    });
+    this.showTosaValidationModal = true;
+  }
+
+  closeTosaValidationModal(): void {
+    this.showTosaValidationModal = false;
+    this.tosaTargetItem = null;
+    this.tosaPendingNextStatus = null;
+  }
+
+  confirmTosaValidation(): void {
+    if (this.tosaValidationForm.invalid || !this.tosaTargetItem) {
+      this.tosaValidationForm.markAllAsTouched();
+      return;
+    }
+
+    const item = this.tosaTargetItem;
+    const formVal = this.tosaValidationForm.value;
+    const now = new Date().toISOString();
+
+    this.dailyService.updateDetails(item.id, {
+      validationConfirmed: true,
+      validatedBy: formVal.validatedBy,
+      validatedAt: now,
+      tosaNotes: formVal.tosaNotes
+    }).subscribe({
+      next: () => {
+        item.validationConfirmed = true;
+        item.validatedBy = formVal.validatedBy;
+        item.validatedAt = now;
+        item.tosaNotes = formVal.tosaNotes;
+
+        this.showToast(`✂️ Tosa de ${item.petName} validada com sucesso por ${formVal.validatedBy}!`, 'success');
+        const next = this.tosaPendingNextStatus;
+        this.closeTosaValidationModal();
+
+        if (next) {
+          this.changeStatus(item, next);
+          if (next === 'entregue') {
+            this.openCashForwardModal(item);
+          }
+        }
+      },
+      error: () => this.showToast('Erro ao registrar validação de tosa.', 'warning')
+    });
+  }
+
+  // -------------------------------------------------------------
+  // Notificação WhatsApp com ETA (HU-03 & HU-14)
+  // -------------------------------------------------------------
+  sendEtaWhatsApp(item: DailyService): void {
+    const rawPhone = (item.phone || '').replace(/\D/g, '');
+    const phone = rawPhone.length === 11 ? '55' + rawPhone : (rawPhone.length === 13 ? rawPhone : '');
+    const etaStr = item.estimatedReadyAt || this.formatEstimatedOut(item);
+    const text = encodeURIComponent(
+      `Olá ${item.customerName}! 🐶 Passando para avisar que o(a) ${item.petName} já está aos nossos cuidados na Animal World para ${item.serviceName}.\n\n` +
+      `⏱️ Previsão estimada de saída: ~${etaStr}.\n\n` +
+      `Assim que estiver prontinho e cheiroso nós te avisamos aqui no WhatsApp! ✨🐾`
+    );
+
+    if (phone) {
+      window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+      this.showToast(`Previsão de saída (~${etaStr}) enviada via WhatsApp para ${item.customerName}!`, 'success');
+    } else {
+      this.showToast('Telefone do tutor inválido para WhatsApp', 'warning');
+    }
+  }
+
+  formatEstimatedOut(item: DailyService): string {
+    if (item.estimatedReadyAt) return item.estimatedReadyAt;
+    const baseTime = item.checkinAt ? new Date(item.checkinAt) : new Date();
+    const eta = this.pricingService.estimateReadyTime(baseTime, 60, item.queueOrder || 1);
+    return eta.formattedTime;
+  }
+
+  // -------------------------------------------------------------
+  // Expediente e Capacidade Configurável (HU-04 e HU-26)
+  // -------------------------------------------------------------
+  openCapacityModal(): void {
+    this.businessHoursList = this.pricingService.getBusinessHours();
+    this.showCapacityModal = true;
+  }
+
+  closeCapacityModal(): void {
+    this.showCapacityModal = false;
+  }
+
+  saveCapacityConfig(): void {
+    this.pricingService.saveBusinessHours(this.businessHoursList);
+    this.checkIfDateIsClosed();
+    this.dailyService.refresh(this.currentDate).subscribe();
+    this.showToast('Configurações de expediente e capacidade salvas com sucesso!', 'success');
+    this.closeCapacityModal();
+  }
+
+  // -------------------------------------------------------------
+  // Encaminhamento ao Caixa (Fim da Esteira)
+  // -------------------------------------------------------------
+  openCashForwardModal(item: DailyService): void {
+    this.cashTargetItem = item;
+    this.selectedPaymentMethod = 'pix';
+    this.showCashModal = true;
+  }
+
+  closeCashModal(): void {
+    this.showCashModal = false;
+    this.cashTargetItem = null;
+  }
+
+  confirmQuickPayment(): void {
+    if (!this.cashTargetItem) return;
+    this.isProcessingPayment = true;
+    const item = this.cashTargetItem;
+    const amount = Number(item.finalPrice || item.estimatedPrice || 0);
+    const description = `Atendimento Banho & Tosa — Pet ${item.petName} (${item.serviceName}) • Tutor: ${item.customerName}`;
+
+    this.cashService.register({
+      type: 'entrada',
+      description,
+      amount,
+      paymentMethod: this.selectedPaymentMethod
+    }).subscribe({
+      next: () => {
+        item.paid = true;
+        item.paymentMethod = this.selectedPaymentMethod;
+        item.paidAt = new Date().toISOString();
+        this.dailyService.updateDetails(item.id, {
+          paid: true,
+          paymentMethod: this.selectedPaymentMethod,
+          paidAt: item.paidAt
+        }).subscribe();
+
+        this.isProcessingPayment = false;
+        this.closeCashModal();
+        this.showToast(`💰 Pagamento de R$ ${this.formatPrice(amount)} (${this.selectedPaymentMethod.toUpperCase()}) registrado no Caixa com sucesso!`, 'success');
+      },
+      error: () => {
+        this.isProcessingPayment = false;
+        this.showToast('Erro ao registrar pagamento no Caixa.', 'warning');
+      }
+    });
+  }
+
+  redirectToCashRegister(item: DailyService): void {
+    const amount = item.finalPrice || item.estimatedPrice || 0;
+    const description = `Atendimento Banho & Tosa — Pet ${item.petName} (${item.serviceName}) • Tutor: ${item.customerName}`;
+    this.closeCashModal();
+    this.router.navigate(['/dashboard/cash'], {
+      queryParams: {
+        source: 'daily-queue',
+        petName: item.petName,
+        customerName: item.customerName,
+        serviceName: item.serviceName,
+        amount: amount,
+        description: description,
+        paymentMethod: this.selectedPaymentMethod
+      }
+    });
+  }
+
+  addToCart(item: DailyService): void {
+    const amount = Number(item.finalPrice || item.estimatedPrice || 0);
+    this.cartService.addCustomItem({
+      id: 9000 + item.id,
+      name: `Serviço: ${item.serviceName} — Pet ${item.petName}`,
+      price: amount,
+      image: 'assets/images/logo.png',
+      quantity: 1
+    });
+    this.closeCashModal();
+    this.showToast(`🛒 Atendimento de ${item.petName} adicionado ao Carrinho com sucesso!`, 'success');
+    this.router.navigate(['/cart']);
+  }
+
+  // -------------------------------------------------------------
+  // Modal de Check-in
+  // -------------------------------------------------------------
   openCheckinModal(): void {
+    if (this.isClosed) {
+      this.showToast('O pet shop está fechado aos domingos. Check-in não permitido.', 'warning');
+      return;
+    }
+    if (this.stats.isFull) {
+      this.showToast('Vagas do dia esgotadas! Não é possível realizar novos check-ins hoje.', 'warning');
+      return;
+    }
+
     this.isEditing = false;
     this.editingId = null;
+    this.selectedExtras = [];
+
     this.checkinForm.reset({
       customerName: '',
       phone: '',
       petName: '',
       petBreed: '',
-      serviceName: this.availableServices[0]?.name || 'Banho Completo',
-      estimatedPrice: this.availableServices[0]?.price || 79.90,
+      petWeightKg: null,
+      serviceName: 'Banho Completo',
+      estimatedPrice: 50.00,
       cageNumber: '',
       groomerName: '',
       notes: '',
+      tosaNotes: '',
       health_skin: false,
       health_parasites: false,
       health_paw: false,
@@ -244,6 +566,8 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       requiresValidation: false,
       validationConfirmed: true
     });
+
+    this.recalculateQuote();
     this.showModal = true;
   }
 
@@ -267,19 +591,27 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       observations: val.health_obs || ''
     };
 
+    const quote = this.currentQuote || this.pricingService.calculateQuote(val.serviceName, val.petWeightKg, val.petBreed, this.selectedExtras);
+    const eta = this.pricingService.estimateReadyTime(new Date(), quote.totalDurationMin, this.stats.waiting);
+
     const payload: Partial<DailyService> = {
       customerName: val.customerName,
       phone: val.phone,
       petName: val.petName,
       petBreed: val.petBreed,
+      petWeightKg: val.petWeightKg ? Number(val.petWeightKg) : null,
+      petSizeTier: quote.sizeTier,
       serviceName: val.serviceName,
+      selectedExtras: this.selectedExtras,
       estimatedPrice: val.estimatedPrice,
       cageNumber: val.cageNumber,
       groomerName: val.groomerName,
       notes: val.notes,
+      tosaNotes: val.tosaNotes,
       healthChecklist,
       requiresValidation: val.requiresValidation,
       validationConfirmed: val.validationConfirmed,
+      estimatedReadyAt: eta.formattedTime,
       date: this.currentDate
     };
 
@@ -294,7 +626,7 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     } else {
       this.dailyService.addCheckin(payload).subscribe({
         next: (created) => {
-          this.showToast(`Pet ${created.petName} entrou na fila! Posição: #${created.queueOrder}`, 'success');
+          this.showToast(`Pet ${created.petName} entrou na fila! Posição: #${created.queueOrder} (Saída estimada: ~${eta.formattedTime})`, 'success');
           this.closeModal();
         },
         error: (err) => {
@@ -318,14 +650,10 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
           this.showToast(`Status de ${updated.petName} alterado para "${newStatus}".`, 'info');
         }
       },
-      error: () => this.showToast('Erro ao alterar status', 'warning')
-    });
-  }
-
-  confirmValidation(item: DailyService): void {
-    this.dailyService.updateDetails(item.id, { validationConfirmed: true }).subscribe({
-      next: () => this.showToast(`Tosa de ${item.petName} validada com o tutor!`, 'success'),
-      error: () => this.showToast('Erro ao confirmar validação', 'warning')
+      error: (err) => {
+        const msg = err?.error?.error || 'Erro ao alterar status';
+        this.showToast(msg, 'warning');
+      }
     });
   }
 

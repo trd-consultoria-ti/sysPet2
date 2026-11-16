@@ -34,6 +34,38 @@
   <p class="form-success" *ngIf="success" role="status">{{ success }}</p>
   <p class="form-error" *ngIf="error" role="alert">{{ error }}</p>
 
+  <!-- Métricas Rápidas do Consultório Clínico -->
+  <div class="consult-stats-grid" *ngIf="step === 1">
+    <div class="stat-card">
+      <div class="stat-icon icon-blue"><i class="fas fa-stethoscope"></i></div>
+      <div class="stat-body">
+        <span class="stat-num">{{ totalConsultations }}</span>
+        <span class="stat-lbl">Total de Atendimentos</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-amber"><i class="fas fa-calendar-alt"></i></div>
+      <div class="stat-body">
+        <span class="stat-num text-amber">{{ scheduledCount }}</span>
+        <span class="stat-lbl">Agendadas</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-teal"><i class="fas fa-user-nurse"></i></div>
+      <div class="stat-body">
+        <span class="stat-num text-teal">{{ inProgressCount }}</span>
+        <span class="stat-lbl">Em Atendimento</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-green"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-body">
+        <span class="stat-num text-green">{{ completedCount }}</span>
+        <span class="stat-lbl">Concluídas</span>
+      </div>
+    </div>
+  </div>
+
   <!-- ETAPA 1 — Fila do dia -->
   <section *ngIf="step === 1" aria-label="Fila do dia">
     <form class="consult-form" *ngIf="showForm" (ngSubmit)="create()" aria-label="Nova consulta">
@@ -73,7 +105,24 @@
     </form>
 
     <div class="filters-row">
-      <div class="form-field">
+      <div class="form-field search-field">
+        <label for="filter-search">Busca Rápida</label>
+        <div class="search-input-wrap">
+          <i class="fas fa-search search-icon"></i>
+          <input id="filter-search" type="search" class="form-control" [(ngModel)]="search" placeholder="Buscar por pet ou tutor...">
+        </div>
+      </div>
+      <div class="form-field status-field">
+        <label for="filter-status">Status</label>
+        <select id="filter-status" class="form-control" [(ngModel)]="statusFilter">
+          <option value="">Todos os Status ({{ consultations.length }})</option>
+          <option value="agendado">Agendado ({{ scheduledCount }})</option>
+          <option value="em_atendimento">Em atendimento ({{ inProgressCount }})</option>
+          <option value="concluido">Concluído ({{ completedCount }})</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+      <div class="form-field date-field">
         <label for="queue-date">Data</label>
         <input id="queue-date" type="date" class="form-control" [(ngModel)]="queueDate" [disabled]="showAllDates">
       </div>
@@ -81,40 +130,98 @@
         <input id="queue-all" type="checkbox" [(ngModel)]="showAllDates">
         <label for="queue-all">Todas as datas</label>
       </div>
-      <div class="form-field">
-        <label for="filter-status">Status</label>
-        <select id="filter-status" class="form-control" [(ngModel)]="statusFilter">
-          <option value="">Todos</option>
-          <option value="agendado">Agendado</option>
-          <option value="em_atendimento">Em atendimento</option>
-          <option value="concluido">Concluído</option>
-          <option value="cancelado">Cancelado</option>
-        </select>
-      </div>
-      <div class="form-field">
-        <label for="filter-search">Busca</label>
-        <input id="filter-search" type="search" class="form-control" [(ngModel)]="search" placeholder="Pet ou tutor">
-      </div>
     </div>
 
     <div class="empty-state" *ngIf="queue.length === 0">
-      <p *ngIf="!showAllDates">Nenhuma consulta em {{ formatDate(queueDate) }}.</p>
-      <p *ngIf="showAllDates">Nenhuma consulta encontrada.</p>
+      <i class="fas fa-stethoscope empty-icon"></i>
+      <p *ngIf="!showAllDates">Nenhuma consulta encontrada em {{ formatDate(queueDate) }}.</p>
+      <p *ngIf="showAllDates">Nenhuma consulta cadastrada com os filtros atuais.</p>
     </div>
 
+    <!-- Lista de Consultas Padronizada -->
     <div class="queue-list" *ngIf="queue.length > 0">
-      <article class="queue-card" *ngFor="let c of queue; trackBy: trackById">
-        <div class="queue-info">
-          <span class="queue-when">{{ formatDate(c.scheduledDate) }}<ng-container *ngIf="c.scheduledTime"> {{ c.scheduledTime }}</ng-container></span>
-          <span class="queue-pet">{{ c.petName }}<ng-container *ngIf="c.petType"> ({{ c.petType }})</ng-container></span>
-          <span class="queue-tutor">Tutor: {{ c.customerName }}</span>
-          <span class="queue-vet" *ngIf="c.vetName">{{ c.vetName }}</span>
-          <span class="queue-reason" *ngIf="c.reason">{{ c.reason }}</span>
+      <article class="queue-card" *ngFor="let c of queue; trackBy: trackById" [ngClass]="'card-status-' + c.status">
+        <div class="queue-main">
+          <!-- Avatar do Pet -->
+          <div class="pet-avatar-wrap">
+            <div class="pet-avatar" [ngClass]="'avatar-' + c.status">
+              {{ getInitials(c.petName) }}
+            </div>
+            <span class="pet-type-tag" *ngIf="c.petType">
+              {{ c.petType === 'gato' || c.petType === 'felino' ? '🐱 Gato' : '🐶 Cão' }}
+            </span>
+          </div>
+
+          <!-- Informações da Consulta -->
+          <div class="queue-info">
+            <div class="pet-title-row">
+              <h3 class="queue-pet">{{ c.petName }}</h3>
+              <span class="queue-breed" *ngIf="c.petBreed">({{ c.petBreed }})</span>
+            </div>
+
+            <div class="chips-row">
+              <span class="info-chip chip-time">
+                <i class="far fa-clock"></i> {{ formatDate(c.scheduledDate) }}<ng-container *ngIf="c.scheduledTime"> às {{ c.scheduledTime }}</ng-container>
+              </span>
+              <span class="info-chip chip-tutor">
+                <i class="fas fa-user"></i> Tutor: <strong>{{ c.customerName }}</strong>
+              </span>
+              <span class="info-chip chip-vet" *ngIf="c.vetName">
+                <i class="fas fa-user-md"></i> Vet: {{ c.vetName }}
+              </span>
+              <span class="info-chip chip-reason" *ngIf="c.reason">
+                <i class="fas fa-notes-medical"></i> {{ c.reason }}
+              </span>
+            </div>
+          </div>
         </div>
+
+        <!-- Lateral: Status Pill e Botão de Ação Padronizados -->
         <div class="queue-side">
-          <span class="status-badge" [ngClass]="c.status">{{ statusLabels[c.status] }}</span>
-          <button type="button" class="btn btn-sm btn-primary" *ngIf="c.status !== 'cancelado'" (click)="select(c)">
-            {{ c.status === 'agendado' ? 'Atender' : (c.status === 'em_atendimento' ? 'Continuar' : 'Ver') }}
+          <span class="status-pill" [ngClass]="'status-' + c.status">
+            <i class="fas" [ngClass]="{
+              'fa-clock': c.status === 'agendado',
+              'fa-stethoscope': c.status === 'em_atendimento',
+              'fa-check-circle': c.status === 'concluido',
+              'fa-ban': c.status === 'cancelado'
+            }"></i>
+            {{ statusLabels[c.status] }}
+          </span>
+
+          <!-- Ações por status na lista da fila -->
+          <ng-container *ngIf="c.status === 'concluido'">
+            <div class="completed-card-actions">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                (click)="select(c)">
+                <i class="fas fa-eye"></i> Ver Prontuário
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-success btn-cart-quick"
+                (click)="addConsultationToCart(c); $event.stopPropagation()"
+                title="Direcionar consulta e medicamentos ao carrinho">
+                <i class="fas fa-cart-plus"></i> + Carrinho
+              </button>
+            </div>
+          </ng-container>
+
+          <button
+            type="button"
+            class="btn btn-sm action-btn"
+            [ngClass]="{
+              'btn-primary': c.status === 'agendado',
+              'btn-warning': c.status === 'em_atendimento'
+            }"
+            *ngIf="c.status !== 'cancelado' && c.status !== 'concluido'"
+            (click)="select(c)">
+            <ng-container *ngIf="c.status === 'agendado'">
+              <i class="fas fa-stethoscope"></i> Iniciar Atendimento
+            </ng-container>
+            <ng-container *ngIf="c.status === 'em_atendimento'">
+              <i class="fas fa-play"></i> Continuar
+            </ng-container>
           </button>
         </div>
       </article>
@@ -129,7 +236,15 @@
         <p class="patient-meta">
           Tutor: {{ current.customerName }} ·
           {{ formatDate(current.scheduledDate) }}<ng-container *ngIf="current.scheduledTime"> {{ current.scheduledTime }}</ng-container> ·
-          <span class="status-badge" [ngClass]="current.status">{{ statusLabels[current.status] }}</span>
+          <span class="status-pill" [ngClass]="'status-' + current.status">
+            <i class="fas" [ngClass]="{
+              'fa-clock': current.status === 'agendado',
+              'fa-stethoscope': current.status === 'em_atendimento',
+              'fa-check-circle': current.status === 'concluido',
+              'fa-ban': current.status === 'cancelado'
+            }"></i>
+            {{ statusLabels[current.status] }}
+          </span>
         </p>
       </div>
 
@@ -252,10 +367,15 @@
       </datalist>
 
       <div class="step-actions">
+        <button type="button" class="btn btn-success" [disabled]="rxSaving" (click)="emitPrescriptionAndGoToCart()">
+          <i class="fas fa-shopping-cart"></i> {{ rxSaving ? 'Emitindo…' : 'Emitir receita e ir para o Carrinho' }}
+        </button>
         <button type="button" class="btn btn-primary" [disabled]="rxSaving" (click)="emitPrescription()">
           {{ rxSaving ? 'Emitindo…' : (prescriptionFor(current) ? 'Atualizar receita e finalizar' : 'Emitir receita e finalizar') }}
         </button>
-        <button type="button" class="btn btn-outline-secondary" (click)="step = 5">Pular etapa</button>
+        <button type="button" class="btn btn-outline-primary" (click)="skipPrescriptionAndGoToCart()">
+          <i class="fas fa-shopping-cart"></i> Pular e ir para o Carrinho
+        </button>
         <button type="button" class="btn btn-outline-secondary" (click)="step = 3">Voltar</button>
       </div>
     </div>
@@ -264,20 +384,34 @@
   <!-- ETAPA 5 — Finalização -->
   <section *ngIf="step === 5 && current" aria-label="Finalização">
     <div class="panel">
-      <h2>Atendimento finalizado</h2>
+      <!-- Banner Destacado: Direcionar ao Carrinho -->
+      <div class="cart-forward-banner">
+        <div class="banner-icon">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="banner-body">
+          <h3>Atendimento Concluído com Sucesso!</h3>
+          <p>O atendimento de <strong>{{ current.petName }}</strong> foi finalizado. Encaminhe a consulta veterinária e os medicamentos prescritos diretamente ao carrinho de compras para pagamento e checkout.</p>
+        </div>
+        <button type="button" class="btn btn-success btn-lg btn-forward" (click)="addConsultationToCart(current)">
+          <i class="fas fa-shopping-cart"></i> Direcionar ao Carrinho & Checkout
+        </button>
+      </div>
+
+      <h2>Resumo do Atendimento</h2>
       <dl class="summary-list">
         <dt>Pet</dt><dd>{{ current.petName }}</dd>
         <dt>Tutor</dt><dd>{{ current.customerName }}</dd>
         <dt>Veterinário</dt><dd>{{ current.vetName || '—' }}</dd>
         <dt>Data</dt><dd>{{ formatDate(current.scheduledDate) }}<ng-container *ngIf="current.scheduledTime"> {{ current.scheduledTime }}</ng-container></dd>
-        <dt>Status</dt><dd><span class="status-badge" [ngClass]="current.status">{{ statusLabels[current.status] }}</span></dd>
+        <dt>Status</dt><dd><span class="status-pill" [ngClass]="'status-' + current.status"><i class="fas" [ngClass]="{'fa-clock': current.status === 'agendado', 'fa-stethoscope': current.status === 'em_atendimento', 'fa-check-circle': current.status === 'concluido', 'fa-ban': current.status === 'cancelado'}"></i> {{ statusLabels[current.status] }}</span></dd>
         <dt *ngIf="current.weight">Peso</dt><dd *ngIf="current.weight">{{ current.weight }} kg</dd>
         <dt *ngIf="current.temperature">Temperatura</dt><dd *ngIf="current.temperature">{{ current.temperature }} °C</dd>
         <dt *ngIf="current.diagnosis">Diagnóstico</dt><dd *ngIf="current.diagnosis">{{ current.diagnosis }}</dd>
       </dl>
 
       <ng-container *ngIf="prescriptionFor(current) as rx">
-        <h3 class="summary-rx-title">Receita</h3>
+        <h3 class="summary-rx-title">Receita Prescrita</h3>
         <ul class="rx-items">
           <li *ngFor="let item of rx.items; trackBy: trackByIndex">
             <strong>{{ item.medication }}</strong>
@@ -288,37 +422,89 @@
           </li>
         </ul>
         <div class="step-actions">
-          <button type="button" class="btn btn-outline-secondary" (click)="printPrescription()">Imprimir receita</button>
-          <button type="button" class="btn btn-outline-secondary" (click)="downloadPdf(rx)">Baixar PDF</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="printPrescription()">
+            <i class="fas fa-print"></i> Imprimir receita (A4)
+          </button>
+          <button type="button" class="btn btn-outline-secondary" (click)="downloadPdf(rx)">
+            <i class="fas fa-file-pdf"></i> Baixar PDF (A4)
+          </button>
         </div>
       </ng-container>
 
       <div class="step-actions">
-        <button type="button" class="btn btn-primary" (click)="backToQueue()">Voltar à fila</button>
+        <button type="button" class="btn btn-success btn-lg" (click)="addConsultationToCart(current)">
+          <i class="fas fa-shopping-cart"></i> Direcionar ao Carrinho & Checkout
+        </button>
+        <button type="button" class="btn btn-outline-primary" (click)="backToQueue()">
+          <i class="fas fa-arrow-left"></i> Voltar à fila de consultas
+        </button>
         <button type="button" class="btn btn-outline-secondary" (click)="step = 4">Voltar à receita</button>
       </div>
     </div>
   </section>
 </div>
 
-<!-- Versão para impressão da receita -->
-<article class="print-slip" *ngIf="printRx">
-  <h1>Receita veterinária — Animal World</h1>
-  <dl>
-    <dt>Pet</dt><dd>{{ printRx.consultation.petName }}</dd>
-    <dt>Tutor</dt><dd>{{ printRx.consultation.customerName }}</dd>
-    <dt>Data da consulta</dt><dd>{{ formatDate(printRx.consultation.scheduledDate) }}</dd>
-    <dt>Veterinário</dt><dd>{{ printRx.prescription.vetName || '—' }}<ng-container *ngIf="printRx.prescription.vetCrmv"> — CRMV {{ printRx.prescription.vetCrmv }}</ng-container></dd>
-  </dl>
-  <h2>Prescrição</h2>
-  <ol>
-    <li *ngFor="let item of printRx.prescription.items">
-      <strong>{{ item.medication }}</strong>
-      <ng-container *ngIf="item.dosage"> — {{ item.dosage }}</ng-container>
-      <ng-container *ngIf="item.frequency">, {{ item.frequency }}</ng-container>
-      <ng-container *ngIf="item.duration">, por {{ item.duration }}</ng-container>
-      <div *ngIf="item.instructions">{{ item.instructions }}</div>
-    </li>
-  </ol>
-  <p *ngIf="printRx.prescription.notes">Observações: {{ printRx.prescription.notes }}</p>
+<!-- Versão para impressão da receita (EXCLUSIVO EM FOLHA A4) -->
+<article class="print-slip rx-a4-official" *ngIf="printRx">
+  <header class="rx-header-a4">
+    <div class="rx-brand-block">
+      <h1>Animal World</h1>
+      <p class="subtitle">Clínica Veterinária Integrada</p>
+      <p class="legal-info">CRMV-SP Jurídico: 98765-J · CNPJ: 12.345.678/0001-90</p>
+      <p class="legal-info">Rua dos Pets, 123 - Centro · Tel: (11) 4002-8922</p>
+    </div>
+    <div class="rx-doc-block">
+      <span class="rx-type-badge">RECEITUÁRIO VETERINÁRIO</span>
+      <div class="rx-format-notice">FORMATO PADRÃO A4</div>
+      <div class="rx-date">Data: {{ formatDate(printRx.consultation.scheduledDate) }}</div>
+      <div class="rx-vet" *ngIf="printRx.prescription.vetName">
+        Dr(a). {{ printRx.prescription.vetName }}
+        <span *ngIf="printRx.prescription.vetCrmv"><br>CRMV: {{ printRx.prescription.vetCrmv }}</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="rx-patient-a4">
+    <h2>Identificação do Paciente & Tutor</h2>
+    <div class="patient-grid">
+      <div><span class="label">Paciente (Pet):</span> <strong>{{ printRx.consultation.petName }}</strong></div>
+      <div *ngIf="printRx.consultation.petType"><span class="label">Espécie/Raça:</span> {{ printRx.consultation.petType }}<span *ngIf="printRx.consultation.petBreed"> / {{ printRx.consultation.petBreed }}</span></div>
+      <div><span class="label">Tutor(a):</span> {{ printRx.consultation.customerName }}</div>
+      <div *ngIf="printRx.consultation.weight"><span class="label">Peso Aferido:</span> {{ printRx.consultation.weight }} kg</div>
+    </div>
+  </section>
+
+  <section class="rx-items-a4">
+    <h2>Prescrição Terapêutica / Medicamentos</h2>
+    <ol class="prescribed-list">
+      <li *ngFor="let item of printRx.prescription.items">
+        <div class="med-name"><strong>{{ item.medication }}</strong></div>
+        <div class="med-posology">
+          <span *ngIf="item.dosage">Dosagem: <strong>{{ item.dosage }}</strong></span>
+          <span *ngIf="item.frequency"> · Frequência: <strong>{{ item.frequency }}</strong></span>
+          <span *ngIf="item.duration"> · Duração: <strong>{{ item.duration }}</strong></span>
+        </div>
+        <div class="med-instructions" *ngIf="item.instructions">
+          <em>Orientações: {{ item.instructions }}</em>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section class="rx-notes-a4" *ngIf="printRx.prescription.notes">
+    <h2>Observações Gerais / Recomendações</h2>
+    <p>{{ printRx.prescription.notes }}</p>
+  </section>
+
+  <footer class="rx-footer-a4">
+    <div class="rx-validity">
+      <p>Receita válida por 30 dias a partir da data de emissão.</p>
+      <p>Documento gerado em conformidade com as normas do CFMV.</p>
+    </div>
+    <div class="rx-signature-box">
+      <div class="sign-line"></div>
+      <div class="vet-name">Dr(a). {{ printRx.prescription.vetName || 'Médico(a) Veterinário(a)' }}</div>
+      <div class="vet-crmv" *ngIf="printRx.prescription.vetCrmv">CRMV: {{ printRx.prescription.vetCrmv }}</div>
+    </div>
+  </footer>
 </article>

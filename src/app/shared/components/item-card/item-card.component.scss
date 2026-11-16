@@ -211,3 +211,23 @@
     background-color: var(--primary-dark);
   }
 }
+
+.service-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+
+  .btn-cart {
+    background: #f0fdfa;
+    border: 1px solid var(--primary);
+    color: var(--primary-dark, #0d9488);
+    font-weight: 600;
+
+    &:hover {
+      background: var(--primary);
+      color: white;
+    }
+  }
+}

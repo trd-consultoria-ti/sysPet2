@@ -12,6 +12,7 @@ export class DailyQueueHeaderComponent {
   @Input() viewMode: 'kanban' | 'list' = 'kanban';
   @Input() currentDate: string = '';
   @Input() isFull: boolean = false;
+  @Input() isClosed: boolean = false;
   @Input() showViewToggle: boolean = true;
   @Input() showDateNavigator: boolean = true;
   @Input() showCheckinBtn: boolean = true;
@@ -21,6 +22,7 @@ export class DailyQueueHeaderComponent {
   @Output() dateChange = new EventEmitter<number>();
   @Output() todayClick = new EventEmitter<void>();
   @Output() checkinClick = new EventEmitter<void>();
+  @Output() configClick = new EventEmitter<void>();
 
   onViewModeSelect(mode: 'kanban' | 'list'): void {
     if (this.viewMode !== mode) {

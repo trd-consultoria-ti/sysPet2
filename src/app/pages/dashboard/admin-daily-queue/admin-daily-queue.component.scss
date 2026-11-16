@@ -413,3 +413,868 @@
   .obs-input { background: white; }
 }
 .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+/* AÇÕES DE CAIXA NO FIM DA ESTEIRA */
+.delivered-action-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.btn-forward-cash {
+  background: #0d9488;
+  color: white;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #0f766e;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(13, 148, 136, 0.3);
+  }
+}
+
+.paid-badge {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.35rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.paid-badge-list {
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* MODAL DE ENCAMINHAMENTO AO CAIXA */
+.modal-cash-dialog {
+  max-width: 520px;
+}
+
+.modal-cash-header {
+  background: #f0fdfa;
+  border-bottom: 1px solid #ccfbf1;
+
+  .header-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+
+    .header-cash-icon {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 50%;
+      background: #0d9488;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #0f766e;
+    }
+
+    .modal-subtitle {
+      margin: 0;
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+  }
+}
+
+.cash-modal-body {
+  padding: 1.25rem 1.5rem;
+  gap: 1.15rem;
+}
+
+.service-summary-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+
+    .label {
+      color: #64748b;
+    }
+
+    .value {
+      color: #1e293b;
+      font-weight: 600;
+
+      small {
+        color: #94a3b8;
+        font-weight: 400;
+      }
+    }
+
+    &.total-row {
+      margin-top: 0.35rem;
+      padding-top: 0.45rem;
+      border-top: 1px dashed #cbd5e1;
+
+      .label {
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 0.95rem;
+      }
+
+      .value-highlight {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #0d9488;
+      }
+    }
+  }
+}
+
+.quick-pay-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+
+  .section-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .payment-methods-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+
+    .method-btn {
+      padding: 0.65rem 0.5rem;
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.4rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+
+      i {
+        font-size: 0.95rem;
+      }
+
+      &:hover {
+        border-color: #0d9488;
+        color: #0d9488;
+        background: #f0fdfa;
+      }
+
+      &.active {
+        border-color: #0d9488;
+        background: #0d9488;
+        color: white;
+        box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3);
+      }
+    }
+  }
+
+  .btn-confirm-pay {
+    margin-top: 0.25rem;
+    padding: 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border-radius: 0.45rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+}
+
+.modal-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin: -0.25rem 0;
+
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  span {
+    padding: 0 0.75rem;
+  }
+}
+
+.full-cash-section {
+  .btn-open-cash {
+    padding: 0.65rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    border-radius: 0.45rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+}
+
+
+.cart-forward-section {
+  .btn-cart-forward {
+    background: #f59e0b;
+    color: white;
+    font-weight: 700;
+    padding: 0.7rem;
+    font-size: 0.92rem;
+    border: none;
+    border-radius: 0.45rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #d97706;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.3);
+    }
+  }
+}
+
+/* ========================================================= */
+/* BANNER DE DOMINGO & CAPACIDADE ESGOTADA (HU-04 e HU-26)   */
+/* ========================================================= */
+.closed-sunday-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: #f8fafc;
+  padding: 1rem 1.25rem;
+  border-radius: 0.65rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+
+  .banner-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .banner-icon {
+      font-size: 1.8rem;
+      color: #cbd5e1;
+    }
+
+    strong {
+      display: block;
+      font-size: 1rem;
+      color: #f1f5f9;
+    }
+
+    p {
+      margin: 0.2rem 0 0;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+  }
+}
+
+.full-capacity-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  padding: 0.75rem 1rem;
+  border-radius: 0.55rem;
+  margin-bottom: 1rem;
+  font-size: 0.88rem;
+
+  i { font-size: 1.1rem; color: #ef4444; }
+}
+
+/* ========================================================= */
+/* PREVISÃO DE SAÍDA ETA (HU-03) & PESO/PORTE (HU-07)       */
+/* ========================================================= */
+.card-eta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f0fdfa;
+  border: 1px dashed #5eead4;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  margin: 0.45rem 0;
+  font-size: 0.78rem;
+
+  .eta-pill {
+    color: #0f766e;
+    font-weight: 500;
+
+    strong {
+      color: #115e59;
+      font-weight: 700;
+    }
+  }
+
+  .btn-wa-eta-mini {
+    background: #25d366;
+    color: white;
+    border: none;
+    border-radius: 0.3rem;
+    padding: 0.15rem 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #1ebc59;
+      transform: scale(1.03);
+    }
+  }
+}
+
+.pet-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.2rem;
+}
+
+.weight-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+}
+
+.extras-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+
+  .extra-chip {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    background: #fff7ed;
+    color: #c2410c;
+    border-radius: 0.3rem;
+    border: 1px solid #fed7aa;
+  }
+}
+
+/* ========================================================= */
+/* VALIDAÇÃO HUMANA DE TOSA BLOQUEANTE (HU-06)               */
+/* ========================================================= */
+.card-tosa-validation {
+  background: #fffbeb;
+  border: 1.5px solid #f59e0b;
+  border-radius: 0.5rem;
+  padding: 0.55rem;
+  margin: 0.5rem 0;
+
+  .validation-warning-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+
+    i {
+      font-size: 1.1rem;
+      color: #d97706;
+      margin-top: 0.1rem;
+    }
+
+    strong {
+      color: #92400e;
+      font-size: 0.8rem;
+      display: block;
+    }
+
+    p {
+      color: #b45309;
+      font-size: 0.72rem;
+      margin: 0.1rem 0 0.35rem;
+      line-height: 1.25;
+    }
+  }
+
+  .validate-btn {
+    width: 100%;
+    padding: 0.28rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    border-radius: 0.35rem;
+  }
+}
+
+.card-tosa-validated {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.35rem;
+  margin: 0.35rem 0;
+}
+
+.btn-blocked-tosa {
+  border-color: #f59e0b !important;
+  color: #b45309 !important;
+  background: #fffbeb !important;
+  animation: pulseWarning 2s infinite;
+}
+
+@keyframes pulseWarning {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0); }
+}
+
+/* ========================================================= */
+/* COTAÇÃO ITEMIZADA & EXTRAS NO CHECK-IN (HU-08 / HU-09)    */
+/* ========================================================= */
+.modal-lg {
+  max-width: 780px !important;
+}
+
+.input-with-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+
+  input {
+    flex: 1;
+  }
+
+  .porte-badge {
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.4rem;
+    white-space: nowrap;
+    border: 1px solid #bae6fd;
+  }
+}
+
+.price-input-highlight {
+  font-size: 1.15rem !important;
+  font-weight: 800 !important;
+  color: #0f766e !important;
+  background-color: #f0fdfa !important;
+  border-color: #5eead4 !important;
+}
+
+.extras-section {
+  margin: 1rem 0;
+
+  .section-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .extras-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .extra-card-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    &.selected {
+      background: #fff7ed;
+      border-color: #fb923c;
+      box-shadow: 0 1px 4px rgba(251, 146, 60, 0.2);
+
+      .extra-check {
+        background: #ea580c;
+        border-color: #ea580c;
+        color: white;
+      }
+    }
+
+    .extra-check {
+      width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 0.25rem;
+      border: 1.5px solid #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      background: white;
+      transition: all 0.15s ease;
+    }
+
+    .extra-info {
+      flex: 1;
+
+      .extra-name {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #1e293b;
+      }
+
+      .extra-desc {
+        display: block;
+        font-size: 0.7rem;
+        color: #64748b;
+        line-height: 1.2;
+      }
+    }
+
+    .extra-price {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #ea580c;
+    }
+  }
+}
+
+.quote-summary-card {
+  background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%);
+  border: 1.5px solid #2dd4bf;
+  border-radius: 0.6rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+
+  .quote-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #0f766e;
+    margin-bottom: 0.5rem;
+  }
+
+  .quote-body {
+    .quote-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: #334155;
+      margin-bottom: 0.25rem;
+
+      .badge-breed-override {
+        background: #dbeafe;
+        color: #1d4ed8;
+        padding: 0.1rem 0.35rem;
+        border-radius: 0.25rem;
+        font-size: 0.74rem;
+      }
+    }
+
+    .quote-divider {
+      border-bottom: 1px dashed #99f6e4;
+      margin: 0.5rem 0;
+    }
+
+    .quote-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+
+      .eta-preview {
+        font-size: 0.78rem;
+        color: #0f766e;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+
+        strong {
+          color: #115e59;
+        }
+      }
+
+      .total-preview {
+        font-size: 1rem;
+        color: #1e293b;
+
+        strong {
+          font-size: 1.15rem;
+          color: #0f766e;
+        }
+      }
+    }
+  }
+}
+
+.tosa-notes-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+/* ========================================================= */
+/* MODAL VALIDAÇÃO DE TOSA (HU-06)                          */
+/* ========================================================= */
+.modal-tosa-dialog {
+  max-width: 520px !important;
+
+  .modal-tosa-header {
+    background: #fffbeb;
+    border-bottom: 1px solid #fef3c7;
+
+    .header-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      .header-tosa-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.5rem;
+        background: #fde68a;
+        color: #b45309;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+      }
+    }
+  }
+
+  .tosa-modal-body {
+    .tosa-pet-summary {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+
+      .summary-field {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.86rem;
+        margin-bottom: 0.3rem;
+
+        .label {
+          color: #64748b;
+          font-weight: 500;
+          min-width: 90px;
+        }
+
+        .badge-service {
+          background: #e0f2fe;
+          color: #0369a1;
+          font-size: 0.75rem;
+          font-weight: 700;
+          padding: 0.15rem 0.5rem;
+          border-radius: 0.3rem;
+        }
+      }
+    }
+
+    .tosa-confirm-check {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      margin-top: 0.75rem;
+
+      .check-container {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        cursor: pointer;
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: #166534;
+        margin: 0;
+
+        input {
+          margin-top: 0.15rem;
+          cursor: pointer;
+        }
+      }
+    }
+  }
+}
+
+/* ========================================================= */
+/* MODAL CONFIGURAÇÃO EXPEDIENTE & CAPACIDADE (HU-04 e 26)   */
+/* ========================================================= */
+.modal-capacity-dialog {
+  max-width: 650px !important;
+
+  .capacity-config-table {
+    width: 100%;
+    margin-bottom: 0.8rem;
+    font-size: 0.86rem;
+
+    th {
+      background: #f8fafc;
+      font-weight: 700;
+      color: #334155;
+      padding: 0.6rem;
+    }
+
+    td {
+      padding: 0.55rem;
+      vertical-align: middle;
+    }
+
+    .day-status-text {
+      margin-left: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #10b981;
+    }
+
+    .time-range {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+
+      span {
+        font-size: 0.75rem;
+        color: #64748b;
+      }
+    }
+  }
+}
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+  vertical-align: middle;
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: 0.3s;
+    border-radius: 22px;
+
+    &::before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+  }
+
+  input:checked + .slider {
+    background-color: #0d9488;
+  }
+
+  input:checked + .slider::before {
+    transform: translateX(16px);
+  }
+}
+

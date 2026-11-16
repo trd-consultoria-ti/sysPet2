@@ -225,7 +225,7 @@ function getInitialDbState(): DbState {
         status: 'active',
         userId: 1,
         pets: [
-          { id: 1, customerId: 1, name: 'Bruce', type: 'Cachorro', breed: 'Golden Retriever', age: 3 }
+          { id: 1, customerId: 1, name: 'Bruce', type: 'Cachorro', breed: 'Golden Retriever', age: 3, weightKg: 32.5 }
         ]
       },
       {
@@ -235,8 +235,8 @@ function getInitialDbState(): DbState {
         phone: '+55 11 98765-4321',
         status: 'active',
         pets: [
-          { id: 2, customerId: 2, name: 'Rex', type: 'Cachorro', breed: 'Labrador', age: 4 },
-          { id: 3, customerId: 2, name: 'Luna', type: 'Cachorro', breed: 'Poodle', age: 2 }
+          { id: 2, customerId: 2, name: 'Rex', type: 'Cachorro', breed: 'Labrador', age: 4, weightKg: 28.0 },
+          { id: 3, customerId: 2, name: 'Luna', type: 'Cachorro', breed: 'Poodle', age: 2, weightKg: 6.5 }
         ]
       },
       {
@@ -246,15 +246,15 @@ function getInitialDbState(): DbState {
         phone: '+55 11 91234-5678',
         status: 'active',
         pets: [
-          { id: 4, customerId: 3, name: 'Mia', type: 'Gato', breed: 'Siamês', age: 1 }
+          { id: 4, customerId: 3, name: 'Mia', type: 'Gato', breed: 'Siamês', age: 1, weightKg: 4.2 }
         ]
       }
     ],
     pets: [
-      { id: 1, customerId: 1, name: 'Bruce', type: 'Cachorro', breed: 'Golden Retriever', age: 3 },
-      { id: 2, customerId: 2, name: 'Rex', type: 'Cachorro', breed: 'Labrador', age: 4 },
-      { id: 3, customerId: 2, name: 'Luna', type: 'Cachorro', breed: 'Poodle', age: 2 },
-      { id: 4, customerId: 3, name: 'Mia', type: 'Gato', breed: 'Siamês', age: 1 }
+      { id: 1, customerId: 1, name: 'Bruce', type: 'Cachorro', breed: 'Golden Retriever', age: 3, weightKg: 32.5 },
+      { id: 2, customerId: 2, name: 'Rex', type: 'Cachorro', breed: 'Labrador', age: 4, weightKg: 28.0 },
+      { id: 3, customerId: 2, name: 'Luna', type: 'Cachorro', breed: 'Poodle', age: 2, weightKg: 6.5 },
+      { id: 4, customerId: 3, name: 'Mia', type: 'Gato', breed: 'Siamês', age: 1, weightKg: 4.2 }
     ],
     appointments: [
       {
@@ -335,19 +335,26 @@ function getInitialDbState(): DbState {
         petId: 1,
         petName: 'Rex',
         petBreed: 'Labrador',
+        petWeightKg: 28.0,
+        petSizeTier: 'grande',
         serviceId: 1,
         serviceName: 'Banho Completo',
+        selectedExtras: ['unhas'],
         date: new Date().toISOString().split('T')[0],
         queueOrder: 1,
         status: 'em_atendimento',
         healthChecklist: { skin_lesion: false, parasites: false, paw_lesion: false },
         notes: 'Pet dócil, usar shampoo neutro',
-        estimatedPrice: 79.9,
+        tosaNotes: '',
+        estimatedPrice: 120.0,
         finalPrice: null,
         cageNumber: 'Box 02',
         groomerName: 'Carlos Tosador',
         requiresValidation: false,
         validationConfirmed: true,
+        validatedBy: null,
+        validatedAt: null,
+        estimatedReadyAt: '15h30',
         checkinAt: new Date(Date.now() - 3600000).toISOString(),
         startedAt: new Date(Date.now() - 1800000).toISOString(),
         readyAt: null,
@@ -362,19 +369,26 @@ function getInitialDbState(): DbState {
         petId: 3,
         petName: 'Mia',
         petBreed: 'Siamês',
+        petWeightKg: 4.2,
+        petSizeTier: 'pequeno',
         serviceId: 2,
         serviceName: 'Tosa Higiênica',
+        selectedExtras: [],
         date: new Date().toISOString().split('T')[0],
         queueOrder: 2,
         status: 'aguardando',
         healthChecklist: { skin_lesion: false, parasites: false, paw_lesion: false },
         notes: 'Atenção na patinha direita',
-        estimatedPrice: 59.9,
+        tosaNotes: 'Tosa higiênica padrão, arredondar pezinhos',
+        estimatedPrice: 60.0,
         finalPrice: null,
         cageNumber: 'Box 05',
         groomerName: 'Mariana',
         requiresValidation: true,
         validationConfirmed: false,
+        validatedBy: null,
+        validatedAt: null,
+        estimatedReadyAt: '16h15',
         checkinAt: new Date(Date.now() - 1800000).toISOString(),
         startedAt: null,
         readyAt: null,
@@ -389,19 +403,26 @@ function getInitialDbState(): DbState {
         petId: 4,
         petName: 'Bob',
         petBreed: 'Golden Retriever',
+        petWeightKg: 31.0,
+        petSizeTier: 'grande',
         serviceId: 1,
         serviceName: 'Banho Completo',
+        selectedExtras: ['desembolo'],
         date: new Date().toISOString().split('T')[0],
         queueOrder: 3,
         status: 'pronto',
         healthChecklist: { skin_lesion: false, parasites: false, paw_lesion: false },
         notes: 'Pronto para retirada, tutor notificado',
-        estimatedPrice: 79.9,
-        finalPrice: 79.9,
+        tosaNotes: '',
+        estimatedPrice: 170.0,
+        finalPrice: 170.0,
         cageNumber: 'Gaiola 01',
         groomerName: 'Carlos Tosador',
         requiresValidation: false,
         validationConfirmed: true,
+        validatedBy: null,
+        validatedAt: null,
+        estimatedReadyAt: '16h45',
         checkinAt: new Date(Date.now() - 7200000).toISOString(),
         startedAt: new Date(Date.now() - 5400000).toISOString(),
         readyAt: new Date(Date.now() - 900000).toISOString(),
@@ -819,14 +840,21 @@ export class DemoBackendInterceptor implements HttpInterceptor {
 
     // Daily Services: GET /api/daily-services
     if (path.startsWith('/api/daily-services') && method === 'GET') {
-      const targetDate = new Date().toISOString().split('T')[0];
+      const urlDateMatch = req.url.match(/date=([^&]+)/);
+      const targetDate = urlDateMatch ? urlDateMatch[1] : new Date().toISOString().split('T')[0];
       const items = (db.dailyServices || []).filter(d => d.date === targetDate);
       const waiting = items.filter(i => i.status === 'aguardando').length;
       const inProgress = items.filter(i => i.status === 'em_atendimento').length;
       const ready = items.filter(i => i.status === 'pronto').length;
       const delivered = items.filter(i => i.status === 'entregue').length;
       const canceled = items.filter(i => i.status === 'cancelado').length;
-      const capacity = 50;
+
+      const d = new Date(targetDate + 'T12:00:00Z');
+      const dayOfWeek = d.getUTCDay();
+      const isSunday = dayOfWeek === 0;
+      const isSaturday = dayOfWeek === 6;
+      const capacity = isSunday ? 0 : (isSaturday ? 32 : 50);
+      const activeCount = items.length - canceled;
 
       return of(new HttpResponse({
         status: 200,
@@ -841,8 +869,9 @@ export class DemoBackendInterceptor implements HttpInterceptor {
             ready,
             delivered,
             canceled,
-            remainingSpots: Math.max(0, capacity - (items.length - canceled)),
-            isFull: (items.length - canceled) >= capacity
+            remainingSpots: isSunday ? 0 : Math.max(0, capacity - activeCount),
+            isFull: isSunday || activeCount >= capacity,
+            isClosed: isSunday
           }
         }
       })).pipe(delay(30));
@@ -850,12 +879,32 @@ export class DemoBackendInterceptor implements HttpInterceptor {
 
     // Daily Services: POST /api/daily-services
     if (path === '/api/daily-services' && method === 'POST') {
-      const today = new Date().toISOString().split('T')[0];
-      const nextOrder = (db.dailyServices || []).filter(d => d.date === today).length + 1;
+      const today = req.body.date || new Date().toISOString().split('T')[0];
+      const d = new Date(today + 'T12:00:00Z');
+      const dayOfWeek = d.getUTCDay();
+      const isSunday = dayOfWeek === 0;
+      if (isSunday) {
+        return of(new HttpResponse({
+          status: 400,
+          body: { error: 'O pet shop está fechado aos domingos. Check-in na esteira não permitido.' }
+        }));
+      }
+
+      const isSaturday = dayOfWeek === 6;
+      const capacity = isSaturday ? 32 : 50;
+      const activeCount = (db.dailyServices || []).filter(item => item.date === today && item.status !== 'cancelado').length;
+      if (activeCount >= capacity) {
+        return of(new HttpResponse({
+          status: 400,
+          body: { error: `Vagas do dia encerradas! Capacidade máxima de ${capacity} atendimentos já foi atingida.` }
+        }));
+      }
+
+      const nextOrder = (db.dailyServices || []).filter(item => item.date === today).length + 1;
       const isTosa = String(req.body.serviceName || '').toLowerCase().includes('tosa');
       const newDs = {
         ...req.body,
-        id: db.dailyServices.length ? Math.max(...db.dailyServices.map(d => d.id)) + 1 : 1,
+        id: db.dailyServices.length ? Math.max(...db.dailyServices.map(item => item.id)) + 1 : 1,
         date: today,
         queueOrder: nextOrder,
         status: 'aguardando',
@@ -874,6 +923,14 @@ export class DemoBackendInterceptor implements HttpInterceptor {
       const status = req.body?.status;
       const ds = (db.dailyServices || []).find(d => d.id === id);
       if (ds) {
+        // HU-06: Bloqueio estrito — tosa NUNCA avança para pronto ou entregue sem confirmação humana
+        if (['pronto', 'entregue'].includes(status) && ds.requiresValidation && !ds.validationConfirmed) {
+          return of(new HttpResponse({
+            status: 400,
+            body: { error: 'Bloqueio de segurança: este procedimento de tosa requer validação humana confirmada com o tutor antes de ser concluído.' }
+          }));
+        }
+
         ds.status = status;
         if (status === 'em_atendimento' && !ds.startedAt) ds.startedAt = new Date().toISOString();
         if (status === 'pronto' && !ds.readyAt) ds.readyAt = new Date().toISOString();
@@ -894,9 +951,14 @@ export class DemoBackendInterceptor implements HttpInterceptor {
       const ds = (db.dailyServices || []).find(d => d.id === id);
       if (ds) {
         Object.assign(ds, req.body);
+        if (req.body.validationConfirmed && !ds.validatedAt) {
+          ds.validatedAt = new Date().toISOString();
+        }
         this.saveDb(db);
         return of(new HttpResponse({ status: 200, body: ds }));
       }
+      return of(new HttpResponse({ status: 404, body: { error: 'Não encontrado' } }));
+    }
       return of(new HttpResponse({ status: 404, body: { error: 'Não encontrado' } }));
     }
 

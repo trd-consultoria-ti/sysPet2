@@ -15,6 +15,7 @@ export class OrderReceiptComponent implements OnInit, OnDestroy {
   order: Order | null = null;
   notFound = false;
   loading = true;
+  printFormat: 'a4' | 'cupom' = 'a4';
 
   statusLabels: Record<OrderStatus, string> = {
     pendente: 'Pendente',

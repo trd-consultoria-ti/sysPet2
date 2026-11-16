@@ -4,20 +4,42 @@
     <span>{{ toastMessage }}</span>
   </div>
 
-  <!-- Header & Ações (Componentizado) -->
+  <!-- Header & Ações -->
   <app-daily-queue-header
     [title]="'Esteira de Produção — Banho & Tosa'"
     [subtitle]="'Quadro Delivery de produção: clique para avançar o pet de estágio ou arraste entre colunas'"
     [(viewMode)]="viewMode"
     [currentDate]="currentDate"
     [isFull]="stats.isFull"
+    [isClosed]="isClosed"
     (dateChange)="changeDate($event)"
     (todayClick)="setToday()"
-    (checkinClick)="openCheckinModal()">
+    (checkinClick)="openCheckinModal()"
+    (configClick)="openCapacityModal()">
   </app-daily-queue-header>
 
+  <!-- Banner de Fechamento / Domingo (HU-04 e HU-26) -->
+  <div class="closed-sunday-banner" *ngIf="isClosed">
+    <div class="banner-content">
+      <i class="fas fa-store-slash banner-icon"></i>
+      <div>
+        <strong>Pet Shop Fechado aos Domingos</strong>
+        <p>A esteira de banho e tosa não opera aos domingos. A criação de novos check-ins e a movimentação da fila estão suspensas.</p>
+      </div>
+    </div>
+    <button type="button" class="btn btn-xs btn-outline-light" (click)="openCapacityModal()">
+      <i class="fas fa-cog"></i> Configurar Expediente
+    </button>
+  </div>
+
+  <!-- Banner de Capacidade Esgotada (HU-04) -->
+  <div class="full-capacity-banner" *ngIf="stats.isFull && !isClosed">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span><strong>Capacidade Máxima Atingida:</strong> Todas as {{ stats.capacity }} vagas do dia foram preenchidas. Novos check-ins de balcão bloqueados.</span>
+  </div>
+
   <!-- Barra de Capacidade do Dia -->
-  <div class="capacity-strip" [class.strip-full]="stats.isFull">
+  <div class="capacity-strip" [class.strip-full]="stats.isFull" *ngIf="!isClosed">
     <div class="capacity-gauge-row">
       <div class="gauge-left">
         <span class="capacity-title"><i class="fas fa-calendar-day"></i> Vagas do Dia:</span>
@@ -27,7 +49,7 @@
         </span>
       </div>
       <div class="gauge-bar-outer">
-        <div class="gauge-bar-fill" [style.width.%]="(stats.totalToday / stats.capacity) * 100"></div>
+        <div class="gauge-bar-fill" [style.width.%]="stats.capacity > 0 ? (stats.totalToday / stats.capacity) * 100 : 100"></div>
       </div>
       <div class="status-summary-mini">
         <span class="badge-waiting">⏳ {{ stats.waiting }} aguardando</span>
@@ -68,20 +90,43 @@
           draggable="true"
           (dragstart)="onDragStart($event, item)">
 
-          <!-- Topo do Card: Posição + Preço -->
+          <!-- Topo do Card: Posição + Horário + Preço -->
           <div class="card-top-bar">
             <span class="card-order-badge">#{{ item.queueOrder }}</span>
             <span class="card-time"><i class="far fa-clock"></i> {{ formatTime(item.checkinAt) }}</span>
             <span class="card-price">R$ {{ formatPrice(item.finalPrice || item.estimatedPrice) }}</span>
           </div>
 
-          <!-- Informações do Pet -->
+          <!-- Previsão de Saída ETA (HU-03) -->
+          <div class="card-eta-bar">
+            <span class="eta-pill">
+              <i class="fas fa-hourglass-half"></i> Saída: <strong>~{{ item.estimatedReadyAt || formatEstimatedOut(item) }}</strong>
+            </span>
+            <button
+              type="button"
+              class="btn-wa-eta-mini"
+              (click)="sendEtaWhatsApp(item)"
+              title="Avisar previsão de saída ao tutor via WhatsApp">
+              <i class="fab fa-whatsapp"></i> Avisar ETA
+            </button>
+          </div>
+
+          <!-- Informações do Pet & Peso/Porte (HU-07) -->
           <div class="card-pet-main">
             <h4 class="card-pet-name">
               {{ item.petName }}
               <small class="card-pet-breed" *ngIf="item.petBreed">({{ item.petBreed }})</small>
             </h4>
-            <span class="service-pill">{{ item.serviceName }}</span>
+            <div class="pet-tags-row">
+              <span class="service-pill">{{ item.serviceName }}</span>
+              <span class="weight-pill" *ngIf="item.petWeightKg">
+                <i class="fas fa-weight-hanging"></i> {{ item.petWeightKg }}kg
+              </span>
+            </div>
+            <!-- Extras Selecionados (HU-09) -->
+            <div class="extras-chips" *ngIf="item.selectedExtras?.length">
+              <span class="extra-chip" *ngFor="let ex of item.selectedExtras">+ {{ ex }}</span>
+            </div>
           </div>
 
           <!-- Dados do Tutor e Box -->
@@ -106,23 +151,36 @@
             <span><strong>Saúde:</strong> {{ getHealthSummary(item.healthChecklist) }}</span>
           </div>
 
-          <!-- Alerta de Validação de Tosa -->
+          <!-- Alerta de Validação de Tosa Bloqueante (HU-06) -->
           <div class="card-tosa-validation" *ngIf="item.requiresValidation && !item.validationConfirmed">
-            <i class="fas fa-info-circle"></i>
-            <span>Tosa exige validação com tutor!</span>
-            <button type="button" class="btn btn-xs btn-outline-success" (click)="confirmValidation(item)">
-              Validar
+            <div class="validation-warning-content">
+              <i class="fas fa-shield-alt text-warning"></i>
+              <div>
+                <strong>Tosa Pendente de Validação</strong>
+                <p>NÃO fecha sozinho. Alinhe detalhes com o tutor antes de concluir.</p>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-warning validate-btn" (click)="openTosaValidationModal(item)">
+              <i class="fas fa-check-double"></i> Validar com Tutor
             </button>
           </div>
 
-          <!-- Notas -->
-          <p class="card-notes" *ngIf="item.notes">
+          <div class="card-tosa-validated" *ngIf="item.requiresValidation && item.validationConfirmed">
+            <i class="fas fa-check-circle"></i>
+            <span>Tosa validada com o tutor <small *ngIf="item.validatedBy">({{ item.validatedBy }})</small></span>
+          </div>
+
+          <!-- Notas e Instruções de Tosa -->
+          <p class="card-notes" *ngIf="item.tosaNotes">
+            <i class="fas fa-cut"></i> <em>Tosa: {{ item.tosaNotes }}</em>
+          </p>
+          <p class="card-notes" *ngIf="item.notes && !item.tosaNotes">
             <i class="far fa-comment-alt"></i> {{ item.notes }}
           </p>
 
-          <!-- Ação Rápida de Esteira: "Clicou passou para o próximo" -->
+          <!-- Ação Rápida de Esteira -->
           <div class="card-advance-strip">
-            <!-- Botão de Voltar Estágio (se não for o primeiro) -->
+            <!-- Botão de Voltar Estágio -->
             <button
               *ngIf="item.status !== 'aguardando'"
               type="button"
@@ -138,9 +196,13 @@
               type="button"
               class="btn btn-sm btn-advance"
               [ngClass]="'btn-advance-' + item.status"
+              [class.btn-blocked-tosa]="item.status === 'em_atendimento' && item.requiresValidation && !item.validationConfirmed"
               (click)="advanceStatus(item)">
               <span *ngIf="item.status === 'aguardando'"><i class="fas fa-play"></i> Iniciar Banho/Tosa ➔</span>
-              <span *ngIf="item.status === 'em_atendimento'"><i class="fas fa-check"></i> Marcar Pronto ➔</span>
+              <span *ngIf="item.status === 'em_atendimento'">
+                <i class="fas fa-check"></i>
+                {{ (item.requiresValidation && !item.validationConfirmed) ? 'Validar Tosa & Concluir ➔' : 'Marcar Pronto ➔' }}
+              </span>
               <span *ngIf="item.status === 'pronto'"><i class="fas fa-paw"></i> Entregar Pet ➔</span>
             </button>
 
@@ -150,13 +212,26 @@
               type="button"
               class="btn btn-sm btn-whatsapp"
               (click)="openWhatsAppNotification(item)"
-              title="Avisar tutor no WhatsApp">
-              <i class="fab fa-whatsapp"></i> Avisar
+              title="Avisar tutor no WhatsApp que pet está pronto">
+              <i class="fab fa-whatsapp"></i> Pet Pronto
             </button>
 
-            <!-- Status de Entregue -->
-            <div class="delivered-badge" *ngIf="item.status === 'entregue'">
-              <i class="fas fa-check-double"></i> Entregue às {{ formatTime(item.deliveredAt) }}
+            <!-- Status de Entregue + Encaminhar ao Caixa -->
+            <div class="delivered-action-box" *ngIf="item.status === 'entregue'">
+              <div class="delivered-badge">
+                <i class="fas fa-check-double"></i> Entregue às {{ formatTime(item.deliveredAt) }}
+              </div>
+              <button
+                *ngIf="!item.paid"
+                type="button"
+                class="btn btn-sm btn-forward-cash"
+                (click)="openCashForwardModal(item)"
+                title="Encaminhar cobrança ao Caixa (PDV)">
+                <i class="fas fa-cash-register"></i> Encaminhar ao Caixa
+              </button>
+              <div class="paid-badge" *ngIf="item.paid">
+                <i class="fas fa-check-circle"></i> Pago no Caixa
+              </div>
             </div>
 
             <!-- Botão Remover -->
@@ -216,10 +291,13 @@
               <span class="pet-breed" *ngIf="item.petBreed">({{ item.petBreed }})</span>
             </h3>
             <span class="status-tag" [ngClass]="item.status">
-              {{ item.status === 'aguardando' ? 'Aguardando' : (item.status === 'em_atendimento' ? 'Em Banho/Tosa' : (item.status === 'pronto' ? 'Pronto para Retirada' : (item.status === 'entregue' ? 'Entregue' : item.status))) }}
+              {{ item.status === 'aguardando' ? 'Aguardando' : (item.status === 'em_atendimento' ? 'Em Banho/Tosa' : (item.status === 'pronto' ? 'Pronto' : (item.status === 'entregue' ? 'Entregue' : item.status))) }}
             </span>
-            <span class="appointment-origin" *ngIf="item.appointmentId">
-              <i class="fas fa-calendar-check"></i> Agendado
+            <span class="eta-tag">
+              <i class="fas fa-hourglass-half"></i> Saída: ~{{ item.estimatedReadyAt || formatEstimatedOut(item) }}
+            </span>
+            <span class="weight-tag" *ngIf="item.petWeightKg">
+              ⚖️ {{ item.petWeightKg }}kg
             </span>
           </div>
 
@@ -228,6 +306,15 @@
             <span *ngIf="item.phone"><i class="fas fa-phone-alt"></i> {{ item.phone }}</span>
             <span *ngIf="item.cageNumber" class="box-tag"><i class="fas fa-home"></i> {{ item.cageNumber }}</span>
             <span *ngIf="item.groomerName" class="groomer-tag"><i class="fas fa-cut"></i> {{ item.groomerName }}</span>
+          </div>
+
+          <!-- Validação de Tosa na Lista -->
+          <div class="tosa-warning-strip" *ngIf="item.requiresValidation && !item.validationConfirmed">
+            <i class="fas fa-shield-alt text-warning"></i>
+            <span>Tosa exige validação com tutor antes de finalizar</span>
+            <button type="button" class="btn btn-xs btn-warning" (click)="openTosaValidationModal(item)">
+              Validar Tosa
+            </button>
           </div>
 
           <div class="health-alert-banner" *ngIf="hasHealthAlerts(item.healthChecklist)">
@@ -243,6 +330,13 @@
 
         <div class="queue-actions">
           <button
+            type="button"
+            class="btn btn-sm btn-outline-info action-btn"
+            (click)="sendEtaWhatsApp(item)"
+            title="Avisar previsão de saída">
+            <i class="fab fa-whatsapp"></i> Previsão
+          </button>
+          <button
             *ngIf="item.status !== 'entregue'"
             type="button"
             class="btn btn-sm btn-primary action-btn"
@@ -256,35 +350,59 @@
             type="button"
             class="btn btn-sm btn-whatsapp action-btn"
             (click)="openWhatsAppNotification(item)">
-            <i class="fab fa-whatsapp"></i> Avisar
+            <i class="fab fa-whatsapp"></i> Pet Pronto
           </button>
+          <button
+            *ngIf="item.status === 'entregue' && !item.paid"
+            type="button"
+            class="btn btn-sm btn-forward-cash action-btn"
+            (click)="openCashForwardModal(item)">
+            <i class="fas fa-cash-register"></i> Caixa
+          </button>
+          <span class="paid-badge-list" *ngIf="item.status === 'entregue' && item.paid">
+            <i class="fas fa-check-circle"></i> Pago
+          </span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal de Check-in de Balcão -->
+  <!-- ======================================================== -->
+  <!-- 3. MODAL DE CHECK-IN DE BALCÃO (HU-07 / 08 / 09 / 03)    -->
+  <!-- ======================================================== -->
   <div class="modal-backdrop" *ngIf="showModal">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ isEditing ? 'Editar Atendimento' : 'Novo Check-in de Balcão (Fila do Dia)' }}</h2>
+          <div>
+            <h2>{{ isEditing ? 'Editar Atendimento' : 'Novo Check-in de Balcão (Fila do Dia)' }}</h2>
+            <p class="modal-subtitle">Precificação automática por porte/raça, cálculo de ETA e triagem</p>
+          </div>
           <button type="button" class="close-btn" (click)="closeModal()">&times;</button>
         </div>
 
         <form [formGroup]="checkinForm" (ngSubmit)="saveCheckin()">
           <div class="modal-body">
+            <!-- Dados do Pet e Peso (HU-07) -->
             <div class="form-row">
-              <div class="form-group col-6">
+              <div class="form-group col-4">
                 <label>Nome do Pet *</label>
-                <input type="text" formControlName="petName" class="form-control" placeholder="Ex: Rex, Mel, Thor">
+                <input type="text" formControlName="petName" class="form-control" placeholder="Ex: Rex, Thor, Mel">
               </div>
-              <div class="form-group col-6">
+              <div class="form-group col-4">
                 <label>Raça do Pet</label>
-                <input type="text" formControlName="petBreed" class="form-control" placeholder="Ex: Shih Tzu, Poodle, SRD">
+                <input type="text" formControlName="petBreed" class="form-control" placeholder="Ex: Spitz, Chow-Chow, Poodle">
+              </div>
+              <div class="form-group col-4">
+                <label>Peso (kg) *</label>
+                <div class="input-with-badge">
+                  <input type="number" step="0.1" min="0.1" formControlName="petWeightKg" class="form-control" placeholder="Ex: 8.5">
+                  <span class="porte-badge">{{ getCalculatedSizeTier() }}</span>
+                </div>
               </div>
             </div>
 
+            <!-- Dados do Tutor -->
             <div class="form-row">
               <div class="form-group col-6">
                 <label>Nome do Tutor *</label>
@@ -296,23 +414,75 @@
               </div>
             </div>
 
+            <!-- Procedimento & Matriz de Preço (HU-08 / HU-09) -->
             <div class="form-row">
               <div class="form-group col-6">
                 <label>Procedimento / Serviço *</label>
                 <select class="form-control" (change)="onServiceSelected($event)" formControlName="serviceName">
-                  <option *ngFor="let srv of availableServices" [value]="srv.name">
-                    {{ srv.name }} — R$ {{ formatPrice(srv.price) }}
-                  </option>
                   <option value="Banho Completo">Banho Completo</option>
                   <option value="Tosa Higiênica">Tosa Higiênica</option>
                   <option value="Tosa Geral">Tosa Geral</option>
                   <option value="Tosa Baby">Tosa Baby</option>
+                  <option value="Tosa da Raça">Tosa da Raça</option>
+                  <option value="Hidratação">Hidratação Profunda</option>
                 </select>
               </div>
 
               <div class="form-group col-6">
-                <label>Preço Estimado (R$) *</label>
-                <input type="number" step="0.5" formControlName="estimatedPrice" class="form-control">
+                <label>Preço Calculado (R$) *</label>
+                <input type="number" step="0.5" formControlName="estimatedPrice" class="form-control price-input-highlight">
+              </div>
+            </div>
+
+            <!-- Seção de Serviços Extras Somáveis (HU-09) -->
+            <div class="extras-section">
+              <label class="section-title"><i class="fas fa-plus-circle"></i> Serviços Adicionais / Extras (Somáveis no Orçamento)</label>
+              <div class="extras-grid">
+                <div
+                  class="extra-card-item"
+                  *ngFor="let extra of availableExtras"
+                  [class.selected]="isExtraSelected(extra.id)"
+                  (click)="toggleExtra(extra.id)">
+                  <div class="extra-check">
+                    <i class="fas fa-check" *ngIf="isExtraSelected(extra.id)"></i>
+                  </div>
+                  <div class="extra-info">
+                    <span class="extra-name">{{ extra.name }}</span>
+                    <span class="extra-desc">{{ extra.description }}</span>
+                  </div>
+                  <div class="extra-price">+ R$ {{ formatPrice(extra.price) }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card de Itemização do Orçamento & ETA (HU-03 & HU-08) -->
+            <div class="quote-summary-card" *ngIf="currentQuote">
+              <div class="quote-header">
+                <i class="fas fa-receipt"></i>
+                <span>Cotação Itemizada & Estimativa de Entrega</span>
+              </div>
+              <div class="quote-body">
+                <div class="quote-line">
+                  <span>{{ currentQuote.serviceName }} ({{ currentQuote.sizeLabel }})</span>
+                  <strong *ngIf="!currentQuote.breedOverrideApplied">R$ {{ formatPrice(currentQuote.basePrice) }}</strong>
+                  <strong *ngIf="currentQuote.breedOverrideApplied" class="badge-breed-override">
+                    R$ {{ formatPrice(currentQuote.basePrice) }} (Raça Especial)
+                  </strong>
+                </div>
+                <div class="quote-line" *ngFor="let ex of currentQuote.extras">
+                  <span>+ {{ ex.name }}</span>
+                  <strong>+ R$ {{ formatPrice(ex.price) }}</strong>
+                </div>
+                <div class="quote-divider"></div>
+                <div class="quote-total-row">
+                  <div class="eta-preview">
+                    <i class="far fa-clock"></i>
+                    <span>Duração: ~{{ currentQuote.totalDurationMin }} min · Saída estimada: <strong>~{{ pricingService.estimateReadyTime(currentDate, currentQuote.totalDurationMin, stats.waiting).formattedTime }}</strong></span>
+                  </div>
+                  <div class="total-preview">
+                    Total: <strong>R$ {{ formatPrice(currentQuote.totalPrice) }}</strong>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -327,6 +497,16 @@
               </div>
             </div>
 
+            <!-- Instruções Específicas de Tosa (HU-06) -->
+            <div class="form-group" *ngIf="checkinForm.get('requiresValidation')?.value">
+              <label class="tosa-notes-label">
+                <i class="fas fa-cut text-warning"></i> Instruções Específicas da Tosa (Exige Validação Humana)
+              </label>
+              <textarea formControlName="tosaNotes" rows="2" class="form-control" placeholder="Ex: Tosa baixa no corpo, preservar rabo e orelhas, arredondar pezinhos."></textarea>
+              <small class="text-muted">A regra da loja exige confirmação com o tutor antes de concluir o atendimento.</small>
+            </div>
+
+            <!-- Checklist de Saúde -->
             <div class="checklist-section">
               <label class="section-title"><i class="fas fa-notes-medical"></i> Checklist de Saúde (Triagem Inicial)</label>
               <div class="checklist-grid">
@@ -355,8 +535,8 @@
             </div>
 
             <div class="form-group">
-              <label>Observações do Atendimento</label>
-              <textarea formControlName="notes" rows="2" class="form-control" placeholder="Ex: Usar shampoo neutro, cuidado com nós"></textarea>
+              <label>Observações Gerais</label>
+              <textarea formControlName="notes" rows="2" class="form-control" placeholder="Ex: Usar shampoo hipoalergênico, tutor solicita cuidado extra"></textarea>
             </div>
           </div>
 
@@ -367,6 +547,253 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 4. MODAL DE VALIDAÇÃO HUMANA DE TOSA (HU-06)             -->
+  <!-- ======================================================== -->
+  <div class="modal-backdrop" *ngIf="showTosaValidationModal && tosaTargetItem">
+    <div class="modal-dialog modal-tosa-dialog">
+      <div class="modal-content">
+        <div class="modal-header modal-tosa-header">
+          <div class="header-title-wrap">
+            <div class="header-tosa-icon"><i class="fas fa-shield-alt"></i></div>
+            <div>
+              <h2>Validação Humana de Tosa</h2>
+              <p class="modal-subtitle">Regra de Segurança: Tosa nunca fecha sozinha sem alinhamento com o tutor</p>
+            </div>
+          </div>
+          <button type="button" class="close-btn" (click)="closeTosaValidationModal()">&times;</button>
+        </div>
+
+        <form [formGroup]="tosaValidationForm" (ngSubmit)="confirmTosaValidation()">
+          <div class="modal-body tosa-modal-body">
+            <!-- Dados do Atendimento -->
+            <div class="tosa-pet-summary">
+              <div class="summary-field">
+                <span class="label">Pet:</span>
+                <strong>{{ tosaTargetItem.petName }} <small *ngIf="tosaTargetItem.petBreed">({{ tosaTargetItem.petBreed }})</small></strong>
+              </div>
+              <div class="summary-field">
+                <span class="label">Tutor:</span>
+                <span>{{ tosaTargetItem.customerName }} ({{ tosaTargetItem.phone }})</span>
+              </div>
+              <div class="summary-field">
+                <span class="label">Procedimento:</span>
+                <span class="badge-service">{{ tosaTargetItem.serviceName }}</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Nome do Responsável pela Conferência (Atendente / Tosador) *</label>
+              <input type="text" formControlName="validatedBy" class="form-control" placeholder="Ex: Carlos Tosador, Thainá Recepção">
+            </div>
+
+            <div class="form-group">
+              <label>Instruções Acordadas com o Tutor *</label>
+              <textarea formControlName="tosaNotes" rows="3" class="form-control" placeholder="Descreva o que foi combinado com o tutor (ex: altura da lâmina, tosa baby no corpinho, rostinho redondo)"></textarea>
+            </div>
+
+            <div class="tosa-confirm-check">
+              <label class="check-container">
+                <input type="checkbox" formControlName="confirmedWithTutor">
+                <span class="checkmark"></span>
+                <span>Confirmo que conversei com o tutor e alinhei os detalhes técnicos da tosa.</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeTosaValidationModal()">Voltar sem Validar</button>
+            <button type="submit" class="btn btn-success" [disabled]="tosaValidationForm.invalid">
+              <i class="fas fa-check-circle"></i> Confirmar Validação & Liberar Conclusão
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 5. MODAL DE CONFIGURAÇÃO DE CAPACIDADE & HORÁRIOS (HU-04/26) -->
+  <!-- ======================================================== -->
+  <div class="modal-backdrop" *ngIf="showCapacityModal">
+    <div class="modal-dialog modal-capacity-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h2>Configuração de Expediente & Capacidade da Fila</h2>
+            <p class="modal-subtitle">Defina o limite de pets por dia da semana e dias de funcionamento</p>
+          </div>
+          <button type="button" class="close-btn" (click)="closeCapacityModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <table class="table table-bordered capacity-config-table">
+            <thead>
+              <tr>
+                <th>Dia da Semana</th>
+                <th>Funcionamento</th>
+                <th>Capacidade (Vagas/Dia)</th>
+                <th>Horário de Atendimento</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let day of businessHoursList">
+                <td><strong>{{ day.dayName }}</strong></td>
+                <td>
+                  <label class="switch">
+                    <input type="checkbox" [(ngModel)]="day.isOpen">
+                    <span class="slider round"></span>
+                  </label>
+                  <span class="day-status-text" [class.text-danger]="!day.isOpen">{{ day.isOpen ? 'Aberto' : 'Fechado' }}</span>
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    class="form-control form-control-sm"
+                    [(ngModel)]="day.capacity"
+                    [disabled]="!day.isOpen"
+                    min="0"
+                    max="200">
+                </td>
+                <td>
+                  <div class="time-range" *ngIf="day.isOpen">
+                    <input type="time" class="form-control form-control-sm" [(ngModel)]="day.openTime">
+                    <span>às</span>
+                    <input type="time" class="form-control form-control-sm" [(ngModel)]="day.closeTime">
+                  </div>
+                  <span class="text-muted" *ngIf="!day.isOpen">Não opera</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="text-muted small">
+            <i class="fas fa-info-circle"></i> Por padrão, a Animal World atende até 50 pets de Segunda a Sexta, até 32 pets aos Sábados, e fecha aos Domingos.
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeCapacityModal()">Cancelar</button>
+          <button type="button" class="btn btn-primary" (click)="saveCapacityConfig()">
+            <i class="fas fa-save"></i> Salvar Configurações
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 6. MODAL DE ENCAMINHAMENTO AO CAIXA (PDV)                -->
+  <!-- ======================================================== -->
+  <div class="modal-backdrop" *ngIf="showCashModal && cashTargetItem">
+    <div class="modal-dialog modal-cash-dialog">
+      <div class="modal-content">
+        <div class="modal-header modal-cash-header">
+          <div class="header-title-wrap">
+            <div class="header-cash-icon"><i class="fas fa-cash-register"></i></div>
+            <div>
+              <h2>Encaminhar ao Caixa (PDV)</h2>
+              <p class="modal-subtitle">Fim da Esteira de Delivery: finalize o atendimento com o pagamento</p>
+            </div>
+          </div>
+          <button type="button" class="close-btn" (click)="closeCashModal()">&times;</button>
+        </div>
+
+        <div class="modal-body cash-modal-body">
+          <div class="service-summary-card">
+            <div class="summary-row">
+              <span class="label">Pet / Raça:</span>
+              <strong class="value">{{ cashTargetItem.petName }} <small *ngIf="cashTargetItem.petBreed">({{ cashTargetItem.petBreed }})</small></strong>
+            </div>
+            <div class="summary-row">
+              <span class="label">Tutor / Cliente:</span>
+              <span class="value">{{ cashTargetItem.customerName }} <small *ngIf="cashTargetItem.phone">({{ cashTargetItem.phone }})</small></span>
+            </div>
+            <div class="summary-row">
+              <span class="label">Serviço Realizado:</span>
+              <span class="value">{{ cashTargetItem.serviceName }}</span>
+            </div>
+            <div class="summary-row total-row">
+              <span class="label">Valor a Cobrar:</span>
+              <strong class="value-highlight">R$ {{ formatPrice(cashTargetItem.finalPrice || cashTargetItem.estimatedPrice) }}</strong>
+            </div>
+          </div>
+
+          <div class="quick-pay-section">
+            <label class="section-label">Forma de Pagamento:</label>
+            <div class="payment-methods-grid">
+              <button
+                type="button"
+                class="method-btn"
+                [class.active]="selectedPaymentMethod === 'pix'"
+                (click)="selectedPaymentMethod = 'pix'">
+                <i class="fas fa-qrcode"></i> PIX
+              </button>
+              <button
+                type="button"
+                class="method-btn"
+                [class.active]="selectedPaymentMethod === 'cartao_credito'"
+                (click)="selectedPaymentMethod = 'cartao_credito'">
+                <i class="fas fa-credit-card"></i> Cartão Crédito
+              </button>
+              <button
+                type="button"
+                class="method-btn"
+                [class.active]="selectedPaymentMethod === 'cartao_debito'"
+                (click)="selectedPaymentMethod = 'cartao_debito'">
+                <i class="far fa-credit-card"></i> Cartão Débito
+              </button>
+              <button
+                type="button"
+                class="method-btn"
+                [class.active]="selectedPaymentMethod === 'dinheiro'"
+                (click)="selectedPaymentMethod = 'dinheiro'">
+                <i class="fas fa-money-bill-wave"></i> Dinheiro
+              </button>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-success btn-block btn-confirm-pay"
+              [disabled]="isProcessingPayment"
+              (click)="confirmQuickPayment()">
+              <i class="fas fa-check-circle" *ngIf="!isProcessingPayment"></i>
+              <i class="fas fa-spinner fa-spin" *ngIf="isProcessingPayment"></i>
+              Registrar Recebimento de R$ {{ formatPrice(cashTargetItem.finalPrice || cashTargetItem.estimatedPrice) }}
+            </button>
+          </div>
+
+          <div class="modal-divider"><span>OU</span></div>
+
+          <div class="cart-forward-section">
+            <button
+              type="button"
+              class="btn btn-warning btn-block btn-cart-forward"
+              (click)="addToCart(cashTargetItem)">
+              <i class="fas fa-shopping-cart"></i> Adicionar ao Carrinho de Compras & Checkout
+            </button>
+          </div>
+
+          <div class="modal-divider"><span>OU</span></div>
+
+          <div class="full-cash-section">
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-block btn-open-cash"
+              (click)="redirectToCashRegister(cashTargetItem)">
+              <i class="fas fa-cash-register"></i> Abrir na Frente de Caixa Completa (PDV) ➔
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeCashModal()">
+            Concluir Depois (Manter Pendente no Caixa)
+          </button>
+        </div>
       </div>
     </div>
   </div>

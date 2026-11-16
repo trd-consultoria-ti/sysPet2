@@ -1,15 +1,30 @@
 <div class="cart-container">
   <div class="page-header">
     <div class="header-left">
-      <h1 class="cart-title">Seu Carrinho</h1>
-      <p class="subtitle">Confira os itens selecionados, quantidades e subtotal antes de finalizar</p>
+      <h1 class="cart-title">
+        <i class="fas fa-shopping-cart" style="color: var(--primary); margin-right: 0.5rem;"></i>
+        Seu Carrinho
+      </h1>
+      <p class="subtitle">Confira os itens selecionados ou adicione qualquer produto, serviço e medicamento do sistema</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary btn-add-catalog" (click)="openCatalogModal()">
+        <i class="fas fa-plus-circle"></i>
+        Adicionar Produto ou Serviço
+      </button>
     </div>
   </div>
 
   <div class="cart-empty" *ngIf="items.length === 0">
     <i class="fas fa-shopping-cart"></i>
     <p>Seu carrinho está vazio.</p>
-    <a routerLink="/products" class="btn btn-primary">Ver Produtos</a>
+    <div class="empty-actions">
+      <button class="btn btn-primary" (click)="openCatalogModal()">
+        <i class="fas fa-plus-circle"></i> Adicionar Produtos ou Serviços
+      </button>
+      <a routerLink="/products" class="btn btn-outline-secondary">Ver Loja de Produtos</a>
+      <a routerLink="/services" class="btn btn-outline-secondary">Ver Serviços</a>
+    </div>
   </div>
 
   <div class="cart-content" *ngIf="items.length !== 0">
@@ -42,7 +57,132 @@
         <span>R$ {{ formatPrice(total) }}</span>
       </div>
       <a routerLink="/checkout" class="btn btn-primary btn-block">Finalizar Compra</a>
+      <button class="btn btn-outline-primary btn-block" (click)="openCatalogModal()">
+        <i class="fas fa-plus"></i> Adicionar Mais Itens
+      </button>
       <a routerLink="/products" class="btn btn-outline-secondary btn-block">Continuar Comprando</a>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Catálogo Unificado (Produtos, Serviços e Medicamentos) -->
+<div class="catalog-modal-backdrop" *ngIf="catalogModalOpen" (click)="closeCatalogModal()">
+  <div class="catalog-modal-dialog" (click)="$event.stopPropagation()">
+    <div class="catalog-modal-header">
+      <div class="header-titles">
+        <h2><i class="fas fa-layer-group"></i> Adicionar ao Carrinho</h2>
+        <p>Escolha qualquer produto, serviço ou medicamento do sistema para adicionar ao carrinho</p>
+      </div>
+      <button class="modal-close-btn" (click)="closeCatalogModal()" aria-label="Fechar modal">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Barra de busca e filtros -->
+    <div class="catalog-toolbar">
+      <div class="search-box">
+        <i class="fas fa-search search-icon"></i>
+        <input 
+          type="text" 
+          [(ngModel)]="catalogSearch" 
+          placeholder="Buscar produto, serviço de banho/tosa, consulta ou medicamento..."
+          class="search-input"
+        />
+        <button class="clear-search-btn" *ngIf="catalogSearch" (click)="catalogSearch = ''">
+          <i class="fas fa-times-circle"></i>
+        </button>
+      </div>
+
+      <div class="filter-pills">
+        <button 
+          class="pill-btn" 
+          [class.active]="activeFilter === 'todos'"
+          (click)="activeFilter = 'todos'"
+        >
+          Todos <span class="pill-badge">{{ getCountByType('todos') }}</span>
+        </button>
+        <button 
+          class="pill-btn" 
+          [class.active]="activeFilter === 'produto'"
+          (click)="activeFilter = 'produto'"
+        >
+          <i class="fas fa-box"></i> Produtos <span class="pill-badge">{{ getCountByType('produto') }}</span>
+        </button>
+        <button 
+          class="pill-btn" 
+          [class.active]="activeFilter === 'servico'"
+          (click)="activeFilter = 'servico'"
+        >
+          <i class="fas fa-paw"></i> Serviços <span class="pill-badge">{{ getCountByType('servico') }}</span>
+        </button>
+        <button 
+          class="pill-btn" 
+          [class.active]="activeFilter === 'medicamento'"
+          (click)="activeFilter = 'medicamento'"
+        >
+          <i class="fas fa-pills"></i> Farmácia <span class="pill-badge">{{ getCountByType('medicamento') }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Alerta de feedback ao adicionar -->
+    <div class="feedback-toast" *ngIf="feedbackMessage">
+      <i class="fas fa-check-circle"></i> {{ feedbackMessage }}
+    </div>
+
+    <!-- Lista de Itens do Catálogo -->
+    <div class="catalog-body">
+      <div class="catalog-empty" *ngIf="filteredCatalogItems.length === 0">
+        <i class="fas fa-search"></i>
+        <p>Nenhum item encontrado com o filtro atual.</p>
+      </div>
+
+      <div class="catalog-grid" *ngIf="filteredCatalogItems.length > 0">
+        <div class="catalog-card" *ngFor="let item of filteredCatalogItems">
+          <div class="catalog-card-media">
+            <img [src]="item.image" [alt]="item.name" class="catalog-card-img" />
+            <span class="type-tag" [ngClass]="item.type">
+              <span *ngIf="item.type === 'produto'"><i class="fas fa-box"></i> PRODUTO</span>
+              <span *ngIf="item.type === 'servico'"><i class="fas fa-paw"></i> SERVIÇO</span>
+              <span *ngIf="item.type === 'medicamento'"><i class="fas fa-pills"></i> FARMÁCIA</span>
+            </span>
+          </div>
+
+          <div class="catalog-card-info">
+            <span class="catalog-cat">{{ item.category }}</span>
+            <h4 class="catalog-name">{{ item.name }}</h4>
+            <p class="catalog-desc" *ngIf="item.description">{{ item.description }}</p>
+            <span class="catalog-sub" *ngIf="item.subtitle">{{ item.subtitle }}</span>
+
+            <div class="catalog-footer">
+              <div class="price-wrap">
+                <span class="label">Preço:</span>
+                <span class="price-val">R$ {{ formatPrice(item.price) }}</span>
+              </div>
+
+              <div class="action-wrap">
+                <span class="in-cart-indicator" *ngIf="getItemCartCount(item.id) > 0">
+                  <i class="fas fa-check"></i> {{ getItemCartCount(item.id) }} no carrinho
+                </span>
+                <button class="btn btn-sm btn-primary add-item-btn" (click)="addCatalogItem(item)">
+                  <i class="fas fa-plus"></i> Adicionar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rodapé do Modal -->
+    <div class="catalog-modal-footer">
+      <div class="footer-summary">
+        <span>Itens no carrinho: <strong>{{ items.length }}</strong></span>
+        <span>Total: <strong>R$ {{ formatPrice(total) }}</strong></span>
+      </div>
+      <button class="btn btn-primary" (click)="closeCatalogModal()">
+        <i class="fas fa-shopping-cart"></i> Ver Carrinho ({{ items.length }})
+      </button>
     </div>
   </div>
 </div>

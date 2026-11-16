@@ -157,32 +157,153 @@
   color: var(--muted);
 }
 
+.print-btn-group {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+
+  button {
+    font-size: 0.78rem;
+    padding: 0.3rem 0.55rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+}
+
 .print-slip {
   display: none;
 }
 
 @media print {
-  .admin-page {
-    display: none;
+  @page {
+    size: auto;
+    margin: 5mm;
+  }
+
+  .admin-page,
+  app-navbar,
+  app-footer,
+  .dashboard-sidebar,
+  .no-print {
+    display: none !important;
   }
 
   .print-slip {
     display: block;
-    padding: 1rem;
-    font-family: inherit;
 
-    h1 {
-      font-size: 1.25rem;
-      margin-bottom: 1rem;
+    &.format-cupom {
+      .thermal-ticket {
+        width: 76mm;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.8rem;
+        line-height: 1.35;
+        color: black;
+        margin: 0 auto;
+
+        .cupom-header {
+          text-align: center;
+          h2 { font-size: 0.95rem; margin: 0 0 0.2rem; }
+          .sub { font-size: 0.8rem; margin: 0; font-weight: 700; }
+        }
+
+        .divider {
+          text-align: center;
+          margin: 0.35rem 0;
+          overflow: hidden;
+        }
+
+        .cupom-body div {
+          margin: 0.2rem 0;
+        }
+
+        footer {
+          text-align: center;
+          font-size: 0.72rem;
+          margin-top: 0.4rem;
+          .tag { color: #666; }
+        }
+      }
     }
 
-    dt {
-      font-weight: 700;
-      margin-top: 0.5rem;
-    }
+    &.format-a4 {
+      .a4-sheet {
+        width: 100%;
+        max-width: 210mm;
+        margin: 0 auto;
+        font-family: inherit;
+        color: #0f172a;
+        padding: 1.5rem;
 
-    dd {
-      margin: 0 0 0.25rem;
+        .a4-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          border-bottom: 2px solid #0d9488;
+          padding-bottom: 1rem;
+          margin-bottom: 1.5rem;
+
+          .brand h1 {
+            font-size: 1.6rem;
+            color: #0d9488;
+            margin: 0 0 0.25rem;
+          }
+          .brand p { margin: 0; color: #64748b; font-size: 0.9rem; }
+
+          .doc-info {
+            text-align: right;
+            font-size: 0.85rem;
+
+            .badge {
+              display: inline-block;
+              background: #f1f5f9;
+              padding: 0.2rem 0.5rem;
+              font-weight: 700;
+              border-radius: 4px;
+              margin-bottom: 0.35rem;
+            }
+          }
+        }
+
+        .a4-section {
+          margin-bottom: 2rem;
+
+          h2 {
+            font-size: 1rem;
+            color: #334155;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.4rem;
+            margin-bottom: 1rem;
+          }
+
+          .a4-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.6rem 1.5rem;
+            font-size: 0.95rem;
+
+            dt { font-weight: 600; color: #64748b; }
+            dd { margin: 0; color: #0f172a; }
+          }
+        }
+
+        .a4-footer {
+          margin-top: 4rem;
+          padding-top: 1rem;
+          border-top: 1px dashed #cbd5e1;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          font-size: 0.82rem;
+          color: #64748b;
+
+          .sign-block {
+            width: 220px;
+            text-align: center;
+            .line { border-top: 1px solid #64748b; margin-bottom: 0.35rem; }
+          }
+        }
+      }
     }
   }
 }

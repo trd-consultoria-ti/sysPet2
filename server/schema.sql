@@ -322,6 +322,17 @@ CREATE INDEX IF NOT EXISTS idx_daily_services_customer ON daily_services(custome
 CREATE INDEX IF NOT EXISTS idx_daily_services_pet ON daily_services(pet_id);
 CREATE INDEX IF NOT EXISTS idx_daily_services_appointment ON daily_services(appointment_id);
 
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS pet_weight_kg NUMERIC(5,2);
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS pet_size_tier TEXT;
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS selected_extras JSONB DEFAULT '[]';
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS estimated_ready_at TIMESTAMPTZ;
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS tosa_notes TEXT DEFAULT '';
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS validated_by TEXT DEFAULT '';
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS validated_at TIMESTAMPTZ;
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS paid BOOLEAN DEFAULT FALSE;
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT '';
+
 -- Medicamentos e Farmácia Veterinária
 CREATE TABLE IF NOT EXISTS medications (
   id SERIAL PRIMARY KEY,

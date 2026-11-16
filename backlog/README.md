@@ -30,6 +30,7 @@ O sistema NÃO é uma agenda de horários. É uma **lista do dia** com fila, pos
 | 09 | [Pacotes semanais](09-pacotes-semanais.md) | ⚪ P3 | Médio |
 | 10 | [Expediente e horários](10-expediente-horarios.md) | ⚪ P3 | Baixo |
 | 11 | [Consultório veterinário](11-consultorio-veterinario.md) | ⚪ P3 — escopo confirmado, depois do pet shop | Médio |
+| 12 | [Dados da empresa (identidade jurídica)](12-dados-empresa.md) | ⚪ P3 — documentos recebidos 16/11 | Baixo |
 
 ## O que já existe e será reaproveitado
 
@@ -51,3 +52,5 @@ Auth/papéis · clientes+pets (falta `weight`) · produtos+estoque (baixa autom�
 - Produtos (ração/medicamentos/acessórios): **preço fixo por item**, tabela a receber dela
 - **BANHO/TOSA: bloco de requisitos COMPLETO** (16/11) — zero dúvidas; consultório é o próximo bloco
 - Clientes mandam **muito áudio** no WhatsApp
+- **Dados da empresa recebidos** (16/11 ~18:43): CNPJ 41.562.090/0001-91 · fantasia ANIMAL WORLD PET SHOP · IE 08.048.303/001-32 · Riacho Fundo II, CEP 71.882-101 · microempresa LTDA (não MEI) — originais em `Shared\animal-world-docs\`, detalhes no card 12
+- Pendente só de artefato dela: tabela de preços de **produtos** e do **consultório**

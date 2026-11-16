@@ -18,6 +18,15 @@
 
   <form class="movement-form" *ngIf="showForm" [formGroup]="movementForm" (ngSubmit)="save()">
     <h2>Novo lançamento</h2>
+
+    <!-- Banner de Encaminhamento da Esteira de Delivery -->
+    <div class="origin-banner" *ngIf="originSource === 'daily-queue'">
+      <div class="banner-icon"><i class="fas fa-paw"></i></div>
+      <div class="banner-text">
+        <strong>Recebimento da Esteira de Delivery</strong>
+        <p>Atendimento concluído para o pet <strong>{{ originDetails.petName }}</strong> (Tutor: {{ originDetails.customerName }}). Confirme a forma de pagamento e finalize a entrada.</p>
+      </div>
+    </div>
     <div class="form-row">
       <div class="form-group form-group-sm">
         <label for="cash-type">Tipo *</label>

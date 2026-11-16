@@ -42,6 +42,24 @@ export class CartService {
     this.persist();
   }
 
+  addCustomItem(item: { id: number; name: string; price: number; image?: string; quantity?: number }): void {
+    const items = [...this.itemsSubject.value];
+    const existing = items.find(i => i.productId === item.id);
+    if (existing) {
+      existing.quantity += (item.quantity || 1);
+    } else {
+      items.push({
+        productId: item.id,
+        name: item.name,
+        price: item.price,
+        image: item.image || 'assets/images/logo.png',
+        quantity: item.quantity || 1
+      });
+    }
+    this.itemsSubject.next(items);
+    this.persist();
+  }
+
   remove(productId: number): void {
     this.itemsSubject.next(this.itemsSubject.value.filter(i => i.productId !== productId));
     this.persist();

@@ -42,17 +42,28 @@
     <div class="item-footer">
       <span class="item-price">R$ {{ (item.price || 0).toFixed(2).replace('.', ',') }}</span>
       
-      <!-- Ação de Serviço: Agendar -->
-      <button 
-        *ngIf="isService"
-        type="button"
-        class="btn btn-primary btn-sm" 
-        (click)="handleAction()" 
-        [attr.aria-label]="'Agendar ' + item.name"
-      >
-        <i class="icon-calendar" aria-hidden="true"></i>
-        Agendar
-      </button>
+      <!-- Ação de Serviço: Agendar ou Adicionar ao Carrinho -->
+      <div class="service-actions" *ngIf="isService">
+        <button 
+          type="button"
+          class="btn btn-outline-primary btn-sm btn-cart" 
+          (click)="addServiceToCart($event)" 
+          [attr.aria-label]="'Adicionar ' + item.name + ' ao carrinho'"
+          title="Adicionar ao Carrinho"
+        >
+          <i class="fas fa-cart-plus" aria-hidden="true"></i>
+          + Carrinho
+        </button>
+        <button 
+          type="button"
+          class="btn btn-primary btn-sm" 
+          (click)="handleAction()" 
+          [attr.aria-label]="'Agendar ' + item.name"
+        >
+          <i class="icon-calendar" aria-hidden="true"></i>
+          Agendar
+        </button>
+      </div>
 
       <!-- Ação de Produto: Adicionar ao Carrinho -->
       <button 

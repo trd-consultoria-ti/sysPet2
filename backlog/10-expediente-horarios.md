@@ -22,3 +22,4 @@ O sistema precisa saber o expediente pra: limitar o dia de atendimento, calcular
 - Tabela/config `business_hours` (day_of_week, open_time, close_time, daily_capacity).
 - Capacidade já está no card 01 — aqui é só o horário; podem ser o mesmo card de configuração.
 - Domingo: **confirmado fechado** por Thaina (~16:33).
+- Alvará RLE licencia funcionamento 08:00–19:00 — expediente real (9–18 / sáb 8–16) cabe dentro, sem impedimento legal.

@@ -1,9 +1,39 @@
-<div class="receipt-page">
+<div class="receipt-page" [ngClass]="'format-' + printFormat">
+  <!-- Barra de controle e alternância de formato (visível apenas na tela) -->
   <div class="receipt-actions no-print">
-    <a routerLink="/orders" class="btn btn-outline-secondary">← Voltar</a>
-    <button type="button" class="btn btn-primary" (click)="print()">
-      <i class="fas fa-print" aria-hidden="true"></i> Imprimir
-    </button>
+    <div class="actions-left">
+      <a routerLink="/orders" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </a>
+    </div>
+
+    <div class="format-toggle">
+      <span class="toggle-label">Formato de Impressão / PDF:</span>
+      <div class="toggle-btn-group">
+        <button 
+          type="button" 
+          class="btn btn-sm" 
+          [class.btn-primary]="printFormat === 'a4'"
+          [class.btn-outline-secondary]="printFormat !== 'a4'"
+          (click)="printFormat = 'a4'">
+          <i class="fas fa-file-alt"></i> Folha A4
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-sm" 
+          [class.btn-primary]="printFormat === 'cupom'"
+          [class.btn-outline-secondary]="printFormat !== 'cupom'"
+          (click)="printFormat = 'cupom'">
+          <i class="fas fa-receipt"></i> Cupom Fiscal (80mm)
+        </button>
+      </div>
+    </div>
+
+    <div class="actions-right">
+      <button type="button" class="btn btn-primary btn-print" (click)="print()">
+        <i class="fas fa-print" aria-hidden="true"></i> Imprimir {{ printFormat === 'a4' ? 'A4' : 'Cupom' }}
+      </button>
+    </div>
   </div>
 
   <p class="empty-state" *ngIf="loading">Carregando pedido...</p>
@@ -12,81 +42,168 @@
     <p>Pedido não encontrado.</p>
   </div>
 
-  <article class="receipt" *ngIf="order">
-    <header class="receipt-header">
-      <h1 class="receipt-brand">Animal World</h1>
-      <p class="receipt-sub">Comprovante de pedido</p>
+  <!-- ================= LAYOUT 1: FOLHA A4 (PADRÃO DANFE / RELATÓRIO) ================= -->
+  <article class="receipt receipt-a4" *ngIf="printFormat === 'a4' && order">
+    <header class="receipt-header-a4">
+      <div class="header-brand-block">
+        <h1 class="receipt-brand">Animal World</h1>
+        <p class="receipt-sub">Clínica Veterinária & Pet Shop</p>
+        <p class="company-tax">CNPJ: 12.345.678/0001-90 · Inscrição Estadual: 123.456.789</p>
+        <p class="company-address">Rua dos Pets, 123 - Centro · Tel: (11) 4002-8922</p>
+      </div>
+      <div class="header-doc-block">
+        <span class="doc-badge">DOCUMENTO NÃO FISCAL</span>
+        <div class="doc-number">PEDIDO {{ order.orderNumber }}</div>
+        <div class="doc-date">Emissão: {{ formatDateTime(order.createdAt) }}</div>
+        <div class="doc-status">Status: <strong>{{ statusLabels[order.status] }}</strong></div>
+      </div>
     </header>
 
-    <section class="receipt-meta">
-      <div class="meta-row">
-        <span class="meta-label">Pedido</span>
-        <strong>{{ order.orderNumber }}</strong>
-      </div>
-      <div class="meta-row">
-        <span class="meta-label">Data</span>
-        <span>{{ formatDateTime(order.createdAt) }}</span>
-      </div>
-      <div class="meta-row">
-        <span class="meta-label">Status</span>
-        <span>{{ statusLabels[order.status] }}</span>
+    <section class="receipt-customer-a4">
+      <h2 class="section-title">Dados do Cliente / Destinatário</h2>
+      <div class="customer-grid">
+        <div class="customer-field">
+          <span class="field-label">Nome:</span>
+          <strong>{{ order.customerName }}</strong>
+        </div>
+        <div class="customer-field" *ngIf="order.phone">
+          <span class="field-label">Telefone:</span>
+          <span>{{ order.phone }}</span>
+        </div>
+        <div class="customer-field" *ngIf="order.email">
+          <span class="field-label">E-mail:</span>
+          <span>{{ order.email }}</span>
+        </div>
+        <div class="customer-field full-width" *ngIf="order.address">
+          <span class="field-label">Endereço de Entrega:</span>
+          <span>{{ order.address }}</span>
+        </div>
       </div>
     </section>
 
-    <section class="receipt-customer">
-      <h2>Cliente</h2>
-      <p>{{ order.customerName }}</p>
-      <p *ngIf="order.email">{{ order.email }}</p>
-      <p *ngIf="order.phone">{{ order.phone }}</p>
-      <p *ngIf="order.address">{{ order.address }}</p>
-    </section>
-
-    <section class="receipt-items">
-      <h2>Itens</h2>
+    <section class="receipt-items-a4">
+      <h2 class="section-title">Itens do Pedido</h2>
       <div class="table-responsive">
-        <table>
+        <table class="a4-table">
           <thead>
             <tr>
-              <th>Item</th>
-              <th class="num">Qtd.</th>
-              <th class="num">Unitário</th>
-              <th class="num">Total</th>
+              <th class="col-num">#</th>
+              <th>Descrição do Produto / Serviço / Medicamento</th>
+              <th class="num col-qty">Qtd.</th>
+              <th class="num col-unit">Preço Unit.</th>
+              <th class="num col-tot">Total</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of order.items">
-              <td>{{ item.name }}</td>
+            <tr *ngFor="let item of order.items; let i = index">
+              <td class="col-num">{{ i + 1 }}</td>
+              <td class="item-name">{{ item.name }}</td>
               <td class="num">{{ item.quantity }}</td>
               <td class="num">R$ {{ formatPrice(item.price) }}</td>
-              <td class="num">R$ {{ formatPrice(item.price * item.quantity) }}</td>
+              <td class="num font-bold">R$ {{ formatPrice(item.price * item.quantity) }}</td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <section class="receipt-total">
-      <div class="receipt-total-row" *ngIf="order.discount && order.discount > 0">
-        <span>Subtotal</span>
-        <span>R$ {{ formatPrice(order.total + order.discount) }}</span>
+    <div class="receipt-bottom-a4">
+      <div class="payment-info-box">
+        <h3>Forma de Pagamento</h3>
+        <p class="payment-type"><i class="fas fa-credit-card"></i> {{ paymentLabel(order.paymentMethod) }}</p>
+        <p class="payment-status-note">Documento emitido eletronicamente pelo sistema Animal World sysPet2.</p>
       </div>
-      <div class="receipt-total-row discount-row" *ngIf="order.discount && order.discount > 0">
-        <span>Desconto{{ order.couponCode ? ' (' + order.couponCode + ')' : '' }}</span>
-        <span>- R$ {{ formatPrice(order.discount) }}</span>
-      </div>
-      <div class="receipt-total-row final-total-row">
-        <span>Total</span>
-        <strong>R$ {{ formatPrice(order.total) }}</strong>
-      </div>
-    </section>
 
-    <section class="receipt-payment">
-      <span class="meta-label">Pagamento:</span>
-      <span>{{ paymentLabel(order.paymentMethod) }}</span>
-    </section>
+      <div class="totals-box-a4">
+        <div class="total-row" *ngIf="order.discount && order.discount > 0">
+          <span>Subtotal:</span>
+          <span>R$ {{ formatPrice(order.total + order.discount) }}</span>
+        </div>
+        <div class="total-row discount" *ngIf="order.discount && order.discount > 0">
+          <span>Desconto{{ order.couponCode ? ' (' + order.couponCode + ')' : '' }}:</span>
+          <span>- R$ {{ formatPrice(order.discount) }}</span>
+        </div>
+        <div class="total-row final-total">
+          <span>Total Geral:</span>
+          <strong>R$ {{ formatPrice(order.total) }}</strong>
+        </div>
+      </div>
+    </div>
 
-    <footer class="receipt-footer">
-      <p>Obrigado pela preferência!</p>
+    <footer class="receipt-footer-a4">
+      <p>Obrigado por confiar os cuidados do seu pet à Animal World!</p>
+      <div class="footer-sign-line">
+        <span>Assinatura do Recebedor</span>
+      </div>
     </footer>
+  </article>
+
+  <!-- ================= LAYOUT 2: CUPOM FISCAL / TÉRMICO (80MM) ================= -->
+  <article class="receipt receipt-cupom" *ngIf="printFormat === 'cupom' && order">
+    <div class="thermal-ticket">
+      <header class="cupom-header">
+        <h2 class="cupom-brand">ANIMAL WORLD PET SHOP</h2>
+        <p class="cupom-cnpj">CNPJ: 12.345.678/0001-90</p>
+        <p class="cupom-address">Rua dos Pets, 123 - Centro - SP</p>
+        <p class="cupom-phone">Tel: (11) 4002-8922</p>
+        <div class="cupom-divider-double">========================================</div>
+        <p class="cupom-doc-title">CUPOM NÃO FISCAL / COMPROVANTE</p>
+        <div class="cupom-meta-grid">
+          <div>PEDIDO: <strong>{{ order.orderNumber }}</strong></div>
+          <div>DATA: {{ formatDateTime(order.createdAt) }}</div>
+        </div>
+        <div class="cupom-divider">----------------------------------------</div>
+        <div class="cupom-client">
+          <div>CLIENTE: {{ order.customerName }}</div>
+          <div *ngIf="order.phone">TEL: {{ order.phone }}</div>
+        </div>
+      </header>
+
+      <div class="cupom-divider">----------------------------------------</div>
+      <div class="cupom-table-head">
+        <span class="c-desc">DESCRIÇÃO</span>
+        <span class="c-qty">QTDxUNIT</span>
+        <span class="c-tot">TOTAL</span>
+      </div>
+      <div class="cupom-divider">----------------------------------------</div>
+
+      <div class="cupom-items-list">
+        <div class="cupom-item" *ngFor="let item of order.items; let idx = index">
+          <div class="item-title">{{ (idx + 1).toString().padStart(3, '0') }} {{ item.name }}</div>
+          <div class="item-math">
+            <span class="c-qty">{{ item.quantity }} UN x R$ {{ formatPrice(item.price) }}</span>
+            <span class="c-tot">R$ {{ formatPrice(item.price * item.quantity) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cupom-divider">----------------------------------------</div>
+
+      <div class="cupom-totals">
+        <div class="tot-line" *ngIf="order.discount && order.discount > 0">
+          <span>SUBTOTAL:</span>
+          <span>R$ {{ formatPrice(order.total + order.discount) }}</span>
+        </div>
+        <div class="tot-line discount-line" *ngIf="order.discount && order.discount > 0">
+          <span>DESCONTO{{ order.couponCode ? ' (' + order.couponCode + ')' : '' }}:</span>
+          <span>- R$ {{ formatPrice(order.discount) }}</span>
+        </div>
+        <div class="tot-line grand-total">
+          <span>TOTAL A PAGAR:</span>
+          <strong>R$ {{ formatPrice(order.total) }}</strong>
+        </div>
+        <div class="tot-line">
+          <span>FORMA PGTO:</span>
+          <span>{{ paymentLabel(order.paymentMethod).toUpperCase() }}</span>
+        </div>
+      </div>
+
+      <div class="cupom-divider-double">========================================</div>
+      <footer class="cupom-footer">
+        <p>OBRIGADO PELA PREFERÊNCIA!</p>
+        <p>VOLTE SEMPRE!</p>
+        <p class="system-tag">sysPet2 - Animal World</p>
+      </footer>
+    </div>
   </article>
 </div>

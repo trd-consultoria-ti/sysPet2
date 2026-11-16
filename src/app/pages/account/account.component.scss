@@ -369,25 +369,198 @@
   }
 }
 
+/* Impressão da receita pelo Tutor — RESTRITO EXCLUSIVAMENTE A FOLHA A4 */
 .print-slip {
   display: none;
 }
 
 @media print {
-  .account-container,
-  .rx-modal-backdrop {
-    display: none;
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm;
   }
 
-  .print-slip {
-    display: block;
-    padding: 1rem;
+  .account-container,
+  .rx-modal-backdrop,
+  app-navbar,
+  app-footer,
+  .no-print {
+    display: none !important;
+  }
 
-    h1 { font-size: 1.25rem; }
-    h2 { font-size: 1rem; margin-top: 1rem; }
-    dl { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; }
-    dt { font-weight: 600; }
-    ol { padding-left: 1.5rem; }
-    li { margin-bottom: 0.5rem; }
+  .print-slip.rx-a4-official {
+    display: block;
+    width: 100%;
+    max-width: 210mm;
+    margin: 0 auto;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #0f172a;
+    padding: 1.5rem 1rem;
+    box-sizing: border-box;
+
+    .rx-header-a4 {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2.5px solid #0d9488;
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.5rem;
+
+      .rx-brand-block {
+        h1 {
+          font-size: 1.85rem;
+          font-weight: 800;
+          color: #0d9488;
+          margin: 0 0 0.2rem 0;
+        }
+
+        .subtitle {
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: #334155;
+          margin: 0 0 0.35rem 0;
+        }
+
+        .legal-info {
+          font-size: 0.78rem;
+          color: #64748b;
+          margin: 0.1rem 0;
+        }
+      }
+
+      .rx-doc-block {
+        text-align: right;
+
+        .rx-type-badge {
+          display: inline-block;
+          background: #0d9488;
+          color: white;
+          padding: 0.25rem 0.65rem;
+          font-size: 0.8rem;
+          font-weight: 700;
+          border-radius: 4px;
+          margin-bottom: 0.35rem;
+        }
+
+        .rx-format-notice {
+          font-size: 0.72rem;
+          font-weight: 700;
+          color: #047857;
+          margin-bottom: 0.25rem;
+        }
+
+        .rx-vet {
+          font-size: 0.88rem;
+          font-weight: 700;
+          color: #0f172a;
+          margin-top: 0.35rem;
+        }
+      }
+    }
+
+    h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #334155;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 0.35rem;
+      margin: 1.25rem 0 0.75rem 0;
+    }
+
+    .rx-patient-a4 {
+      .patient-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem 1.5rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+
+        .label {
+          color: #64748b;
+          margin-right: 0.35rem;
+        }
+      }
+    }
+
+    .rx-items-a4 {
+      .prescribed-list {
+        padding-left: 1.5rem;
+        margin: 0.5rem 0;
+
+        li {
+          margin-bottom: 1rem;
+          font-size: 0.92rem;
+          line-height: 1.45;
+
+          .med-name {
+            font-size: 1.05rem;
+            color: #0f172a;
+            margin-bottom: 0.15rem;
+          }
+
+          .med-posology {
+            color: #334155;
+            font-size: 0.88rem;
+          }
+
+          .med-instructions {
+            color: #0d9488;
+            font-size: 0.82rem;
+            margin-top: 0.2rem;
+          }
+        }
+      }
+    }
+
+    .rx-notes-a4 {
+      p {
+        font-size: 0.88rem;
+        color: #475569;
+        line-height: 1.4;
+      }
+    }
+
+    .rx-footer-a4 {
+      margin-top: 3.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px dashed #cbd5e1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+
+      .rx-validity {
+        p {
+          margin: 0.15rem 0;
+          font-size: 0.78rem;
+          color: #64748b;
+        }
+      }
+
+      .rx-signature-box {
+        width: 250px;
+        text-align: center;
+
+        .sign-line {
+          border-top: 1.5px solid #0f172a;
+          margin-bottom: 0.35rem;
+        }
+
+        .vet-name {
+          font-size: 0.88rem;
+          font-weight: 700;
+          color: #0f172a;
+        }
+
+        .vet-crmv {
+          font-size: 0.8rem;
+          color: #64748b;
+        }
+      }
+    }
   }
 }

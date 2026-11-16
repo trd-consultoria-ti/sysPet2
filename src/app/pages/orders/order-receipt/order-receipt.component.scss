@@ -1,129 +1,505 @@
 .receipt-page {
-  max-width: 640px;
+  max-width: 860px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 2rem 1rem 4rem;
+  transition: all 0.3s ease;
+
+  &.format-cupom {
+    max-width: 440px;
+  }
 }
 
+/* Barra de ações e alternador de formato */
 .receipt-actions {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-
-.receipt {
-  background: var(--background);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 2rem;
-
-  h2 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin: 1.25rem 0 0.5rem;
-    color: var(--foreground);
-  }
-}
-
-.receipt-header {
-  text-align: center;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 1rem;
-  margin-bottom: 1rem;
-}
-
-.receipt-brand {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--primary-text);
-  margin: 0;
-}
-
-.receipt-sub {
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.meta-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.2rem 0;
-  font-size: 0.9rem;
-}
-
-.meta-label {
-  color: var(--muted);
-}
-
-.receipt-customer p {
-  margin: 0.15rem 0;
-  font-size: 0.9rem;
-}
-
-.receipt-items table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-
-  th, td {
-    padding: 0.5rem 0.25rem;
-    border-bottom: 1px solid var(--border);
-    text-align: left;
-  }
-
-  .num {
-    text-align: right;
-  }
-}
-
-.receipt-total {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem 0.25rem;
-  border-top: 2px solid var(--foreground);
-  margin-top: 0.5rem;
-}
-
-.receipt-total-row {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 0.95rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
-  &.final-total-row {
-    font-size: 1.2rem;
+  .format-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+
+    .toggle-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .toggle-btn-group {
+      display: inline-flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #cbd5e1;
+
+      button {
+        border-radius: 0;
+        border: none;
+        padding: 0.45rem 0.85rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+
+        &:first-child {
+          border-right: 1px solid #cbd5e1;
+        }
+
+        &.btn-primary {
+          background: var(--primary);
+          color: white;
+        }
+
+        &.btn-outline-secondary {
+          background: #f8fafc;
+          color: #475569;
+
+          &:hover {
+            background: #e2e8f0;
+          }
+        }
+      }
+    }
+  }
+
+  .btn-print {
+    padding: 0.5rem 1.25rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+/* ================= 1. ESTILOS DO FORMATO A4 ================= */
+.receipt-a4 {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  .receipt-header-a4 {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid #0f172a;
+    margin-bottom: 1.75rem;
+
+    .header-brand-block {
+      .receipt-brand {
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: #0d9488;
+        margin: 0 0 0.25rem 0;
+      }
+
+      .receipt-sub {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #334155;
+        margin: 0 0 0.5rem 0;
+      }
+
+      .company-tax, .company-address {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin: 0.1rem 0;
+      }
+    }
+
+    .header-doc-block {
+      text-align: right;
+
+      .doc-badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 700;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+      }
+
+      .doc-number {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0f172a;
+      }
+
+      .doc-date {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+      }
+
+      .doc-status {
+        font-size: 0.85rem;
+        color: #0d9488;
+        margin-top: 0.25rem;
+      }
+    }
+  }
+
+  .section-title {
+    font-size: 0.9rem;
     font-weight: 700;
-    margin-top: 0.25rem;
-    padding-top: 0.5rem;
-    border-top: 1px dashed var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    margin: 0 0 0.75rem 0;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid #e2e8f0;
   }
 
-  &.discount-row {
-    color: #16a34a;
+  .receipt-customer-a4 {
+    margin-bottom: 1.75rem;
+
+    .customer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem 1.5rem;
+      background: #f8fafc;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+
+      .customer-field {
+        font-size: 0.88rem;
+
+        .field-label {
+          color: #64748b;
+          margin-right: 0.35rem;
+        }
+
+        &.full-width {
+          grid-column: 1 / -1;
+        }
+      }
+    }
+  }
+
+  .receipt-items-a4 {
+    margin-bottom: 1.75rem;
+
+    .a4-table {
+      width: 100%;
+      border-collapse: collapse;
+
+      th {
+        background: #f1f5f9;
+        padding: 0.75rem 0.65rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #334155;
+        text-align: left;
+        border-top: 1px solid #cbd5e1;
+        border-bottom: 1px solid #cbd5e1;
+
+        &.num { text-align: right; }
+        &.col-num { width: 40px; text-align: center; }
+        &.col-qty { width: 70px; }
+        &.col-unit { width: 110px; }
+        &.col-tot { width: 120px; }
+      }
+
+      td {
+        padding: 0.75rem 0.65rem;
+        font-size: 0.88rem;
+        color: #1e293b;
+        border-bottom: 1px solid #e2e8f0;
+
+        &.num { text-align: right; }
+        &.col-num { text-align: center; color: #94a3b8; }
+        &.font-bold { font-weight: 700; color: #0f172a; }
+      }
+    }
+  }
+
+  .receipt-bottom-a4 {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #0f172a;
+
+    .payment-info-box {
+      flex: 1;
+
+      h3 {
+        margin: 0 0 0.35rem 0;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+      }
+
+      .payment-type {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 0.5rem 0;
+
+        i { color: #0d9488; margin-right: 0.4rem; }
+      }
+
+      .payment-status-note {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        margin: 0;
+      }
+    }
+
+    .totals-box-a4 {
+      width: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+
+      .total-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.92rem;
+        color: #475569;
+
+        &.discount {
+          color: #16a34a;
+        }
+
+        &.final-total {
+          font-size: 1.25rem;
+          font-weight: 800;
+          color: #0f172a;
+          padding-top: 0.65rem;
+          border-top: 2px solid #0f172a;
+          margin-top: 0.35rem;
+
+          strong {
+            color: #0d9488;
+          }
+        }
+      }
+    }
+  }
+
+  .receipt-footer-a4 {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed #cbd5e1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+
+    p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    .footer-sign-line {
+      width: 240px;
+      border-top: 1px solid #94a3b8;
+      text-align: center;
+      padding-top: 0.35rem;
+
+      span {
+        font-size: 0.75rem;
+        color: #64748b;
+      }
+    }
   }
 }
 
-.receipt-payment {
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
+/* ================= 2. ESTILOS DO FORMATO CUPOM FISCAL (80MM TÉRMICO) ================= */
+.receipt-cupom {
+  background: #fdfdfd;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  padding: 1.25rem 1rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: #111827;
+
+  .thermal-ticket {
+    max-width: 100%;
+  }
+
+  .cupom-header {
+    text-align: center;
+
+    .cupom-brand {
+      font-size: 1.05rem;
+      font-weight: 900;
+      margin: 0 0 0.2rem 0;
+      letter-spacing: 0.04em;
+    }
+
+    .cupom-cnpj, .cupom-address, .cupom-phone {
+      margin: 0.1rem 0;
+      font-size: 0.75rem;
+    }
+
+    .cupom-doc-title {
+      font-weight: 700;
+      font-size: 0.78rem;
+      margin: 0.4rem 0;
+    }
+
+    .cupom-meta-grid {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      margin: 0.35rem 0;
+    }
+
+    .cupom-client {
+      text-align: left;
+      font-size: 0.75rem;
+      margin: 0.35rem 0;
+    }
+  }
+
+  .cupom-divider, .cupom-divider-double {
+    text-align: center;
+    color: #475569;
+    letter-spacing: -0.05em;
+    overflow: hidden;
+    margin: 0.35rem 0;
+    font-size: 0.78rem;
+  }
+
+  .cupom-table-head {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 800;
+    font-size: 0.75rem;
+
+    .c-desc { flex: 1; }
+    .c-qty { width: 110px; text-align: center; }
+    .c-tot { width: 75px; text-align: right; }
+  }
+
+  .cupom-items-list {
+    margin: 0.4rem 0;
+
+    .cupom-item {
+      margin-bottom: 0.45rem;
+
+      .item-title {
+        font-weight: 700;
+        font-size: 0.8rem;
+      }
+
+      .item-math {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: #374151;
+
+        .c-qty { margin-left: 1rem; }
+        .c-tot { font-weight: 700; color: #111827; }
+      }
+    }
+  }
+
+  .cupom-totals {
+    margin: 0.5rem 0;
+
+    .tot-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      padding: 0.15rem 0;
+
+      &.discount-line {
+        color: #15803d;
+      }
+
+      &.grand-total {
+        font-size: 1rem;
+        font-weight: 900;
+        border-top: 1px dashed #111827;
+        border-bottom: 1px dashed #111827;
+        padding: 0.4rem 0;
+        margin: 0.35rem 0;
+      }
+    }
+  }
+
+  .cupom-footer {
+    text-align: center;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+
+    p {
+      margin: 0.2rem 0;
+    }
+
+    .system-tag {
+      font-size: 0.65rem;
+      color: #64748b;
+      margin-top: 0.4rem;
+    }
+  }
 }
 
-.receipt-footer {
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--muted);
-  border-top: 1px dashed var(--border);
-  padding-top: 1rem;
-}
-
+/* ================= 3. REGRAS DE IMPRESSÃO (@MEDIA PRINT) ================= */
 @media print {
-  .receipt-page {
-    padding: 0;
-    max-width: none;
+  @page {
+    size: auto;
+    margin: 5mm;
   }
 
-  .receipt {
-    border: none;
-    padding: 0;
+  /* Oculta navbar, footer da aplicação e barra de alternância */
+  .no-print,
+  app-navbar,
+  app-footer,
+  .skip-link,
+  app-global-nav-menu {
+    display: none !important;
+  }
+
+  .receipt-page {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+
+    &.format-a4 {
+      .receipt-a4 {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 210mm !important;
+        margin: 0 auto !important;
+      }
+    }
+
+    &.format-cupom {
+      .receipt-cupom {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        width: 78mm !important;
+        max-width: 78mm !important;
+        margin: 0 auto !important;
+      }
+    }
   }
 }

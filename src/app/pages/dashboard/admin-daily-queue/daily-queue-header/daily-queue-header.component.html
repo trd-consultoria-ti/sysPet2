@@ -35,9 +35,15 @@
 
     <!-- Botão de Check-in -->
     <button type="button" class="checkin-btn" *ngIf="showCheckinBtn"
-            (click)="onCheckinClick()" [disabled]="isFull">
+            (click)="onCheckinClick()" [disabled]="isFull || isClosed"
+            [title]="isClosed ? 'Estabelecimento fechado neste dia' : (isFull ? 'Vagas do dia esgotadas' : 'Adicionar pet à esteira')">
       <i class="fas fa-plus checkin-icon"></i>
-      <span>{{ checkinBtnText }}</span>
+      <span>{{ isClosed ? 'Fechado' : checkinBtnText }}</span>
+    </button>
+
+    <!-- Botão de Configuração de Capacidade e Horários -->
+    <button type="button" class="config-btn" (click)="configClick.emit()" title="Configurar capacidade diária e expediente">
+      <i class="fas fa-cog"></i>
     </button>
 
     <!-- Slot opcional para ações adicionais -->

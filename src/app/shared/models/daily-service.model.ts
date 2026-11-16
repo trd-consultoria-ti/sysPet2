@@ -18,24 +18,34 @@ export interface DailyService {
   petId?: number | null;
   petName: string;
   petBreed?: string;
+  petWeightKg?: number | null;
+  petSizeTier?: string;
   petImage?: string | null;
   serviceId?: number | null;
   serviceName: string;
+  selectedExtras?: string[];
   date: string;
   queueOrder: number;
   status: DailyServiceStatus;
   healthChecklist: HealthChecklist;
   notes?: string;
+  tosaNotes?: string;
   estimatedPrice: number;
   finalPrice?: number | null;
   cageNumber?: string;
   groomerName?: string;
   requiresValidation: boolean;
   validationConfirmed: boolean;
+  validatedBy?: string | null;
+  validatedAt?: string | null;
   checkinAt: string;
   startedAt?: string | null;
   readyAt?: string | null;
   deliveredAt?: string | null;
+  estimatedReadyAt?: string | null;
+  paid?: boolean;
+  paidAt?: string | null;
+  paymentMethod?: string | null;
   createdAt?: string;
 }
 
@@ -50,6 +60,7 @@ export interface DailyQueueStats {
   canceled: number;
   remainingSpots: number;
   isFull: boolean;
+  isClosed?: boolean;
 }
 
 export interface DailyQueueResponse {

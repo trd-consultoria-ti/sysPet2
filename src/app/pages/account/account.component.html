@@ -56,6 +56,10 @@
             <label for="pet-age">Idade</label>
             <input type="number" id="pet-age" class="form-control" formControlName="age" min="0" placeholder="Anos">
           </div>
+          <div class="form-group form-group--weight">
+            <label for="pet-weight">Peso (kg) <small *ngIf="petForm.get('weightKg')?.value">· {{ getPetSizeInfo(petForm.get('weightKg')?.value) }}</small></label>
+            <input type="number" id="pet-weight" class="form-control" formControlName="weightKg" min="0.1" step="0.1" placeholder="Ex: 12.5">
+          </div>
         </div>
         <p class="form-error" *ngIf="petError" role="alert">{{ petError }}</p>
         <div class="form-actions">
@@ -77,7 +81,12 @@
       <li class="pet-card" *ngFor="let pet of pets">
         <div class="pet-info">
           <span class="pet-name">{{ pet.name }}</span>
-          <span class="pet-meta">{{ pet.type }}<span *ngIf="pet.breed"> · {{ pet.breed }}</span><span *ngIf="pet.age !== undefined && pet.age !== null"> · {{ pet.age }} {{ pet.age === 1 ? 'ano' : 'anos' }}</span></span>
+          <span class="pet-meta">
+            {{ pet.type }}
+            <span *ngIf="pet.breed"> · {{ pet.breed }}</span>
+            <span *ngIf="pet.age !== undefined && pet.age !== null"> · {{ pet.age }} {{ pet.age === 1 ? 'ano' : 'anos' }}</span>
+            <span *ngIf="pet.weightKg"> · ⚖️ {{ pet.weightKg }} kg ({{ getPetSizeInfo(pet.weightKg) }})</span>
+          </span>
         </div>
         <div class="pet-actions">
           <button type="button" class="btn btn-outline-secondary btn-sm" (click)="startEditPet(pet)" [attr.aria-label]="'Editar pet ' + pet.name">
@@ -205,25 +214,66 @@
     </div>
   </div>
 
-  <!-- Versão para impressão da receita -->
-  <article class="print-slip" *ngIf="printRx">
-    <h1>Receita veterinária — Animal World</h1>
-    <dl>
-      <dt>Pet</dt><dd>{{ printRx.petName }}</dd>
-      <dt>Tutor</dt><dd>{{ printRx.customerName }}</dd>
-      <dt>Veterinário</dt><dd>{{ printRx.vetName || '—' }}<ng-container *ngIf="printRx.vetCrmv"> — CRMV {{ printRx.vetCrmv }}</ng-container></dd>
-    </dl>
-    <h2>Prescrição</h2>
-    <ol>
-      <li *ngFor="let item of printRx.items">
-        <strong>{{ item.medication }}</strong>
-        <ng-container *ngIf="item.dosage"> — {{ item.dosage }}</ng-container>
-        <ng-container *ngIf="item.frequency">, {{ item.frequency }}</ng-container>
-        <ng-container *ngIf="item.duration">, por {{ item.duration }}</ng-container>
-        <div *ngIf="item.instructions">{{ item.instructions }}</div>
-      </li>
-    </ol>
-    <p *ngIf="printRx.notes">Observações: {{ printRx.notes }}</p>
+  <!-- Versão para impressão da receita (EXCLUSIVO EM FOLHA A4) -->
+  <article class="print-slip rx-a4-official" *ngIf="printRx">
+    <header class="rx-header-a4">
+      <div class="rx-brand-block">
+        <h1>Animal World</h1>
+        <p class="subtitle">Clínica Veterinária Integrada</p>
+        <p class="legal-info">CRMV-SP Jurídico: 98765-J · CNPJ: 12.345.678/0001-90</p>
+        <p class="legal-info">Rua dos Pets, 123 - Centro · Tel: (11) 4002-8922</p>
+      </div>
+      <div class="rx-doc-block">
+        <span class="rx-type-badge">RECEITUÁRIO VETERINÁRIO</span>
+        <div class="rx-format-notice">FORMATO PADRÃO A4</div>
+        <div class="rx-vet" *ngIf="printRx.vetName">
+          Dr(a). {{ printRx.vetName }}
+          <span *ngIf="printRx.vetCrmv"><br>CRMV: {{ printRx.vetCrmv }}</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="rx-patient-a4">
+      <h2>Identificação do Paciente & Tutor</h2>
+      <div class="patient-grid">
+        <div><span class="label">Paciente (Pet):</span> <strong>{{ printRx.petName }}</strong></div>
+        <div><span class="label">Tutor(a):</span> {{ printRx.customerName }}</div>
+      </div>
+    </section>
+
+    <section class="rx-items-a4">
+      <h2>Prescrição Terapêutica</h2>
+      <ol class="prescribed-list">
+        <li *ngFor="let item of printRx.items">
+          <div class="med-name"><strong>{{ item.medication }}</strong></div>
+          <div class="med-posology">
+            <span *ngIf="item.dosage">Dosagem: <strong>{{ item.dosage }}</strong></span>
+            <span *ngIf="item.frequency"> · Frequência: <strong>{{ item.frequency }}</strong></span>
+            <span *ngIf="item.duration"> · Duração: <strong>{{ item.duration }}</strong></span>
+          </div>
+          <div class="med-instructions" *ngIf="item.instructions">
+            <em>Orientações: {{ item.instructions }}</em>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="rx-notes-a4" *ngIf="printRx.notes">
+      <h2>Observações</h2>
+      <p>{{ printRx.notes }}</p>
+    </section>
+
+    <footer class="rx-footer-a4">
+      <div class="rx-validity">
+        <p>Receita válida por 30 dias a partir da data de emissão.</p>
+        <p>Documento oficial emitido pelo sistema Animal World sysPet2.</p>
+      </div>
+      <div class="rx-signature-box">
+        <div class="sign-line"></div>
+        <div class="vet-name">Dr(a). {{ printRx.vetName || 'Médico(a) Veterinário(a)' }}</div>
+        <div class="vet-crmv" *ngIf="printRx.vetCrmv">CRMV: {{ printRx.vetCrmv }}</div>
+      </div>
+    </footer>
   </article>
 
   <!-- Privacidade / LGPD -->

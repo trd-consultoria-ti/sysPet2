@@ -24,6 +24,7 @@ export class AdminAppointmentsComponent implements OnInit, OnDestroy {
   viewMode: 'list' | 'week' = 'list';
   weekOffset = 0;
   printAppointment: Appointment | null = null;
+  printFormat: 'a4' | 'cupom' = 'cupom';
 
   statusLabels: Record<AppointmentStatus, string> = {
     solicitado: 'Solicitado',
@@ -101,7 +102,8 @@ export class AdminAppointmentsComponent implements OnInit, OnDestroy {
   nextWeek(): void { this.weekOffset++; }
   currentWeek(): void { this.weekOffset = 0; }
 
-  printSlip(appointment: Appointment): void {
+  printSlip(appointment: Appointment, format: 'a4' | 'cupom' = 'cupom'): void {
+    this.printFormat = format;
     this.printAppointment = appointment;
     setTimeout(() => window.print());
   }
