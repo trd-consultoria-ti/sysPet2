@@ -6,21 +6,13 @@
   ></app-section-heading>
   
   <!-- Barra de busca -->
-  <div class="search-container">
-    <label for="product-search-input" class="sr-only">Buscar produtos</label>
-    <div class="search-icon">
-      <i class="icon-search" aria-hidden="true"></i>
-    </div>
-    <input
-      id="product-search-input"
-      type="text"
-      placeholder="Buscar produtos..."
-      aria-label="Buscar produtos"
-      [value]="searchQuery"
-      (input)="onSearch($event)"
-      class="search-input"
-    />
-  </div>
+  <app-search-bar
+    placeholder="Buscar produtos..."
+    label="Buscar produtos"
+    inputId="product-search-input"
+    [value]="searchQuery"
+    (search)="onSearch($event)"
+  ></app-search-bar>
 
   <div class="products-layout">
     <!-- Sidebar com filtros -->
@@ -63,13 +55,8 @@
         </p>
       </div>
       
-      <!-- Grid de produtos -->
-      <div class="products-grid" *ngIf="filteredProducts.length > 0">
-        <app-product-card 
-          *ngFor="let product of filteredProducts" 
-          [product]="product"
-        ></app-product-card>
-      </div>
+      <!-- Grid de produtos unificado -->
+      <app-item-list [items]="filteredProducts" type="product"></app-item-list>
     </div>
   </div>
 </div>

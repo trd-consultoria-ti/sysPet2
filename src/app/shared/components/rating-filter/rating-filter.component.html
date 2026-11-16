@@ -1,0 +1,17 @@
+<div class="rating-filter">
+  <h4 class="filter-subtitle">Avaliação</h4>
+  <div class="rating-list">
+    <div *ngFor="let rating of ratingOptions" class="rating-item">
+      <input 
+        [id]="'rating-' + rating" 
+        type="checkbox" 
+        [checked]="isSelected(rating)"
+        (change)="onToggle(rating)"
+        class="custom-checkbox" 
+      />
+      <label [for]="'rating-' + rating" class="rating-label">
+        {{ rating }} estrelas ou mais
+      </label>
+    </div>
+  </div>
+</div>

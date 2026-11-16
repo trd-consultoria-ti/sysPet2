@@ -10,6 +10,8 @@ import { AdminServicesComponent } from './admin-services/admin-services.componen
 import { AdminUsersComponent } from './admin-users/admin-users.component';
 import { AdminCashComponent } from './admin-cash/admin-cash.component';
 import { AdminReportsComponent } from './admin-reports/admin-reports.component';
+import { AdminConsultationsComponent } from './admin-consultations/admin-consultations.component';
+import { AdminVetsComponent } from './admin-vets/admin-vets.component';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 
 const routes: Routes = [
@@ -20,6 +22,8 @@ const routes: Routes = [
       { path: '', component: DashboardHomeComponent },
       { path: 'customers', loadChildren: () => import('../customers/customers.module').then(m => m.CustomersModule) },
       { path: 'appointments', component: AdminAppointmentsComponent },
+      { path: 'consultations', component: AdminConsultationsComponent },
+      { path: 'vets', component: AdminVetsComponent },
       { path: 'orders', loadChildren: () => import('../orders/orders.module').then(m => m.OrdersModule) },
       { path: 'inventory', component: InventoryComponent },
       { path: 'services', component: AdminServicesComponent, canActivate: [AdminGuard] },
@@ -39,7 +43,9 @@ const routes: Routes = [
     AdminServicesComponent,
     AdminUsersComponent,
     AdminCashComponent,
-    AdminReportsComponent
+    AdminReportsComponent,
+    AdminConsultationsComponent,
+    AdminVetsComponent
   ],
   imports: [
     CommonModule,

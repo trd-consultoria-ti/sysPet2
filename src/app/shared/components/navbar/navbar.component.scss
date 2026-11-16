@@ -10,28 +10,14 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  padding: 1rem 0;
+  padding: 0.875rem 0;
 }
 
 .navbar-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-  color: var(--foreground);
-  font-weight: 700;
-  font-size: 1.25rem;
-}
-
-.logo img {
-  height: 2rem;
-  width: auto;
+  gap: 1.5rem;
 }
 
 .menu-toggle {
@@ -69,6 +55,7 @@
   transition: color 0.2s ease;
   padding: 0.5rem 0;
   position: relative;
+  white-space: nowrap;
 }
 
 .nav-item a:hover,
@@ -86,7 +73,40 @@
   background-color: var(--primary);
 }
 
+/* Responsividade Desktop (>= 992px) */
+@media (min-width: 992px) {
+  .menu-toggle {
+    display: none !important;
+  }
+
+  .mobile-actions {
+    display: none !important;
+  }
+
+  .desktop-actions {
+    display: flex !important;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+  }
+}
+
+/* Responsividade Mobile/Tablet (< 992px) */
 @media (max-width: 991px) {
+  .desktop-actions {
+    display: none !important;
+  }
+
+  .menu-toggle {
+    display: flex !important;
+  }
+
   .nav {
     position: fixed;
     top: 4.5rem;
@@ -131,119 +151,9 @@
     font-size: 1.05rem;
   }
 
-  .nav-actions {
+  .mobile-actions {
+    display: block !important;
     margin-top: 1.5rem;
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
   }
-
-  .nav-actions .btn {
-    width: 100%;
-    min-height: 44px;
-  }
-}
-
-.cart-link {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 1.25rem;
-  text-decoration: none;
-  margin-right: 0.5rem;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0.5rem;
-}
-
-.cart-link:hover {
-  color: var(--primary-text);
-}
-
-.cart-badge {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background-color: var(--accent);
-  color: var(--foreground);
-  font-size: 0.7rem;
-  font-weight: 700;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
-}
-
-.nav-user {
-  font-weight: 500;
-  color: var(--foreground);
-  margin-right: 0.75rem;
-  font-size: 0.9rem;
-}
-
-.notif {
-  position: relative;
-}
-
-.notif-btn {
-  position: relative;
-  background: transparent;
-  border: none;
-  color: var(--foreground);
-  font-size: 1.15rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  min-width: 44px;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.notif-dropdown {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.5rem);
-  min-width: 260px;
-  max-width: calc(100vw - 2rem);
-  background: var(--background);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  padding: 0.5rem;
-  z-index: 1000;
-}
-
-.notif-group {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted-foreground, var(--muted));
-  margin: 0.4rem 0.4rem 0.2rem;
-}
-
-.notif-item {
-  display: block;
-  padding: 0.45rem 0.4rem;
-  border-radius: var(--radius);
-  font-size: 0.85rem;
-  color: var(--foreground);
-  text-decoration: none;
-
-  &:hover {
-    background: var(--input);
-  }
-}
-
-.notif-empty {
-  padding: 0.75rem 0.4rem;
-  font-size: 0.85rem;
-  color: var(--muted-foreground, var(--muted));
 }

@@ -1,0 +1,24 @@
+<div class="price-slider-wrapper">
+  <h4 class="filter-subtitle">{{ label }}</h4>
+  <div class="price-slider-container">
+    <label [for]="sliderId" class="sr-only">Filtrar por preço máximo</label>
+    <input 
+      [id]="sliderId"
+      type="range" 
+      [min]="min" 
+      [max]="max" 
+      [value]="value"
+      (input)="onInput($event)"
+      aria-label="Filtrar por preço máximo"
+      [attr.aria-valuemin]="min"
+      [attr.aria-valuemax]="max"
+      [attr.aria-valuenow]="value"
+      class="price-slider" 
+    />
+  </div>
+  <div class="price-labels">
+    <span class="price-limit">R$ {{ min }}</span>
+    <span class="price-current">Até R$ {{ value }}</span>
+    <span class="price-limit">R$ {{ max }}</span>
+  </div>
+</div>

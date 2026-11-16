@@ -1,0 +1,8 @@
+<div class="items-grid" *ngIf="items && items.length > 0">
+  <app-item-card 
+    *ngFor="let item of items; trackBy: trackByItemId" 
+    [item]="item"
+    [type]="type"
+    (action)="itemAction.emit($event)"
+  ></app-item-card>
+</div>

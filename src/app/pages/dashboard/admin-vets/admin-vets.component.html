@@ -1,0 +1,81 @@
+<div class="admin-page">
+  <div class="page-header">
+    <h1>Veterinários</h1>
+    <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()">Novo veterinário</button>
+  </div>
+
+  <p class="form-success" *ngIf="success" role="status">{{ success }}</p>
+  <p class="form-error" *ngIf="error" role="alert">{{ error }}</p>
+
+  <form class="vet-form" *ngIf="showForm" (ngSubmit)="save()" aria-label="Dados do veterinário">
+    <h2>{{ editingId ? 'Editar veterinário' : 'Novo veterinário' }}</h2>
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="vet-name">Nome *</label>
+        <input id="vet-name" type="text" class="form-control" [(ngModel)]="form.name" name="name" required maxlength="120">
+      </div>
+      <div class="form-field">
+        <label for="vet-crmv">CRMV</label>
+        <input id="vet-crmv" type="text" class="form-control" [(ngModel)]="form.crmv" name="crmv" maxlength="20">
+      </div>
+      <div class="form-field">
+        <label for="vet-specialty">Especialidade</label>
+        <input id="vet-specialty" type="text" class="form-control" [(ngModel)]="form.specialty" name="specialty" maxlength="80">
+      </div>
+      <div class="form-field">
+        <label for="vet-phone">Telefone</label>
+        <input id="vet-phone" type="tel" class="form-control" [(ngModel)]="form.phone" name="phone" maxlength="20">
+      </div>
+      <div class="form-field form-check">
+        <input id="vet-active" type="checkbox" [(ngModel)]="form.active" name="active">
+        <label for="vet-active">Ativo</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving">{{ saving ? 'Salvando…' : 'Salvar' }}</button>
+      <button type="button" class="btn btn-outline-secondary" (click)="showForm = false">Cancelar</button>
+    </div>
+  </form>
+
+  <div class="empty-state" *ngIf="vets.length === 0 && !showForm">
+    <p>Nenhum veterinário cadastrado.</p>
+  </div>
+
+  <div class="table-container" *ngIf="vets.length > 0">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>CRMV</th>
+          <th>Especialidade</th>
+          <th>Telefone</th>
+          <th>Ativo</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let vet of vets; trackBy: trackById">
+          <td>{{ vet.name }}</td>
+          <td>{{ vet.crmv || '—' }}</td>
+          <td>{{ vet.specialty || '—' }}</td>
+          <td>{{ vet.phone || '—' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="vet.active ? 'active' : 'inactive'">
+              {{ vet.active ? 'Ativo' : 'Inativo' }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="openEdit(vet)"
+                    [attr.aria-label]="'Editar ' + vet.name">Editar</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="toggleActive(vet)"
+                    [attr.aria-label]="(vet.active ? 'Desativar ' : 'Reativar ') + vet.name">
+              {{ vet.active ? 'Desativar' : 'Reativar' }}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" *ngIf="isAdmin" (click)="remove(vet)"
+                    [attr.aria-label]="'Excluir ' + vet.name">Excluir</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

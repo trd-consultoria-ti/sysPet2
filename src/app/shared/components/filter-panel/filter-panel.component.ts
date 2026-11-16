@@ -31,43 +31,50 @@ export class FilterPanelComponent implements OnInit {
   }
 
   onCategoryChange(category: string): void {
-    // If clicking on the already active category, do nothing
     if (this.activeCategory === category) {
       return;
     }
-    
-    // Set the new active category and emit the change
     this.activeCategory = category;
     this.categoryChange.emit(category);
   }
 
+  onPriceSliderChange(price: number): void {
+    this.selectedPrice = price;
+    this.priceRangeChange.emit(price);
+  }
+
   onPriceChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.selectedPrice = Number(input.value);
-    this.priceRangeChange.emit(this.selectedPrice);
+    this.onPriceSliderChange(Number(input.value));
+  }
+
+  onRatingFilterChange(ratings: number[]): void {
+    this.selectedRatings = ratings;
+    this.ratingFilterChange.emit(ratings);
+  }
+
+  onDurationFilterChange(durations: string[]): void {
+    this.selectedDurations = durations;
+    this.durationFilterChange.emit(durations);
   }
 
   onRatingChange(rating: number): void {
     const index = this.selectedRatings.indexOf(rating);
-    
     if (index === -1) {
       this.selectedRatings.push(rating);
     } else {
       this.selectedRatings.splice(index, 1);
     }
-    
     this.ratingFilterChange.emit(this.selectedRatings);
   }
 
   onDurationChange(duration: string): void {
     const index = this.selectedDurations.indexOf(duration);
-    
     if (index === -1) {
       this.selectedDurations.push(duration);
     } else {
       this.selectedDurations.splice(index, 1);
     }
-    
     this.durationFilterChange.emit(this.selectedDurations);
   }
 

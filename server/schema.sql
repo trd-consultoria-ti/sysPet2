@@ -118,9 +118,9 @@ INSERT INTO products (id, name, price, rating, reviews, image, category, descrip
   (2, 'Brinquedo Interativo para Gatos', 49.90, 4.6, 87, 'https://images.unsplash.com/photo-1545249390-6bdfa286032f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80', 'Brinquedos', 'Brinquedo interativo que estimula o instinto de caça dos felinos.'),
   (3, 'Coleira Ajustável com GPS', 129.90, 4.9, 56, 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1364&q=80', 'Acessórios', 'Coleira ajustável com GPS integrado para monitorar a localização do seu pet.'),
   (4, 'Shampoo Hipoalergênico', 39.90, 4.7, 92, 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1498&q=80', 'Higiene', 'Shampoo hipoalergênico para pets com pele sensível. Fórmula suave e sem parabenos.'),
-  (5, 'Casaco de Inverno para Cães', 79.90, 4.5, 45, 'https://images.unsplash.com/photo-1583337426008-2fef51aa872e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1364&q=80', 'Roupas', 'Casaco térmico para cães, ideal para dias frios. Material impermeável e confortável.'),
+  (5, 'Casaco de Inverno para Cães', 79.90, 4.5, 45, 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 'Roupas', 'Casaco térmico para cães, ideal para dias frios. Material impermeável e confortável.'),
   (6, 'Cama Ortopédica para Pets', 159.90, 4.8, 78, 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1460&q=80', 'Camas', 'Cama ortopédica que proporciona suporte adequado para pets de todas as idades.'),
-  (7, 'Suplemento Vitamínico', 69.90, 4.6, 63, 'https://images.unsplash.com/photo-1606585302006-b880b4f3b5b3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80', 'Medicamentos', 'Suplemento vitamínico para fortalecer o sistema imunológico do seu pet.'),
+  (7, 'Suplemento Vitamínico', 69.90, 4.6, 63, 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 'Medicamentos', 'Suplemento vitamínico para fortalecer o sistema imunológico do seu pet.'),
   (8, 'Escova Removedora de Pelos', 45.90, 4.4, 52, 'https://images.unsplash.com/photo-1560743641-3914f2c45636?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1587&q=80', 'Acessórios', 'Escova eficiente para remover pelos soltos e reduzir a queda de pelos em casa.')
 ON CONFLICT (id) DO NOTHING;
 SELECT setval('products_id_seq', (SELECT MAX(id) FROM products));
@@ -132,7 +132,7 @@ INSERT INTO catalog_services (id, name, price, rating, reviews, image, category,
   (4, 'Taxi Dog', 49.90, 4.6, 89, 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1586&q=80', 'Taxi Dog', 'Variável', 'Transporte seguro e confortável para seu pet para qualquer lugar da cidade.'),
   (5, 'Hospedagem Pet', 89.90, 4.9, 76, 'https://images.unsplash.com/photo-1596854273338-cbf078ec7071?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1480&q=80', 'Hospedagem', 'Diária', 'Acomodação confortável para seu pet com monitoramento 24 horas.'),
   (6, 'Adestramento Básico', 149.90, 4.7, 62, 'https://images.unsplash.com/photo-1588943211346-0908a1fb0b01?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80', 'Adestramento', '1 hora', 'Sessão de adestramento para ensinar comandos básicos de obediência.'),
-  (7, 'Spa Pet', 119.90, 4.8, 45, 'https://images.unsplash.com/photo-1596206186161-0f0bb130a55c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80', 'Spa', '2 horas', 'Tratamento completo de relaxamento com massagem, aromaterapia e hidratação.'),
+  (7, 'Spa Pet', 119.90, 4.8, 45, 'https://images.unsplash.com/photo-1535294435445-d7249524ef2e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 'Spa', '2 horas', 'Tratamento completo de relaxamento com massagem, aromaterapia e hidratação.'),
   (8, 'Creche Diária', 69.90, 4.6, 58, 'https://images.unsplash.com/photo-1599839619722-39751411ea63?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1523&q=80', 'Creche', 'Diária', 'Um dia inteiro de diversão e socialização para seu pet enquanto você trabalha.')
 ON CONFLICT (id) DO NOTHING;
 SELECT setval('catalog_services_id_seq', (SELECT MAX(id) FROM catalog_services));
@@ -204,6 +204,68 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity, entity_id);
 CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(user_id);
+
+-- M30 consultório veterinário: veterinários (com ou sem login), consultas e receitas
+
+-- Profissional: user_id NULL = cadastro avulso sem login; preenchido = staff vinculado
+CREATE TABLE IF NOT EXISTS vets (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  crmv TEXT NOT NULL DEFAULT '',
+  specialty TEXT NOT NULL DEFAULT '',
+  phone TEXT NOT NULL DEFAULT '',
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_vets_user ON vets(user_id);
+CREATE INDEX IF NOT EXISTS idx_vets_active ON vets(active);
+
+-- Consulta: sempre vinculada a um pet (e indiretamente ao tutor via pets.customer_id)
+CREATE TABLE IF NOT EXISTS consultations (
+  id SERIAL PRIMARY KEY,
+  pet_id INTEGER NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+  vet_id INTEGER REFERENCES vets(id) ON DELETE SET NULL,
+  scheduled_date DATE NOT NULL,
+  scheduled_time TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'agendado'
+    CHECK (status IN ('agendado', 'em_atendimento', 'concluido', 'cancelado')),
+  reason TEXT NOT NULL DEFAULT '',
+  weight NUMERIC(6,2),
+  temperature NUMERIC(4,1),
+  diagnosis TEXT NOT NULL DEFAULT '',
+  notes TEXT NOT NULL DEFAULT '',
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_consultations_pet ON consultations(pet_id);
+CREATE INDEX IF NOT EXISTS idx_consultations_date ON consultations(scheduled_date);
+CREATE INDEX IF NOT EXISTS idx_consultations_vet ON consultations(vet_id);
+CREATE INDEX IF NOT EXISTS idx_consultations_status ON consultations(status);
+
+-- Receita emitida a partir de uma consulta (1:1 — uma consulta tem no máximo uma receita)
+CREATE TABLE IF NOT EXISTS prescriptions (
+  id SERIAL PRIMARY KEY,
+  consultation_id INTEGER NOT NULL UNIQUE REFERENCES consultations(id) ON DELETE CASCADE,
+  vet_id INTEGER REFERENCES vets(id) ON DELETE SET NULL,
+  issued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  notes TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_prescriptions_consultation ON prescriptions(consultation_id);
+
+-- Itens da receita: medicação em texto livre (nome, dose, frequência, duração, instruções)
+CREATE TABLE IF NOT EXISTS prescription_items (
+  id SERIAL PRIMARY KEY,
+  prescription_id INTEGER NOT NULL REFERENCES prescriptions(id) ON DELETE CASCADE,
+  medication TEXT NOT NULL,
+  dosage TEXT NOT NULL DEFAULT '',
+  frequency TEXT NOT NULL DEFAULT '',
+  duration TEXT NOT NULL DEFAULT '',
+  instructions TEXT NOT NULL DEFAULT '',
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_prescription_items_prescription ON prescription_items(prescription_id);
 
 -- M26 cupons de desconto: code único; API deve normalizar caixa (UPPER) antes do lookup
 CREATE TABLE IF NOT EXISTS coupons (

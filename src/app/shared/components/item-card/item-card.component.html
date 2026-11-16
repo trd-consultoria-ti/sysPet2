@@ -1,0 +1,71 @@
+<div class="item-card" [class.item-card-service]="isService" [class.item-card-product]="isProduct">
+  <div class="item-image">
+    <img 
+      [src]="displayImage" 
+      [alt]="item.name" 
+      (error)="onImageError()"
+      class="item-img"
+      loading="lazy"
+    />
+    <div class="item-category">
+      <span>{{ item.category }}</span>
+    </div>
+  </div>
+  
+  <div class="item-content">
+    <div class="item-rating">
+      <div class="rating-stars">
+        <i class="icon-star" aria-hidden="true"></i>
+        <span class="rating-value">{{ item.rating }}</span>
+      </div>
+      <span class="rating-divider">·</span>
+      <span class="review-count">{{ item.reviews }} avaliações</span>
+    </div>
+    
+    <h3 class="item-title">{{ item.name }}</h3>
+    <p class="item-description">{{ item.description }}</p>
+    
+    <!-- Meta de Serviço: Duração -->
+    <div class="item-meta" *ngIf="isService && item.duration">
+      <div class="item-duration">
+        <i class="icon-clock" aria-hidden="true"></i>
+        <span>{{ item.duration }}</span>
+      </div>
+    </div>
+
+    <!-- Meta de Produto: Estoque -->
+    <div class="item-meta" *ngIf="isProduct && (outOfStock || lowStock)">
+      <span class="stock-flag stock-out" *ngIf="outOfStock">Esgotado</span>
+      <span class="stock-flag stock-low" *ngIf="lowStock && !outOfStock">Últimas unidades</span>
+    </div>
+    
+    <div class="item-footer">
+      <span class="item-price">R$ {{ (item.price || 0).toFixed(2).replace('.', ',') }}</span>
+      
+      <!-- Ação de Serviço: Agendar -->
+      <button 
+        *ngIf="isService"
+        type="button"
+        class="btn btn-primary btn-sm" 
+        (click)="handleAction()" 
+        [attr.aria-label]="'Agendar ' + item.name"
+      >
+        <i class="icon-calendar" aria-hidden="true"></i>
+        Agendar
+      </button>
+
+      <!-- Ação de Produto: Adicionar ao Carrinho -->
+      <button 
+        *ngIf="isProduct"
+        type="button"
+        class="btn btn-primary btn-sm" 
+        (click)="handleAction()" 
+        [disabled]="outOfStock"
+        [attr.aria-label]="(outOfStock ? 'Esgotado: ' : 'Adicionar ao carrinho: ') + item.name"
+      >
+        <i class="icon-shopping-cart" aria-hidden="true"></i>
+        {{ outOfStock ? 'Esgotado' : 'Adicionar' }}
+      </button>
+    </div>
+  </div>
+</div>

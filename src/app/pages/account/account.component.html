@@ -146,6 +146,81 @@
     </ul>
   </section>
 
+  <!-- Consultas veterinárias e receitas -->
+  <section class="account-section" *ngIf="user?.role === 'customer'">
+    <h2>Consultas e Receitas</h2>
+
+    <div class="appointments-empty" *ngIf="consultations.length === 0">
+      <i class="fas fa-stethoscope" aria-hidden="true"></i>
+      <p>Nenhuma consulta veterinária registrada para seus pets.</p>
+    </div>
+
+    <ul class="appointments-list" *ngIf="consultations.length > 0">
+      <li class="appointment-card" *ngFor="let c of consultations; trackBy: trackById">
+        <div class="appointment-info">
+          <span class="appointment-pet">{{ c.petName }}</span>
+          <span class="appointment-service">{{ c.vetName || 'Consultório' }}<ng-container *ngIf="c.vetSpecialty"> — {{ c.vetSpecialty }}</ng-container></span>
+          <span class="appointment-when">{{ formatDate(c.scheduledDate) }}<ng-container *ngIf="c.scheduledTime"> às {{ c.scheduledTime }}</ng-container></span>
+          <span class="appointment-notes" *ngIf="c.diagnosis">Diagnóstico: {{ c.diagnosis }}</span>
+        </div>
+        <div class="consult-card-side">
+          <span class="appointment-status" [ngClass]="c.status">
+            {{ consultationStatusLabels[c.status] }}
+          </span>
+          <button type="button" class="btn btn-sm btn-outline-secondary"
+                  *ngIf="c.prescriptionId || prescriptionFor(c)"
+                  (click)="viewPrescription(c)">Ver receita</button>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Modal read-only da receita -->
+  <div class="rx-modal-backdrop" *ngIf="viewingPrescription" (click)="viewingPrescription = null">
+    <div class="rx-modal" role="dialog" aria-modal="true" aria-labelledby="rx-modal-title" (click)="$event.stopPropagation()">
+      <h3 id="rx-modal-title">Receita — {{ viewingPrescription.petName }}</h3>
+      <p class="rx-meta">
+        {{ viewingPrescription.vetName || '—' }}<ng-container *ngIf="viewingPrescription.vetCrmv"> — CRMV {{ viewingPrescription.vetCrmv }}</ng-container>
+      </p>
+      <ul class="rx-items">
+        <li *ngFor="let item of viewingPrescription.items">
+          <strong>{{ item.medication }}</strong>
+          <ng-container *ngIf="item.dosage"> — {{ item.dosage }}</ng-container>
+          <ng-container *ngIf="item.frequency">, {{ item.frequency }}</ng-container>
+          <ng-container *ngIf="item.duration">, por {{ item.duration }}</ng-container>
+          <div class="rx-instructions" *ngIf="item.instructions">{{ item.instructions }}</div>
+        </li>
+      </ul>
+      <p class="rx-notes" *ngIf="viewingPrescription.notes">{{ viewingPrescription.notes }}</p>
+      <div class="rx-actions">
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="printPrescription(viewingPrescription)">Imprimir</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="downloadPrescriptionPdf(viewingPrescription)">Baixar PDF</button>
+        <button type="button" class="btn btn-sm btn-primary" (click)="viewingPrescription = null">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Versão para impressão da receita -->
+  <article class="print-slip" *ngIf="printRx">
+    <h1>Receita veterinária — Animal World</h1>
+    <dl>
+      <dt>Pet</dt><dd>{{ printRx.petName }}</dd>
+      <dt>Tutor</dt><dd>{{ printRx.customerName }}</dd>
+      <dt>Veterinário</dt><dd>{{ printRx.vetName || '—' }}<ng-container *ngIf="printRx.vetCrmv"> — CRMV {{ printRx.vetCrmv }}</ng-container></dd>
+    </dl>
+    <h2>Prescrição</h2>
+    <ol>
+      <li *ngFor="let item of printRx.items">
+        <strong>{{ item.medication }}</strong>
+        <ng-container *ngIf="item.dosage"> — {{ item.dosage }}</ng-container>
+        <ng-container *ngIf="item.frequency">, {{ item.frequency }}</ng-container>
+        <ng-container *ngIf="item.duration">, por {{ item.duration }}</ng-container>
+        <div *ngIf="item.instructions">{{ item.instructions }}</div>
+      </li>
+    </ol>
+    <p *ngIf="printRx.notes">Observações: {{ printRx.notes }}</p>
+  </article>
+
   <!-- Privacidade / LGPD -->
   <section class="account-section privacy-section" *ngIf="user?.role === 'customer'">
     <h2>Privacidade</h2>

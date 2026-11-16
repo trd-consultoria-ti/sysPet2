@@ -1,0 +1,24 @@
+<div class="search-container">
+  <label [for]="inputId" class="sr-only">{{ label || placeholder }}</label>
+  <div class="search-icon">
+    <i class="icon-search" aria-hidden="true"></i>
+  </div>
+  <input
+    [id]="inputId"
+    type="text"
+    [placeholder]="placeholder"
+    [attr.aria-label]="label || placeholder"
+    [value]="value"
+    (input)="onInput($event)"
+    class="search-input"
+  />
+  <button
+    *ngIf="value"
+    type="button"
+    class="search-clear-btn"
+    (click)="clear()"
+    aria-label="Limpar busca"
+  >
+    <i class="icon-x" aria-hidden="true"></i>
+  </button>
+</div>

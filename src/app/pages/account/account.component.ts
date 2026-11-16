@@ -11,6 +11,10 @@ import { Customer } from '../../shared/models/customer.model';
 import { Pet } from '../../shared/models/pet.model';
 import { Order, OrderStatus } from '../../shared/models/order.model';
 import { Appointment, AppointmentStatus } from '../../shared/models/appointment.model';
+import { Consultation, ConsultationStatus } from '../../shared/models/consultation.model';
+import { Prescription } from '../../shared/models/prescription.model';
+import { ConsultationService } from '../../shared/services/consultation.service';
+import { PrescriptionService } from '../../shared/services/prescription.service';
 
 @Component({
   selector: 'app-account',
@@ -24,6 +28,9 @@ export class AccountComponent implements OnInit, OnDestroy {
   customer: Customer | null = null;
   orders: Order[] = [];
   appointments: Appointment[] = [];
+  consultations: Consultation[] = [];
+  viewingPrescription: Prescription | null = null;
+  printRx: Prescription | null = null;
 
   petForm: FormGroup;
   showPetForm = false;
@@ -54,6 +61,13 @@ export class AccountComponent implements OnInit, OnDestroy {
     cancelado: 'Cancelado'
   };
 
+  consultationStatusLabels: Record<ConsultationStatus, string> = {
+    agendado: 'Agendado',
+    em_atendimento: 'Em atendimento',
+    concluido: 'Concluído',
+    cancelado: 'Cancelado'
+  };
+
   roleLabels: Record<User['role'], string> = {
     admin: 'Administrador',
     collaborator: 'Colaborador',
@@ -65,6 +79,8 @@ export class AccountComponent implements OnInit, OnDestroy {
     private customerService: CustomerService,
     private orderService: OrderService,
     private appointmentService: AppointmentService,
+    private consultationService: ConsultationService,
+    private prescriptionService: PrescriptionService,
     private fb: FormBuilder,
     private router: Router
   ) {
@@ -97,6 +113,11 @@ export class AccountComponent implements OnInit, OnDestroy {
     this.appointmentService.getAppointments().pipe(takeUntil(this.destroy$)).subscribe(appointments => {
       this.appointments = appointments;
     });
+
+    this.consultationService.refresh();
+    this.consultationService.getConsultations().pipe(takeUntil(this.destroy$)).subscribe(consultations => {
+      this.consultations = consultations;
+    });
   }
 
   get pets(): Pet[] {
@@ -110,6 +131,38 @@ export class AccountComponent implements OnInit, OnDestroy {
     return this.appointments
       .filter(a => a.customerId === this.customer!.id)
       .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  }
+
+  prescriptionFor(c: Consultation): Prescription | undefined {
+    return this.prescriptionService.getCachedByConsultation(c.id);
+  }
+
+  viewPrescription(c: Consultation): void {
+    const cached = this.prescriptionService.getCachedByConsultation(c.id);
+    if (cached) {
+      this.viewingPrescription = cached;
+      return;
+    }
+    if (c.prescriptionId) {
+      this.prescriptionService.getById(c.prescriptionId).pipe(takeUntil(this.destroy$)).subscribe({
+        next: rx => this.viewingPrescription = rx,
+        error: () => {}
+      });
+    }
+  }
+
+  printPrescription(rx: Prescription): void {
+    this.printRx = rx;
+    setTimeout(() => window.print());
+  }
+
+  downloadPrescriptionPdf(rx: Prescription): void {
+    this.prescriptionService.downloadPdf(rx.id, `receita-${rx.petName || rx.id}.pdf`)
+      .pipe(takeUntil(this.destroy$)).subscribe({ error: () => {} });
+  }
+
+  trackById(_index: number, item: { id?: number }): number | undefined {
+    return item.id;
   }
 
   startAddPet(): void {

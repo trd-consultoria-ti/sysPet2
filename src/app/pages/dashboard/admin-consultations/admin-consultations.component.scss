@@ -1,0 +1,170 @@
+.admin-page {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+
+  h1 { margin: 0; }
+}
+
+.filters-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+
+  .form-field { min-width: 180px; flex: 1; }
+}
+
+.consult-form {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius, 8px);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+
+  label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+}
+
+.form-field-wide {
+  grid-column: 1 / -1;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.detail-row td {
+  background: var(--surface-alt, #f9fafb);
+  padding: 0;
+}
+
+.consult-detail {
+  padding: 1rem;
+
+  .status-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .detail-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+}
+
+.rx-section {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--border, #e5e7eb);
+  padding-top: 1rem;
+
+  h2 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.rx-item-row {
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius, 8px);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.rx-notes-field {
+  margin: 0.75rem 0;
+}
+
+.rx-view {
+  .rx-meta {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .rx-items {
+    padding-left: 1.25rem;
+    margin: 0.5rem 0;
+
+    li { margin-bottom: 0.5rem; }
+  }
+
+  .rx-instructions {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .rx-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+}
+
+.status-badge {
+  &.em_atendimento {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  &.concluido {
+    background: #d4edda;
+    color: #155724;
+  }
+}
+
+.print-slip {
+  display: none;
+}
+
+@media print {
+  .admin-page {
+    display: none;
+  }
+
+  .print-slip {
+    display: block;
+    padding: 1rem;
+    font-family: inherit;
+
+    h1 { font-size: 1.25rem; }
+    h2 { font-size: 1rem; margin-top: 1rem; }
+    dl { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; }
+    dt { font-weight: 600; }
+    ol { padding-left: 1.5rem; }
+    li { margin-bottom: 0.5rem; }
+  }
+}
+
+@media (max-width: 768px) {
+  .filters-row { flex-direction: column; }
+}

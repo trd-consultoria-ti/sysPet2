@@ -1118,6 +1118,280 @@ app.delete('/api/me', requireAuth, async (req, res) => {
   }
 });
 
+// ---------- M30 consultório veterinário ----------
+
+const vetJson = v => ({
+  id: v.id, userId: v.user_id, name: v.name, crmv: v.crmv,
+  specialty: v.specialty, phone: v.phone, active: v.active, createdAt: v.created_at
+});
+
+//JOIN pet+tutor+vet para resposta rica da consulta
+const CONSULT_SELECT = `
+  SELECT c.*, p.name AS pet_name, p.type AS pet_type, p.breed AS pet_breed,
+         cu.name AS customer_name, cu.id AS customer_id,
+         v.name AS vet_name, v.crmv AS vet_crmv, v.specialty AS vet_specialty,
+         rx.id AS prescription_id
+  FROM consultations c
+  JOIN pets p ON p.id = c.pet_id
+  JOIN customers cu ON cu.id = p.customer_id
+  LEFT JOIN vets v ON v.id = c.vet_id
+  LEFT JOIN prescriptions rx ON rx.consultation_id = c.id`;
+
+const consultJson = r => ({
+  id: r.id, petId: r.pet_id, petName: r.pet_name, petType: r.pet_type, petBreed: r.pet_breed,
+  customerId: r.customer_id, customerName: r.customer_name,
+  vetId: r.vet_id, vetName: r.vet_name, vetCrmv: r.vet_crmv, vetSpecialty: r.vet_specialty,
+  scheduledDate: r.scheduled_date instanceof Date ? r.scheduled_date.toISOString().split('T')[0] : r.scheduled_date,
+  scheduledTime: r.scheduled_time, status: r.status, reason: r.reason,
+  weight: num(r.weight), temperature: num(r.temperature),
+  diagnosis: r.diagnosis, notes: r.notes,
+  createdBy: r.created_by, createdAt: r.created_at, updatedAt: r.updated_at,
+  prescriptionId: r.prescription_id || null
+});
+
+// customer só enxerga consultas dos próprios pets
+async function ownsConsultation(req, id) {
+  if (isStaff(req.user)) return true;
+  const { rows } = await pool.query(
+    `SELECT 1 FROM consultations c JOIN pets p ON p.id = c.pet_id
+     JOIN customers cu ON cu.id = p.customer_id
+     WHERE c.id=$1 AND cu.user_id=$2`,
+    [id, req.user.id]
+  );
+  return rows.length > 0;
+}
+
+// ---------- veterinários ----------
+
+app.get('/api/vets', requireAuth, requireStaff, async (req, res) => {
+  const { rows } = await pool.query('SELECT * FROM vets ORDER BY active DESC, name');
+  res.json(rows.map(vetJson));
+});
+
+app.post('/api/vets', requireAuth, requireStaff, async (req, res) => {
+  const { userId, name, crmv, specialty, phone, active } = req.body;
+  if (!name || !String(name).trim()) return res.status(400).json({ error: 'Nome é obrigatório' });
+  const { rows } = await pool.query(
+    'INSERT INTO vets (user_id, name, crmv, specialty, phone, active) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+    [userId || null, String(name).trim(), crmv || '', specialty || '', phone || '', active !== false]
+  );
+  audit('vets', rows[0].id, 'create', null, vetJson(rows[0]), req.user.id);
+  res.status(201).json(vetJson(rows[0]));
+});
+
+app.put('/api/vets/:id', requireAuth, requireStaff, async (req, res) => {
+  const { userId, name, crmv, specialty, phone, active } = req.body;
+  if (!name || !String(name).trim()) return res.status(400).json({ error: 'Nome é obrigatório' });
+  const { rows } = await pool.query(
+    'UPDATE vets SET user_id=$2, name=$3, crmv=$4, specialty=$5, phone=$6, active=$7 WHERE id=$1 RETURNING *',
+    [req.params.id, userId || null, String(name).trim(), crmv || '', specialty || '', phone || '', active !== false]
+  );
+  if (!rows.length) return res.status(404).json({ error: 'Veterinário não encontrado' });
+  audit('vets', rows[0].id, 'update', null, vetJson(rows[0]), req.user.id);
+  res.json(vetJson(rows[0]));
+});
+
+app.delete('/api/vets/:id', requireAuth, requireAdmin, async (req, res) => {
+  const { rows: old } = await pool.query('SELECT * FROM vets WHERE id=$1', [req.params.id]);
+  if (!old.length) return res.status(404).json({ error: 'Veterinário não encontrado' });
+  // consultas referenciam vet_id com ON DELETE SET NULL — histórico preservado
+  await pool.query('DELETE FROM vets WHERE id=$1', [req.params.id]);
+  audit('vets', old[0].id, 'delete', vetJson(old[0]), null, req.user.id);
+  res.status(204).end();
+});
+
+// ---------- consultas ----------
+
+app.get('/api/consultations', requireAuth, async (req, res) => {
+  const { rows } = isStaff(req.user)
+    ? await pool.query(`${CONSULT_SELECT} ORDER BY c.scheduled_date DESC, c.scheduled_time, c.id DESC`)
+    : await pool.query(
+        `${CONSULT_SELECT} WHERE cu.user_id=$1 ORDER BY c.scheduled_date DESC, c.scheduled_time, c.id DESC`,
+        [req.user.id]
+      );
+  res.json(rows.map(consultJson));
+});
+
+app.get('/api/consultations/:id', requireAuth, async (req, res) => {
+  if (!(await ownsConsultation(req, req.params.id))) {
+    return res.status(403).json({ error: 'Consulta não encontrada ou sem permissão' });
+  }
+  const { rows } = await pool.query(`${CONSULT_SELECT} WHERE c.id=$1`, [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'Consulta não encontrada' });
+  res.json(consultJson(rows[0]));
+});
+
+app.post('/api/consultations', requireAuth, requireStaff, async (req, res) => {
+  const { petId, vetId, scheduledDate, scheduledTime, reason } = req.body;
+  if (!petId || !scheduledDate) return res.status(400).json({ error: 'Pet e data são obrigatórios' });
+  const { rows: pet } = await pool.query('SELECT id FROM pets WHERE id=$1', [petId]);
+  if (!pet.length) return res.status(400).json({ error: 'Pet não encontrado' });
+  if (vetId) {
+    const { rows: vet } = await pool.query('SELECT id FROM vets WHERE id=$1 AND active=true', [vetId]);
+    if (!vet.length) return res.status(400).json({ error: 'Veterinário não encontrado ou inativo' });
+  }
+  const { rows } = await pool.query(
+    `INSERT INTO consultations (pet_id, vet_id, scheduled_date, scheduled_time, reason, created_by)
+     VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+    [petId, vetId || null, scheduledDate, scheduledTime || '', reason || '', req.user.id]
+  );
+  audit('consultations', rows[0].id, 'create', null, { petId, vetId, scheduledDate }, req.user.id);
+  const { rows: full } = await pool.query(`${CONSULT_SELECT} WHERE c.id=$1`, [rows[0].id]);
+  res.status(201).json(consultJson(full[0]));
+});
+
+app.patch('/api/consultations/:id', requireAuth, requireStaff, async (req, res) => {
+  const { status, vetId, reason, weight, temperature, diagnosis, notes, scheduledDate, scheduledTime } = req.body;
+  const validStatus = ['agendado', 'em_atendimento', 'concluido', 'cancelado'];
+  if (status && !validStatus.includes(status)) return res.status(400).json({ error: 'Status inválido' });
+  const { rows: old } = await pool.query('SELECT * FROM consultations WHERE id=$1', [req.params.id]);
+  if (!old.length) return res.status(404).json({ error: 'Consulta não encontrada' });
+  const o = old[0];
+  const { rows } = await pool.query(
+    `UPDATE consultations SET
+       status=$2, vet_id=$3, reason=$4, weight=$5, temperature=$6,
+       diagnosis=$7, notes=$8, scheduled_date=$9, scheduled_time=$10, updated_at=now()
+     WHERE id=$1 RETURNING *`,
+    [
+      req.params.id,
+      status || o.status,
+      vetId !== undefined ? (vetId || null) : o.vet_id,
+      reason !== undefined ? reason : o.reason,
+      weight !== undefined ? weight : o.weight,
+      temperature !== undefined ? temperature : o.temperature,
+      diagnosis !== undefined ? diagnosis : o.diagnosis,
+      notes !== undefined ? notes : o.notes,
+      scheduledDate || o.scheduled_date,
+      scheduledTime !== undefined ? scheduledTime : o.scheduled_time
+    ]
+  );
+  audit('consultations', rows[0].id, 'update',
+    { status: o.status, diagnosis: o.diagnosis },
+    { status: rows[0].status, diagnosis: rows[0].diagnosis }, req.user.id);
+  const { rows: full } = await pool.query(`${CONSULT_SELECT} WHERE c.id=$1`, [rows[0].id]);
+  res.json(consultJson(full[0]));
+});
+
+// ---------- receitas ----------
+
+const PRESCRIPTION_SELECT = `
+  SELECT pr.*, c.id AS consultation_id, v.name AS vet_name, v.crmv AS vet_crmv,
+         p.name AS pet_name, cu.name AS customer_name
+  FROM prescriptions pr
+  JOIN consultations c ON c.id = pr.consultation_id
+  JOIN pets p ON p.id = c.pet_id
+  JOIN customers cu ON cu.id = p.customer_id
+  LEFT JOIN vets v ON v.id = pr.vet_id`;
+
+const prescriptionJson = async r => {
+  const { rows: items } = await pool.query(
+    'SELECT * FROM prescription_items WHERE prescription_id=$1 ORDER BY sort_order, id', [r.id]);
+  return {
+    id: r.id, consultationId: r.consultation_id,
+    vetId: r.vet_id, vetName: r.vet_name, vetCrmv: r.vet_crmv,
+    petName: r.pet_name, customerName: r.customer_name,
+    issuedAt: r.issued_at, notes: r.notes,
+    items: items.map(i => ({
+      id: i.id, medication: i.medication, dosage: i.dosage,
+      frequency: i.frequency, duration: i.duration, instructions: i.instructions
+    }))
+  };
+};
+
+app.post('/api/prescriptions', requireAuth, requireStaff, async (req, res) => {
+  const { consultationId, vetId, notes, items } = req.body;
+  if (!consultationId) return res.status(400).json({ error: 'Consulta é obrigatória' });
+  const { rows: cons } = await pool.query('SELECT id, status FROM consultations WHERE id=$1', [consultationId]);
+  if (!cons.length) return res.status(404).json({ error: 'Consulta não encontrada' });
+  const list = Array.isArray(items) ? items.filter(i => i.medication && String(i.medication).trim()) : [];
+  if (!list.length) return res.status(400).json({ error: 'Receita precisa de ao menos um medicamento' });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows: pr } = await client.query(
+      `INSERT INTO prescriptions (consultation_id, vet_id, notes) VALUES ($1,$2,$3)
+       ON CONFLICT (consultation_id) DO UPDATE SET vet_id=$2, notes=$3, issued_at=now()
+       RETURNING *`,
+      [consultationId, vetId || cons[0].vet_id || null, notes || '']
+    );
+    // reemissão: limpa itens antigos e reinsere (upsert simples e idempotente)
+    await client.query('DELETE FROM prescription_items WHERE prescription_id=$1', [pr[0].id]);
+    for (let idx = 0; idx < list.length; idx++) {
+      const i = list[idx];
+      await client.query(
+        `INSERT INTO prescription_items (prescription_id, medication, dosage, frequency, duration, instructions, sort_order)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [pr[0].id, String(i.medication).trim(), i.dosage || '', i.frequency || '', i.duration || '', i.instructions || '', idx]
+      );
+    }
+    await client.query('COMMIT');
+    audit('prescriptions', pr[0].id, 'save', null, { consultationId, items: list.length }, req.user.id);
+    const { rows: full } = await pool.query(`${PRESCRIPTION_SELECT} WHERE pr.id=$1`, [pr[0].id]);
+    res.status(201).json(await prescriptionJson(full[0]));
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+});
+
+app.get('/api/prescriptions/:id', requireAuth, async (req, res) => {
+  const { rows } = await pool.query(`${PRESCRIPTION_SELECT} WHERE pr.id=$1`, [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'Receita não encontrada' });
+  const r = rows[0];
+  if (!isStaff(req.user)) {
+    const { rows: own } = await pool.query(
+      `SELECT 1 FROM consultations c JOIN pets p ON p.id=c.pet_id
+       JOIN customers cu ON cu.id=p.customer_id WHERE c.id=$1 AND cu.user_id=$2`,
+      [r.consultation_id, req.user.id]);
+    if (!own.length) return res.status(403).json({ error: 'Receita sem permissão' });
+  }
+  res.json(await prescriptionJson(r));
+});
+
+// PDF da receita: texto puro via pdfkit (sem HTML externo — seguro contra injeção)
+app.get('/api/prescriptions/:id/pdf', requireAuth, async (req, res) => {
+  const PDFDocument = require('pdfkit');
+  const { rows } = await pool.query(`${PRESCRIPTION_SELECT} WHERE pr.id=$1`, [req.params.id]);
+  if (!rows.length) return res.status(404).json({ error: 'Receita não encontrada' });
+  const r = rows[0];
+  if (!isStaff(req.user)) {
+    const { rows: own } = await pool.query(
+      `SELECT 1 FROM consultations c JOIN pets p ON p.id=c.pet_id
+       JOIN customers cu ON cu.id=p.customer_id WHERE c.id=$1 AND cu.user_id=$2`,
+      [r.consultation_id, req.user.id]);
+    if (!own.length) return res.status(403).json({ error: 'Receita sem permissão' });
+  }
+  const rx = await prescriptionJson(r);
+  const doc = new PDFDocument({ margin: 50, size: 'A4' });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="receita-${rx.id}.pdf"`);
+  doc.pipe(res);
+  doc.fontSize(20).fillColor('#2a9d8f').text('Animal World', { align: 'center' });
+  doc.fontSize(14).fillColor('#333').text('Receituário Veterinário', { align: 'center' });
+  doc.moveDown();
+  doc.fontSize(11).fillColor('#555')
+    .text(`Paciente: ${rx.petName}`)
+    .text(`Tutor: ${rx.customerName}`)
+    .text(`Veterinário: ${rx.vetName || '—'}${rx.vetCrmv ? ` — CRMV ${rx.vetCrmv}` : ''}`)
+    .text(`Emitida em: ${new Date(rx.issuedAt).toLocaleString('pt-BR')}`);
+  doc.moveDown();
+  doc.fontSize(12).fillColor('#333').text('Prescrição:', { underline: true });
+  rx.items.forEach((i, idx) => {
+    doc.moveDown(0.5).fontSize(11);
+    doc.text(`${idx + 1}. ${i.medication}`);
+    const parts = [i.dosage && `Dose: ${i.dosage}`, i.frequency && `Frequência: ${i.frequency}`,
+      i.duration && `Duração: ${i.duration}`, i.instructions && `Instruções: ${i.instructions}`]
+      .filter(Boolean).join('  |  ');
+    if (parts) doc.fillColor('#555').text(`   ${parts}`);
+    doc.fillColor('#333');
+  });
+  if (rx.notes) doc.moveDown().fontSize(10).fillColor('#555').text(`Observações: ${rx.notes}`);
+  doc.moveDown(2).fontSize(10).fillColor('#888').text('Documento gerado pelo sistema Animal World.', { align: 'center' });
+  doc.end();
+});
+
 // ---------- health & static ----------
 
 app.get('/api/health', async (req, res) => {

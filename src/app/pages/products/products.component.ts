@@ -50,8 +50,8 @@ export class ProductsComponent implements OnInit, OnDestroy {
     });
   }
 
-  onSearch(event: Event): void {
-    this.searchQuery = (event.target as HTMLInputElement).value;
+  onSearch(event: Event | string): void {
+    this.searchQuery = typeof event === 'string' ? event : (event.target as HTMLInputElement).value;
   }
 
   onCategoryChange(category: string): void {

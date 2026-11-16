@@ -1,0 +1,17 @@
+<div class="category-filter">
+  <h3 class="filter-title">Categorias</h3>
+  <div class="category-list">
+    <div *ngFor="let category of categories" class="category-item">
+      <input 
+        [id]="'category-' + category" 
+        type="checkbox" 
+        [checked]="activeCategory === category"
+        (change)="onSelect(category)"
+        class="custom-checkbox" 
+      />
+      <label [for]="'category-' + category" class="category-label">
+        {{ category }}
+      </label>
+    </div>
+  </div>
+</div>

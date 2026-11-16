@@ -1,0 +1,17 @@
+<div class="duration-filter">
+  <h4 class="filter-subtitle">Duração</h4>
+  <div class="duration-list">
+    <div *ngFor="let duration of durationOptions" class="duration-item">
+      <input 
+        [id]="'duration-' + duration" 
+        type="checkbox" 
+        [checked]="isSelected(duration)"
+        (change)="onToggle(duration)"
+        class="custom-checkbox" 
+      />
+      <label [for]="'duration-' + duration" class="duration-label">
+        {{ duration }}
+      </label>
+    </div>
+  </div>
+</div>

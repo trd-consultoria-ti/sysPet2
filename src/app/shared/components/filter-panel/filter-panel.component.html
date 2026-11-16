@@ -1,84 +1,33 @@
-<div class="bg-background rounded-xl shadow-card p-6">
-  <h3 class="text-lg font-semibold">Categorias</h3>
-  <div class="space-y-2 mt-3">
-    <div *ngFor="let category of categories" class="flex items-center">
-      <input 
-        [id]="'category-' + category" 
-        type="checkbox" 
-        [checked]="activeCategory === category"
-        (change)="onCategoryChange(category)"
-        class="custom-checkbox h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" 
-      />
-      <label [for]="'category-' + category" class="ml-2 text-sm text-gray-700">
-        {{ category }}
-      </label>
-    </div>
-  </div>
+<div class="filter-panel-card bg-background rounded-xl shadow-card p-6">
+  <app-category-filter
+    [categories]="categories"
+    [activeCategory]="activeCategory"
+    (categoryChange)="onCategoryChange($event)"
+  ></app-category-filter>
 
-  <div class="mt-8">
-    <h3 class="text-lg font-semibold">Filtrar por</h3>
+  <div class="filter-group-more mt-8">
+    <h3 class="filter-group-title text-lg font-semibold">Filtrar por</h3>
     
-    <div class="space-y-6 mt-3">
-      <div>
-        <h4 class="font-medium">Faixa de Preço</h4>
-        <div class="price-slider-container mt-3">
-          <label for="price-range-slider" class="sr-only">Filtrar por preço máximo</label>
-          <input 
-            id="price-range-slider"
-            type="range" 
-            [min]="minPrice" 
-            [max]="maxPrice" 
-            [value]="selectedPrice"
-            (input)="onPriceChange($event)"
-            aria-label="Filtrar por preço máximo"
-            [attr.aria-valuemin]="minPrice"
-            [attr.aria-valuemax]="maxPrice"
-            [attr.aria-valuenow]="selectedPrice"
-            class="price-slider w-full appearance-none cursor-pointer" 
-          />
-        </div>
-        <div class="flex justify-between mt-2">
-          <span class="text-sm text-gray-600">R$ {{ minPrice }}</span>
-          <span class="text-sm font-semibold text-primary">Até R$ {{ selectedPrice }}</span>
-          <span class="text-sm text-gray-600">R$ {{ maxPrice }}</span>
-        </div>
-      </div>
-      
-      <div>
-        <h4 class="font-medium">Avaliação</h4>
-        <div class="space-y-2 mt-3">
-          <div *ngFor="let rating of ratingOptions" class="flex items-center">
-            <input 
-              [id]="'rating-' + rating" 
-              type="checkbox" 
-              [checked]="isRatingSelected(rating)"
-              (change)="onRatingChange(rating)"
-              class="custom-checkbox h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" 
-            />
-            <label [for]="'rating-' + rating" class="ml-2 text-sm text-gray-700">
-              {{ rating }} estrelas ou mais
-            </label>
-          </div>
-        </div>
-      </div>
+    <div class="filter-group-items space-y-6 mt-3">
+      <app-price-slider
+        [min]="minPrice"
+        [max]="maxPrice"
+        [value]="selectedPrice"
+        (valueChange)="onPriceSliderChange($event)"
+      ></app-price-slider>
 
-      <div *ngIf="showDurationFilter">
-        <h4 class="font-medium">Duração</h4>
-        <div class="space-y-2 mt-3">
-          <div *ngFor="let duration of durationOptions" class="flex items-center">
-            <input 
-              [id]="'duration-' + duration" 
-              type="checkbox" 
-              [checked]="isDurationSelected(duration)"
-              (change)="onDurationChange(duration)"
-              class="custom-checkbox h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" 
-            />
-            <label [for]="'duration-' + duration" class="ml-2 text-sm text-gray-700">
-              {{ duration }}
-            </label>
-          </div>
-        </div>
-      </div>
+      <app-rating-filter
+        [ratingOptions]="ratingOptions"
+        [selectedRatings]="selectedRatings"
+        (ratingChange)="onRatingFilterChange($event)"
+      ></app-rating-filter>
+
+      <app-duration-filter
+        *ngIf="showDurationFilter"
+        [durationOptions]="durationOptions"
+        [selectedDurations]="selectedDurations"
+        (durationChange)="onDurationFilterChange($event)"
+      ></app-duration-filter>
     </div>
   </div>
 </div>
