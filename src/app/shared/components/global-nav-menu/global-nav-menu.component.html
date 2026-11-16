@@ -1,7 +1,7 @@
 <!-- Backdrop com clique para fechar -->
 <div class="sidebar-backdrop" [class.open]="isOpen" (click)="close()" aria-hidden="true"></div>
 
-<!-- Coluna Deslizante Lateral idêntica ao design system do Animal World -->
+<!-- Coluna Deslizante Lateral dividida por setores (Design System Animal World) -->
 <aside class="dashboard-sidebar-drawer" [class.open]="isOpen" role="dialog" aria-modal="true" aria-label="Navegação Geral Animal World">
 
   <!-- Header idêntico à coluna original -->
@@ -17,152 +17,157 @@
     </button>
   </div>
 
-  <!-- Menu de Itens com o exato estilo da coluna do sistema -->
+  <!-- Menu de Itens com o exato estilo da coluna do sistema, separado por setores -->
   <div class="sidebar-scrollable">
     <ul class="sidebar-menu">
 
-      <!-- 1. Gestão & Dashboard -->
+      <!-- SETOR 1: VISÃO GERAL -->
+      <li class="sidebar-section-header">
+        <span>Visão Geral</span>
+      </li>
       <li class="sidebar-item">
         <a (click)="navigate('/dashboard')">
           <i class="fas fa-home" aria-hidden="true"></i> Painel
         </a>
       </li>
-
       <li class="sidebar-item">
         <a (click)="navigate('/dashboard/rotas')">
           <i class="fas fa-sitemap" aria-hidden="true"></i> Mapa do Sistema
         </a>
       </li>
 
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/customers')">
-          <i class="fas fa-users" aria-hidden="true"></i> Clientes & Pets
-        </a>
+      <!-- SETOR 2: BANHO, TOSA & ATENDIMENTO -->
+      <li class="sidebar-section-header">
+        <span>Banho, Tosa & Atendimento</span>
       </li>
-
       <li class="sidebar-item">
         <a (click)="navigate('/dashboard/daily-queue')">
-          <i class="fas fa-clipboard-list" aria-hidden="true"></i> Fila do Dia
+          <i class="fas fa-columns" aria-hidden="true"></i> Esteira Delivery (Kanban)
         </a>
       </li>
-
       <li class="sidebar-item">
         <a (click)="navigate('/dashboard/daily-queue')">
-          <i class="fas fa-columns" aria-hidden="true"></i> Esteira Delivery
+          <i class="fas fa-clipboard-list" aria-hidden="true"></i> Fila do Dia & Gaiolas
         </a>
       </li>
-
       <li class="sidebar-item">
         <a (click)="navigate('/dashboard/appointments')">
           <i class="fas fa-calendar-alt" aria-hidden="true"></i> Agendamentos
         </a>
       </li>
 
+      <!-- SETOR 3: CLÍNICA VETERINÁRIA -->
+      <li class="sidebar-section-header">
+        <span>Clínica Veterinária</span>
+      </li>
       <li class="sidebar-item">
         <a (click)="navigate('/dashboard/consultations')">
-          <i class="fas fa-stethoscope" aria-hidden="true"></i> Consultório
+          <i class="fas fa-stethoscope" aria-hidden="true"></i> Consultório & Prontuários
         </a>
       </li>
-
       <li class="sidebar-item">
         <a (click)="navigate('/dashboard/vets')">
           <i class="fas fa-user-md" aria-hidden="true"></i> Médicos Veterinários
         </a>
       </li>
-
       <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/orders')">
-          <i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos
+        <a (click)="navigate('/dashboard/medications')">
+          <i class="fas fa-pills" aria-hidden="true"></i> Farmácia & Medicamentos
         </a>
       </li>
 
+      <!-- SETOR 4: CADASTROS & ESTOQUE -->
+      <li class="sidebar-section-header">
+        <span>Cadastros & Estoque</span>
+      </li>
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard/customers')">
+          <i class="fas fa-users" aria-hidden="true"></i> Clientes & Pets
+        </a>
+      </li>
       <li class="sidebar-item">
         <a (click)="navigate('/dashboard/inventory')">
           <i class="fas fa-box" aria-hidden="true"></i> Produtos & Estoque
         </a>
       </li>
-
-      <li class="sidebar-item">
-        <a (click)="navigate('/dashboard/medications')">
-          <i class="fas fa-pills" aria-hidden="true"></i> Medicamentos
-        </a>
-      </li>
-
       <li class="sidebar-item" *ngIf="isAdmin">
         <a (click)="navigate('/dashboard/services')">
-          <i class="fas fa-concierge-bell" aria-hidden="true"></i> Serviços
+          <i class="fas fa-concierge-bell" aria-hidden="true"></i> Serviços & Preços
         </a>
       </li>
-
       <li class="sidebar-item" *ngIf="isAdmin">
         <a (click)="navigate('/dashboard/users')">
           <i class="fas fa-user-tie" aria-hidden="true"></i> Funcionários & Equipe
         </a>
       </li>
 
+      <!-- SETOR 5: FINANCEIRO & GESTÃO -->
+      <li class="sidebar-section-header">
+        <span>Financeiro & Gestão</span>
+      </li>
       <li class="sidebar-item" *ngIf="isAdmin">
         <a (click)="navigate('/dashboard/cash')">
-          <i class="fas fa-cash-register" aria-hidden="true"></i> Caixa
+          <i class="fas fa-cash-register" aria-hidden="true"></i> Caixa (PDV)
         </a>
       </li>
-
+      <li class="sidebar-item">
+        <a (click)="navigate('/dashboard/orders')">
+          <i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos da Loja
+        </a>
+      </li>
       <li class="sidebar-item" *ngIf="isAdmin">
         <a (click)="navigate('/dashboard/reports')">
-          <i class="fas fa-chart-line" aria-hidden="true"></i> Balanço
+          <i class="fas fa-chart-line" aria-hidden="true"></i> Balanço & Faturamento
         </a>
       </li>
 
-      <!-- Divisor para a Área do Cliente / Loja Pública -->
-      <li class="sidebar-divider">
+      <!-- SETOR 6: LOJA & TUTOR (PÚBLICO) -->
+      <li class="sidebar-section-header">
         <span>Área da Loja & Tutor</span>
       </li>
-
       <li class="sidebar-item">
         <a (click)="navigate('/')">
           <i class="fas fa-store" aria-hidden="true"></i> Início da Loja
         </a>
       </li>
-
       <li class="sidebar-item">
         <a (click)="navigate('/services')">
           <i class="fas fa-cut" aria-hidden="true"></i> Serviços Pet
         </a>
       </li>
-
       <li class="sidebar-item">
         <a (click)="navigate('/products')">
           <i class="fas fa-box-open" aria-hidden="true"></i> Produtos Loja
         </a>
       </li>
-
       <li class="sidebar-item">
         <a (click)="navigate('/appointments')">
           <i class="fas fa-calendar-check" aria-hidden="true"></i> Agendamento Online
         </a>
       </li>
-
       <li class="sidebar-item">
         <a (click)="navigate('/cart')">
           <i class="fas fa-shopping-cart" aria-hidden="true"></i> Carrinho
         </a>
       </li>
-
       <li class="sidebar-item" *ngIf="currentUser">
         <a (click)="navigate('/account')">
           <i class="fas fa-user-circle" aria-hidden="true"></i> Minha Conta
         </a>
       </li>
 
-      <!-- Sair -->
+      <!-- SETOR 7: CONTA & ACESSO -->
+      <li class="sidebar-section-header">
+        <span>Acesso</span>
+      </li>
       <li class="sidebar-item" *ngIf="currentUser">
         <button type="button" class="sidebar-logout" (click)="logout()">
           <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Sair
         </button>
       </li>
-
       <li class="sidebar-item" *ngIf="!currentUser">
         <a (click)="navigate('/login')">
-          <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Login
+          <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Fazer Login
         </a>
       </li>
 

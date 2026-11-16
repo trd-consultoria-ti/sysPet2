@@ -178,17 +178,23 @@
   }
 }
 
-// Divisor entre seções
-.sidebar-divider {
+// Divisor / Título entre setores
+.sidebar-section-header {
   padding: 1rem 1.5rem 0.35rem;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
   border-top: 1px solid #f1f5f9;
 
+  &:first-of-type {
+    border-top: none;
+    padding-top: 0.5rem;
+  }
+
   span {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 700;
     color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
+    display: block;
   }
 }

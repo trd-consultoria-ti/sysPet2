@@ -69,6 +69,26 @@
   margin: 0;
 }
 
+.sidebar-section-header {
+  padding: 0.9rem 1.5rem 0.25rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid #f1f5f9;
+
+  &:first-of-type {
+    border-top: none;
+    padding-top: 0.25rem;
+  }
+
+  span {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: block;
+  }
+}
+
 .sidebar-item {
   margin-bottom: 0.25rem;
 }
