@@ -25,12 +25,22 @@ export class DashboardComponent implements OnDestroy {
     financeiro: true
   };
 
+  sidebarMobileOpen = false;
+
   toggleSection(key: string): void {
     this.sections[key] = !this.sections[key];
   }
 
   isSectionOpen(key: string): boolean {
     return this.sections[key] !== false;
+  }
+
+  toggleMobileSidebar(): void {
+    this.sidebarMobileOpen = !this.sidebarMobileOpen;
+  }
+
+  closeMobileSidebar(): void {
+    this.sidebarMobileOpen = false;
   }
 
   constructor(

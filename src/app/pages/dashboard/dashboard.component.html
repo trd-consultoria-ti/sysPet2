@@ -1,13 +1,17 @@
-<div class="dashboard-container">
-  <div class="dashboard-content">
-    <!-- Sidebar de navegação -->
-    <nav class="dashboard-sidebar" aria-label="Navegação do painel">
-      <div class="sidebar-header">
-        <button type="button" class="btn-sidebar-menu" (click)="openGlobalMenu()" title="Abrir Menu Geral de Telas (Ctrl+K)">
-          <i class="fas fa-bars"></i>
-        </button>
-        <span class="sidebar-brand">Animal World</span>
-      </div>
+<div class="dashboard-layout">
+  <!-- Backdrop para mobile quando o sidebar estiver aberto -->
+  <div class="sidebar-backdrop" *ngIf="sidebarMobileOpen" (click)="closeMobileSidebar()" aria-hidden="true"></div>
+
+  <!-- 1. BARRA LATERAL (Única navegação do Dashboard) -->
+  <aside class="dashboard-sidebar" [class.mobile-open]="sidebarMobileOpen" aria-label="Navegação do painel">
+    <div class="sidebar-brand-box">
+      <app-logo size="md"></app-logo>
+      <button type="button" class="btn-close-sidebar-mobile" (click)="closeMobileSidebar()" aria-label="Fechar menu">
+        <i class="fas fa-times" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="sidebar-scrollable">
       <ul class="sidebar-menu">
         <!-- VISÃO GERAL -->
         <li class="sidebar-section-header"
@@ -21,12 +25,12 @@
         </li>
         <ng-container *ngIf="isSectionOpen('visaoGeral')">
           <li class="sidebar-item">
-            <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+            <a routerLink="/dashboard" (click)="closeMobileSidebar()" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
               <i class="fas fa-home" aria-hidden="true"></i> Painel
             </a>
           </li>
           <li class="sidebar-item">
-            <a routerLink="/dashboard/rotas" routerLinkActive="active">
+            <a routerLink="/dashboard/rotas" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-sitemap" aria-hidden="true"></i> Mapa do Sistema
             </a>
           </li>
@@ -44,12 +48,12 @@
         </li>
         <ng-container *ngIf="isSectionOpen('atendimento')">
           <li class="sidebar-item">
-            <a routerLink="/dashboard/daily-queue" routerLinkActive="active">
+            <a routerLink="/dashboard/daily-queue" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-clipboard-list" aria-hidden="true"></i> Fila do Dia
             </a>
           </li>
           <li class="sidebar-item">
-            <a routerLink="/dashboard/appointments" routerLinkActive="active">
+            <a routerLink="/dashboard/appointments" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-calendar-alt" aria-hidden="true"></i> Agendamentos
             </a>
           </li>
@@ -67,17 +71,17 @@
         </li>
         <ng-container *ngIf="isSectionOpen('clinica')">
           <li class="sidebar-item">
-            <a routerLink="/dashboard/consultations" routerLinkActive="active">
+            <a routerLink="/dashboard/consultations" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-stethoscope" aria-hidden="true"></i> Consultório
             </a>
           </li>
           <li class="sidebar-item">
-            <a routerLink="/dashboard/vets" routerLinkActive="active">
+            <a routerLink="/dashboard/vets" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-user-md" aria-hidden="true"></i> Médicos Veterinários
             </a>
           </li>
           <li class="sidebar-item">
-            <a routerLink="/dashboard/medications" routerLinkActive="active">
+            <a routerLink="/dashboard/medications" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-pills" aria-hidden="true"></i> Medicamentos
             </a>
           </li>
@@ -95,22 +99,22 @@
         </li>
         <ng-container *ngIf="isSectionOpen('cadastros')">
           <li class="sidebar-item">
-            <a routerLink="/dashboard/customers" routerLinkActive="active">
+            <a routerLink="/dashboard/customers" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-users" aria-hidden="true"></i> Clientes & Pets
             </a>
           </li>
           <li class="sidebar-item">
-            <a routerLink="/dashboard/inventory" routerLinkActive="active">
+            <a routerLink="/dashboard/inventory" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-box" aria-hidden="true"></i> Produtos & Estoque
             </a>
           </li>
           <li class="sidebar-item" *ngIf="isAdmin">
-            <a routerLink="/dashboard/services" routerLinkActive="active">
+            <a routerLink="/dashboard/services" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-concierge-bell" aria-hidden="true"></i> Serviços
             </a>
           </li>
           <li class="sidebar-item" *ngIf="isAdmin">
-            <a routerLink="/dashboard/users" routerLinkActive="active">
+            <a routerLink="/dashboard/users" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-user-tie" aria-hidden="true"></i> Funcionários & Equipe
             </a>
           </li>
@@ -128,49 +132,58 @@
         </li>
         <ng-container *ngIf="isSectionOpen('financeiro')">
           <li class="sidebar-item" *ngIf="isAdmin">
-            <a routerLink="/dashboard/cash" routerLinkActive="active">
+            <a routerLink="/dashboard/cash" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-cash-register" aria-hidden="true"></i> Caixa
             </a>
           </li>
           <li class="sidebar-item">
-            <a routerLink="/dashboard/orders" routerLinkActive="active">
+            <a routerLink="/dashboard/orders" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos
             </a>
           </li>
           <li class="sidebar-item" *ngIf="isAdmin">
-            <a routerLink="/dashboard/reports" routerLinkActive="active">
+            <a routerLink="/dashboard/reports" (click)="closeMobileSidebar()" routerLinkActive="active">
               <i class="fas fa-chart-line" aria-hidden="true"></i> Balanço
             </a>
           </li>
         </ng-container>
-
-        <li class="sidebar-item">
-          <button type="button" class="sidebar-logout" (click)="logout()">
-            <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Sair
-          </button>
-        </li>
       </ul>
-    </nav>
+    </div>
 
-    <!-- Conteúdo principal -->
-    <div class="dashboard-main">
-      <!-- Cabeçalho com ações e menu de perfil unificado -->
-      <div class="dashboard-header">
-        <div class="header-left-actions">
-          <button type="button" class="btn-global-menu-trigger" (click)="openGlobalMenu()" title="Abrir Menu Geral de Telas (Ctrl+K)">
-            <i class="fas fa-bars"></i>
-            <span>Menu do Sistema</span>
-          </button>
-          <a routerLink="/" class="btn btn-outline-secondary btn-sm btn-back-site">
-            <i class="fas fa-arrow-left"></i> Voltar à Loja
-          </a>
-        </div>
-        <div class="header-right-actions">
-          <app-nav-actions></app-nav-actions>
+    <div class="sidebar-footer">
+      <a routerLink="/" class="sidebar-back-link" title="Voltar à Loja Virtual">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        <span>Voltar à Loja</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- 2. ÁREA PRINCIPAL COM O ÚNICO CABEÇALHO DO DASHBOARD -->
+  <div class="dashboard-main-area">
+    <header class="dashboard-topbar">
+      <div class="topbar-left">
+        <!-- Botão menu hamburger VISÍVEL APENAS EM MOBILE -->
+        <button type="button" class="btn-toggle-sidebar-mobile" (click)="toggleMobileSidebar()" aria-label="Abrir menu lateral">
+          <i class="fas fa-bars" aria-hidden="true"></i>
+        </button>
+        <div class="topbar-title-wrap">
+          <h1 class="topbar-title">Painel de Gestão</h1>
+          <span class="topbar-subtitle">Animal World ERP</span>
         </div>
       </div>
 
+      <div class="topbar-right">
+        <a routerLink="/" class="btn-back-to-store" title="Ir para a loja pública">
+          <i class="fas fa-store" aria-hidden="true"></i>
+          <span>Loja Virtual</span>
+        </a>
+        <app-nav-actions></app-nav-actions>
+      </div>
+    </header>
+
+    <!-- Conteúdo com scroll independente -->
+    <main class="dashboard-scrollable-content">
       <router-outlet></router-outlet>
-    </div>
+    </main>
   </div>
 </div>
