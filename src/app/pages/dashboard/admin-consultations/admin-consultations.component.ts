@@ -15,6 +15,11 @@ interface PetOption {
   tutorName: string;
 }
 
+interface Step {
+  num: number;
+  label: string;
+}
+
 @Component({
   selector: 'app-admin-consultations',
   templateUrl: './admin-consultations.component.html',
@@ -26,10 +31,23 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
   consultations: Consultation[] = [];
   petOptions: PetOption[] = [];
   activeVets: Vet[] = [];
-  statusFilter = '';
-  search = '';
   error = '';
   success = '';
+
+  readonly steps: Step[] = [
+    { num: 1, label: 'Fila do dia' },
+    { num: 2, label: 'Atendimento' },
+    { num: 3, label: 'Conduta' },
+    { num: 4, label: 'Receita' },
+    { num: 5, label: 'Finalização' }
+  ];
+  step = 1;
+  current: Consultation | null = null;
+
+  queueDate = new Date().toISOString().split('T')[0];
+  showAllDates = false;
+  statusFilter = '';
+  search = '';
 
   statusLabels: Record<ConsultationStatus, string> = {
     agendado: 'Agendado',
@@ -37,7 +55,6 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     concluido: 'Concluído',
     cancelado: 'Cancelado'
   };
-  readonly statusOrder: ConsultationStatus[] = ['agendado', 'em_atendimento', 'concluido', 'cancelado'];
 
   showForm = false;
   saving = false;
@@ -49,7 +66,6 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     reason: ''
   };
 
-  expandedId: number | null = null;
   editData: {
     vetId?: number | null; scheduledDate?: string; scheduledTime?: string;
     reason?: string; weight?: number | null; temperature?: number | null;
@@ -59,7 +75,6 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
   rxItems: PrescriptionItem[] = [];
   rxNotes = '';
   rxSaving = false;
-  rxViewEditing = false;
   printRx: { consultation: Consultation; prescription: Prescription } | null = null;
 
   constructor(
@@ -73,6 +88,10 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     this.consultationService.refresh();
     this.consultationService.getConsultations().pipe(takeUntil(this.destroy$)).subscribe(list => {
       this.consultations = list;
+      if (this.current) {
+        const fresh = list.find(c => c.id === this.current!.id);
+        if (fresh) this.current = fresh;
+      }
     });
     this.vetService.getVets().pipe(takeUntil(this.destroy$)).subscribe(vets => {
       this.activeVets = vets.filter(v => v.active);
@@ -87,13 +106,57 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     });
   }
 
-  get filtered(): Consultation[] {
+  get queue(): Consultation[] {
     const term = this.search.trim().toLowerCase();
-    return this.consultations.filter(c => {
-      if (this.statusFilter && c.status !== this.statusFilter) return false;
-      if (term && !`${c.petName} ${c.customerName}`.toLowerCase().includes(term)) return false;
-      return true;
-    });
+    return this.consultations
+      .filter(c => {
+        if (!this.showAllDates && c.scheduledDate !== this.queueDate) return false;
+        if (this.statusFilter && c.status !== this.statusFilter) return false;
+        if (term && !`${c.petName} ${c.customerName}`.toLowerCase().includes(term)) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const open = (s: ConsultationStatus) => (s === 'em_atendimento' ? 0 : s === 'agendado' ? 1 : 2);
+        const diff = open(a.status) - open(b.status);
+        if (diff !== 0) return diff;
+        return (a.scheduledTime || '').localeCompare(b.scheduledTime || '');
+      });
+  }
+
+  goToStep(n: number): void {
+    if (n === 1) {
+      this.step = 1;
+      return;
+    }
+    if (!this.current || n > this.step) return;
+    this.step = n;
+  }
+
+  select(c: Consultation): void {
+    this.current = c;
+    this.editData = {
+      vetId: c.vetId ?? null,
+      scheduledDate: c.scheduledDate,
+      scheduledTime: c.scheduledTime || '',
+      reason: c.reason || '',
+      weight: c.weight ?? null,
+      temperature: c.temperature ?? null,
+      diagnosis: c.diagnosis || '',
+      notes: c.notes || ''
+    };
+    this.initRxEditor(c);
+    if (c.prescriptionId && !this.prescriptionService.getCachedByConsultation(c.id)) {
+      this.prescriptionService.getById(c.prescriptionId).pipe(takeUntil(this.destroy$)).subscribe({ error: () => {} });
+    }
+    this.error = '';
+    this.step = c.status === 'concluido' ? 4 : 2;
+  }
+
+  backToQueue(): void {
+    this.step = 1;
+    this.current = null;
+    this.error = '';
+    this.consultationService.refresh();
   }
 
   create(): void {
@@ -114,7 +177,8 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
         this.saving = false;
         this.showForm = false;
         this.newConsultation = { petId: '' as unknown as number, vetId: '' as unknown as number, scheduledDate: '', scheduledTime: '', reason: '' };
-        this.success = `Consulta de ${created.petName} agendada para ${this.formatDate(created.scheduledDate)}.`;
+        this.success = `Consulta de ${created.petName} agendada.`;
+        this.select(created);
       },
       error: err => {
         this.saving = false;
@@ -123,49 +187,43 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     });
   }
 
-  toggleExpand(c: Consultation): void {
-    if (this.expandedId === c.id) {
-      this.expandedId = null;
-      return;
-    }
-    this.expandedId = c.id;
-    if (c.prescriptionId && !this.prescriptionService.getCachedByConsultation(c.id)) {
-      this.prescriptionService.getById(c.prescriptionId).pipe(takeUntil(this.destroy$)).subscribe({ error: () => {} });
-    }
-    this.editData = {
-      vetId: c.vetId ?? null,
-      scheduledDate: c.scheduledDate,
-      scheduledTime: c.scheduledTime || '',
-      reason: c.reason || '',
-      weight: c.weight ?? null,
-      temperature: c.temperature ?? null,
-      diagnosis: c.diagnosis || '',
-      notes: c.notes || ''
-    };
-    this.initRxEditor(c);
-  }
-
-  saveClinical(c: Consultation): void {
+  startAttendance(): void {
+    if (!this.current) return;
     this.error = '';
-    this.consultationService.update(c.id, {
+    const status = this.current.status === 'agendado' ? 'em_atendimento' : this.current.status;
+    this.consultationService.update(this.current.id, {
+      status,
       vetId: this.editData.vetId || null,
-      scheduledDate: this.editData.scheduledDate,
       scheduledTime: this.editData.scheduledTime || undefined,
       reason: this.editData.reason,
       weight: this.editData.weight ?? null,
       temperature: this.editData.temperature ?? null,
-      diagnosis: this.editData.diagnosis,
       notes: this.editData.notes
     }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => this.success = 'Consulta atualizada.',
-      error: err => this.error = err.error?.error || 'Erro ao salvar consulta.'
+      next: () => { this.step = 3; },
+      error: err => this.error = err.error?.error || 'Erro ao salvar atendimento.'
     });
   }
 
-  setStatus(c: Consultation, status: ConsultationStatus): void {
-    this.consultationService.update(c.id, { status }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => this.success = `Status alterado para ${this.statusLabels[status]}.`,
-      error: err => this.error = err.error?.error || 'Erro ao alterar status.'
+  conclude(): void {
+    if (!this.current) return;
+    this.error = '';
+    this.consultationService.update(this.current.id, {
+      status: 'concluido',
+      diagnosis: this.editData.diagnosis,
+      notes: this.editData.notes
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.step = 4; this.initRxEditor(this.current!); },
+      error: err => this.error = err.error?.error || 'Erro ao concluir consulta.'
+    });
+  }
+
+  cancelConsultation(): void {
+    if (!this.current) return;
+    if (!confirm(`Cancelar a consulta de ${this.current.petName}?`)) return;
+    this.consultationService.update(this.current.id, { status: 'cancelado' }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.success = 'Consulta cancelada.'; this.backToQueue(); },
+      error: err => this.error = err.error?.error || 'Erro ao cancelar consulta.'
     });
   }
 
@@ -174,7 +232,6 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
   }
 
   initRxEditor(c: Consultation): void {
-    this.rxViewEditing = false;
     const existing = this.prescriptionService.getCachedByConsultation(c.id);
     this.rxItems = existing ? existing.items.map(i => ({ ...i })) : [this.emptyRxItem()];
     this.rxNotes = existing?.notes || '';
@@ -192,7 +249,8 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     this.rxItems.splice(index, 1);
   }
 
-  emitPrescription(c: Consultation): void {
+  emitPrescription(): void {
+    if (!this.current) return;
     this.error = '';
     const items = this.rxItems.filter(i => i.medication && i.medication.trim());
     if (!items.length) {
@@ -201,14 +259,14 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     }
     this.rxSaving = true;
     this.prescriptionService.save({
-      consultationId: c.id,
-      vetId: c.vetId || undefined,
+      consultationId: this.current.id,
+      vetId: this.current.vetId || undefined,
       notes: this.rxNotes || undefined,
       items
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.rxSaving = false;
-        this.success = 'Receita emitida.';
+        this.step = 5;
       },
       error: err => {
         this.rxSaving = false;
@@ -217,10 +275,11 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     });
   }
 
-  printPrescription(c: Consultation): void {
-    const prescription = this.prescriptionFor(c);
+  printPrescription(): void {
+    if (!this.current) return;
+    const prescription = this.prescriptionFor(this.current);
     if (!prescription) return;
-    this.printRx = { consultation: c, prescription };
+    this.printRx = { consultation: this.current, prescription };
     setTimeout(() => window.print());
   }
 
@@ -248,6 +307,10 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
 
   trackByPet(_index: number, opt: PetOption): number | undefined {
     return opt.pet.id;
+  }
+
+  trackByStep(_index: number, s: Step): number {
+    return s.num;
   }
 
   ngOnDestroy(): void {

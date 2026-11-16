@@ -617,17 +617,27 @@ app.delete('/api/pets/:id', requireAuth, async (req, res) => {
 // ---------- appointments ----------
 
 app.get('/api/appointments', requireAuth, async (req, res) => {
-  const { rows } = isStaff(req.user)
-    ? await pool.query('SELECT * FROM appointments ORDER BY date, time, id')
+  const mineOnly = req.query.mine === 'true';
+  const { rows } = (isStaff(req.user) && !mineOnly)
+    ? await pool.query(
+        `SELECT a.*, u.name AS user_name, u.email AS user_email
+         FROM appointments a
+         LEFT JOIN users u ON u.id = a.user_id
+         ORDER BY a.date, a.time, a.id`
+      )
     : await pool.query(
-        `SELECT * FROM appointments
-         WHERE customer_id IN (SELECT id FROM customers WHERE user_id=$1)
-         ORDER BY date, time, id`,
+        `SELECT a.*, u.name AS user_name, u.email AS user_email
+         FROM appointments a
+         LEFT JOIN users u ON u.id = a.user_id
+         WHERE a.user_id = $1 OR a.customer_id IN (SELECT id FROM customers WHERE user_id=$1)
+         ORDER BY a.date, a.time, a.id`,
         [req.user.id]
       );
   res.json(rows.map(a => ({
     ...a,
     id: a.id,
+    userId: a.user_id,
+    userName: a.user_name,
     customerId: a.customer_id,
     customerName: a.customer_name,
     petName: a.pet_name,
@@ -640,25 +650,58 @@ app.get('/api/appointments', requireAuth, async (req, res) => {
 
 app.post('/api/appointments', requireAuth, async (req, res) => {
   let { customerId, customerName, petName, serviceId, serviceName, date, time, notes } = req.body;
+
+  let { rows: cust } = await pool.query('SELECT id, name FROM customers WHERE user_id=$1', [req.user.id]);
+  if (!cust.length) {
+    const { rows: byEmail } = await pool.query('SELECT id, name FROM customers WHERE email=$1', [req.user.email]);
+    if (byEmail.length) {
+      await pool.query('UPDATE customers SET user_id=$1 WHERE id=$2', [req.user.id, byEmail[0].id]);
+      cust = byEmail;
+    } else {
+      const { rows: created } = await pool.query(
+        'INSERT INTO customers (user_id, name, email, status) VALUES ($1,$2,$3,$4) RETURNING id, name',
+        [req.user.id, req.user.name, req.user.email, 'active']
+      );
+      cust = created;
+    }
+  }
+
   if (!isStaff(req.user)) {
-    const { rows: cust } = await pool.query('SELECT id, name FROM customers WHERE user_id=$1', [req.user.id]);
-    if (!cust.length) return res.status(400).json({ error: 'Perfil de cliente não encontrado' });
     customerId = cust[0].id;
     customerName = cust[0].name;
     const { rows: pet } = await pool.query('SELECT id FROM pets WHERE customer_id=$1 AND name=$2', [customerId, petName]);
     if (!pet.length) return res.status(400).json({ error: 'Pet não encontrado no seu cadastro' });
+  } else {
+    if (!customerId) {
+      customerId = cust[0].id;
+      customerName = cust[0].name;
+    } else if (!customerName) {
+      const { rows: selectedCust } = await pool.query('SELECT name FROM customers WHERE id=$1', [customerId]);
+      if (selectedCust.length) {
+        customerName = selectedCust[0].name;
+      }
+    }
   }
+
   const { rows } = await pool.query(
-    `INSERT INTO appointments (customer_id, customer_name, pet_name, service_id, service_name, date, time, notes)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-    [customerId || null, customerName || null, petName, serviceId || null, serviceName || null, date, time, notes || null]
+    `INSERT INTO appointments (user_id, customer_id, customer_name, pet_name, service_id, service_name, date, time, notes)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+    [req.user.id, customerId || null, customerName || null, petName, serviceId || null, serviceName || null, date, time, notes || null]
   );
   const a = rows[0];
   res.status(201).json({
-    id: a.id, customerId: a.customer_id, customerName: a.customer_name,
-    petName: a.pet_name, serviceId: a.service_id, serviceName: a.service_name,
+    id: a.id,
+    userId: a.user_id,
+    customerId: a.customer_id,
+    customerName: a.customer_name,
+    petName: a.pet_name,
+    serviceId: a.service_id,
+    serviceName: a.service_name,
     date: a.date instanceof Date ? a.date.toISOString().split('T')[0] : a.date,
-    time: a.time, notes: a.notes, status: a.status, createdAt: a.created_at
+    time: a.time,
+    notes: a.notes,
+    status: a.status,
+    createdAt: a.created_at
   });
 });
 

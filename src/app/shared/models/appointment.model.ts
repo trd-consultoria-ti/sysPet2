@@ -2,6 +2,8 @@ export type AppointmentStatus = 'solicitado' | 'confirmado' | 'concluido' | 'can
 
 export interface Appointment {
   id?: number;
+  userId?: number;
+  userName?: string;
   customerId?: number;
   customerName?: string;
   petName: string;

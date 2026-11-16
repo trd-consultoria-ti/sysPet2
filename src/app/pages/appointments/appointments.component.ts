@@ -25,6 +25,7 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
   appointments: Appointment[] = [];
   confirmationMessage: string = '';
   isCustomerRole = false;
+  currentUser: any = null;
   myCustomerId: number | null = null;
   private allAppointments: Appointment[] = [];
   showPetForm = false;
@@ -86,16 +87,21 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
     });
 
     const user = this.authService.getCurrentUser();
+    this.currentUser = user;
     this.isCustomerRole = user?.role === 'customer';
 
     this.customerService.getCustomers().pipe(takeUntil(this.destroy$)).subscribe(customers => {
       this.customers = [...customers];
-      if (this.isCustomerRole && user) {
-        const mine = customers.find(c => c.userId === user.id);
+      if (user) {
+        const mine = customers.find(c => c.userId === user.id || c.email === user.email);
         if (mine?.id) {
           this.myCustomerId = mine.id;
-          this.appointmentForm.patchValue({ customerId: mine.id });
-          this.appointmentForm.get('customerId')!.disable();
+          if (!this.appointmentForm.get('customerId')?.value) {
+            this.appointmentForm.patchValue({ customerId: mine.id });
+          }
+          if (this.isCustomerRole) {
+            this.appointmentForm.get('customerId')!.disable();
+          }
         }
       }
       this.applyAppointmentFilter();
@@ -116,9 +122,10 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
   }
 
   savePet(): void {
-    if (this.petForm.valid && this.myCustomerId) {
+    const targetCustomerId = this.myCustomerId || this.appointmentForm.get('customerId')?.value;
+    if (this.petForm.valid && targetCustomerId) {
       const v = this.petForm.value;
-      this.customerService.addPet(this.myCustomerId, {
+      this.customerService.addPet(targetCustomerId, {
         name: v.name,
         type: v.type,
         breed: v.breed || undefined,
@@ -132,8 +139,9 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
   }
 
   private applyAppointmentFilter(): void {
-    const visible = this.isCustomerRole && this.myCustomerId
-      ? this.allAppointments.filter(a => a.customerId === this.myCustomerId)
+    const user = this.authService.getCurrentUser();
+    const visible = user
+      ? this.allAppointments.filter(a => a.userId === user.id || (this.myCustomerId && a.customerId === this.myCustomerId))
       : this.allAppointments;
     this.appointments = [...visible].sort((a, b) =>
       (a.date + a.time).localeCompare(b.date + b.time)
@@ -141,7 +149,7 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
   }
 
   get petsOfSelectedCustomer(): Pet[] {
-    const customerId = this.appointmentForm.get('customerId')?.value;
+    const customerId = this.appointmentForm.get('customerId')?.value || this.myCustomerId;
     const customer = this.customers.find(c => c.id === customerId);
     return customer?.pets || [];
   }
@@ -160,6 +168,7 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
       }
 
       this.appointmentService.add({
+        userId: this.currentUser?.id,
         petName: pet?.name || '',
         serviceId: service?.id,
         serviceName: service?.name,
@@ -170,7 +179,8 @@ export class AppointmentsComponent implements OnInit, OnDestroy {
         notes: formValues.notes || undefined
       }).pipe(takeUntil(this.destroy$)).subscribe(() => {
         this.confirmationMessage = `Agendamento solicitado para ${pet?.name} em ${this.formatDate(formValues.date)} às ${formValues.time}.`;
-        this.appointmentForm.reset();
+        this.appointmentService.refresh();
+        this.appointmentForm.reset({ customerId: this.myCustomerId });
       });
     }
   }

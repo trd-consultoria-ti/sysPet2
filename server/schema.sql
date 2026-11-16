@@ -68,6 +68,7 @@ CREATE INDEX IF NOT EXISTS idx_pets_customer ON pets(customer_id);
 
 CREATE TABLE IF NOT EXISTS appointments (
   id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
   customer_name TEXT,
   pet_name TEXT NOT NULL,
@@ -83,6 +84,7 @@ CREATE TABLE IF NOT EXISTS appointments (
 CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
 CREATE INDEX IF NOT EXISTS idx_appointments_customer ON appointments(customer_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_service ON appointments(service_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_user ON appointments(user_id);
 
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL PRIMARY KEY,

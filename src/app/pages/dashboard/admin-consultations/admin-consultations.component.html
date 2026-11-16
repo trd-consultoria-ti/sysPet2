@@ -1,233 +1,292 @@
 <div class="admin-page">
   <div class="page-header">
     <h1>Consultório</h1>
-    <button type="button" class="btn btn-primary btn-sm" (click)="showForm = !showForm">
-      {{ showForm ? 'Cancelar' : 'Nova consulta' }}
-    </button>
+    <div class="header-actions">
+      <button type="button" class="btn btn-outline-secondary btn-sm" *ngIf="step > 1" (click)="backToQueue()">
+        ← Fila do dia
+      </button>
+      <button type="button" class="btn btn-primary btn-sm" *ngIf="step === 1" (click)="showForm = !showForm">
+        {{ showForm ? 'Fechar' : 'Nova consulta' }}
+      </button>
+    </div>
   </div>
+
+  <!-- Indicador de etapas -->
+  <nav aria-label="Etapas do atendimento">
+    <ol class="steps">
+      <li *ngFor="let s of steps; trackBy: trackByStep"
+          [class.active]="step === s.num"
+          [class.done]="step > s.num">
+        <button type="button" class="step-btn"
+                [disabled]="s.num > 1 && (!current || s.num > step)"
+                [attr.aria-current]="step === s.num ? 'step' : null"
+                (click)="goToStep(s.num)">
+          <span class="step-num">{{ s.num }}</span>
+          <span class="step-label">{{ s.label }}</span>
+        </button>
+      </li>
+    </ol>
+  </nav>
 
   <p class="form-success" *ngIf="success" role="status">{{ success }}</p>
   <p class="form-error" *ngIf="error" role="alert">{{ error }}</p>
 
-  <!-- Nova consulta -->
-  <form class="consult-form" *ngIf="showForm" (ngSubmit)="create()" aria-label="Nova consulta">
-    <div class="form-grid">
+  <!-- ETAPA 1 — Fila do dia -->
+  <section *ngIf="step === 1" aria-label="Fila do dia">
+    <form class="consult-form" *ngIf="showForm" (ngSubmit)="create()" aria-label="Nova consulta">
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="consult-pet">Pet *</label>
+          <select id="consult-pet" class="form-control" [(ngModel)]="newConsultation.petId" name="petId" required>
+            <option [ngValue]="''" disabled>Selecione o pet</option>
+            <option *ngFor="let opt of petOptions; trackBy: trackByPet" [ngValue]="opt.pet.id">
+              {{ opt.pet.name }} — {{ opt.tutorName }}
+            </option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="consult-vet">Veterinário</label>
+          <select id="consult-vet" class="form-control" [(ngModel)]="newConsultation.vetId" name="vetId">
+            <option [ngValue]="''">Sem vínculo</option>
+            <option *ngFor="let vet of activeVets; trackBy: trackById" [ngValue]="vet.id">
+              {{ vet.name }}<ng-container *ngIf="vet.specialty"> — {{ vet.specialty }}</ng-container>
+            </option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="consult-date">Data *</label>
+          <input id="consult-date" type="date" class="form-control" [(ngModel)]="newConsultation.scheduledDate" name="scheduledDate" required>
+        </div>
+        <div class="form-field">
+          <label for="consult-time">Horário</label>
+          <input id="consult-time" type="time" class="form-control" [(ngModel)]="newConsultation.scheduledTime" name="scheduledTime">
+        </div>
+        <div class="form-field form-field-wide">
+          <label for="consult-reason">Motivo</label>
+          <input id="consult-reason" type="text" class="form-control" [(ngModel)]="newConsultation.reason" name="reason" maxlength="200" placeholder="Ex.: check-up, vacina, dor abdominal">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" [disabled]="saving">{{ saving ? 'Salvando…' : 'Agendar consulta' }}</button>
+    </form>
+
+    <div class="filters-row">
       <div class="form-field">
-        <label for="consult-pet">Pet *</label>
-        <select id="consult-pet" class="form-control" [(ngModel)]="newConsultation.petId" name="petId" required>
-          <option [ngValue]="''" disabled>Selecione o pet</option>
-          <option *ngFor="let opt of petOptions; trackBy: trackByPet" [ngValue]="opt.pet.id">
-            {{ opt.pet.name }} — {{ opt.tutorName }}
-          </option>
+        <label for="queue-date">Data</label>
+        <input id="queue-date" type="date" class="form-control" [(ngModel)]="queueDate" [disabled]="showAllDates">
+      </div>
+      <div class="form-field form-check">
+        <input id="queue-all" type="checkbox" [(ngModel)]="showAllDates">
+        <label for="queue-all">Todas as datas</label>
+      </div>
+      <div class="form-field">
+        <label for="filter-status">Status</label>
+        <select id="filter-status" class="form-control" [(ngModel)]="statusFilter">
+          <option value="">Todos</option>
+          <option value="agendado">Agendado</option>
+          <option value="em_atendimento">Em atendimento</option>
+          <option value="concluido">Concluído</option>
+          <option value="cancelado">Cancelado</option>
         </select>
       </div>
       <div class="form-field">
-        <label for="consult-vet">Veterinário</label>
-        <select id="consult-vet" class="form-control" [(ngModel)]="newConsultation.vetId" name="vetId">
-          <option [ngValue]="''">Sem vínculo</option>
-          <option *ngFor="let vet of activeVets; trackBy: trackById" [ngValue]="vet.id">
-            {{ vet.name }}<ng-container *ngIf="vet.specialty"> — {{ vet.specialty }}</ng-container>
-          </option>
-        </select>
-      </div>
-      <div class="form-field">
-        <label for="consult-date">Data *</label>
-        <input id="consult-date" type="date" class="form-control" [(ngModel)]="newConsultation.scheduledDate" name="scheduledDate" required>
-      </div>
-      <div class="form-field">
-        <label for="consult-time">Horário</label>
-        <input id="consult-time" type="time" class="form-control" [(ngModel)]="newConsultation.scheduledTime" name="scheduledTime">
-      </div>
-      <div class="form-field form-field-wide">
-        <label for="consult-reason">Motivo</label>
-        <input id="consult-reason" type="text" class="form-control" [(ngModel)]="newConsultation.reason" name="reason" maxlength="200" placeholder="Ex.: check-up, vacina, dor abdominal">
+        <label for="filter-search">Busca</label>
+        <input id="filter-search" type="search" class="form-control" [(ngModel)]="search" placeholder="Pet ou tutor">
       </div>
     </div>
-    <button type="submit" class="btn btn-primary" [disabled]="saving">{{ saving ? 'Salvando…' : 'Agendar consulta' }}</button>
-  </form>
 
-  <!-- Filtros -->
-  <div class="filters-row" *ngIf="consultations.length > 0">
-    <div class="form-field">
-      <label for="filter-status">Status</label>
-      <select id="filter-status" class="form-control" [(ngModel)]="statusFilter">
-        <option value="">Todos</option>
-        <option *ngFor="let s of statusOrder" [value]="s">{{ statusLabels[s] }}</option>
-      </select>
+    <div class="empty-state" *ngIf="queue.length === 0">
+      <p *ngIf="!showAllDates">Nenhuma consulta em {{ formatDate(queueDate) }}.</p>
+      <p *ngIf="showAllDates">Nenhuma consulta encontrada.</p>
     </div>
-    <div class="form-field">
-      <label for="filter-search">Busca</label>
-      <input id="filter-search" type="search" class="form-control" [(ngModel)]="search" placeholder="Pet ou tutor">
+
+    <div class="queue-list" *ngIf="queue.length > 0">
+      <article class="queue-card" *ngFor="let c of queue; trackBy: trackById">
+        <div class="queue-info">
+          <span class="queue-when">{{ formatDate(c.scheduledDate) }}<ng-container *ngIf="c.scheduledTime"> {{ c.scheduledTime }}</ng-container></span>
+          <span class="queue-pet">{{ c.petName }}<ng-container *ngIf="c.petType"> ({{ c.petType }})</ng-container></span>
+          <span class="queue-tutor">Tutor: {{ c.customerName }}</span>
+          <span class="queue-vet" *ngIf="c.vetName">{{ c.vetName }}</span>
+          <span class="queue-reason" *ngIf="c.reason">{{ c.reason }}</span>
+        </div>
+        <div class="queue-side">
+          <span class="status-badge" [ngClass]="c.status">{{ statusLabels[c.status] }}</span>
+          <button type="button" class="btn btn-sm btn-primary" *ngIf="c.status !== 'cancelado'" (click)="select(c)">
+            {{ c.status === 'agendado' ? 'Atender' : (c.status === 'em_atendimento' ? 'Continuar' : 'Ver') }}
+          </button>
+        </div>
+      </article>
     </div>
-  </div>
+  </section>
 
-  <div class="empty-state" *ngIf="consultations.length === 0">
-    <p>Nenhuma consulta registrada ainda.</p>
-  </div>
-  <div class="empty-state" *ngIf="consultations.length > 0 && filtered.length === 0">
-    <p>Nenhuma consulta encontrada com os filtros aplicados.</p>
-  </div>
+  <!-- ETAPA 2 — Atendimento -->
+  <section *ngIf="step === 2 && current" aria-label="Atendimento">
+    <div class="panel">
+      <div class="patient-summary">
+        <h2>{{ current.petName }}<ng-container *ngIf="current.petType"> — {{ current.petType }}</ng-container><ng-container *ngIf="current.petBreed">, {{ current.petBreed }}</ng-container></h2>
+        <p class="patient-meta">
+          Tutor: {{ current.customerName }} ·
+          {{ formatDate(current.scheduledDate) }}<ng-container *ngIf="current.scheduledTime"> {{ current.scheduledTime }}</ng-container> ·
+          <span class="status-badge" [ngClass]="current.status">{{ statusLabels[current.status] }}</span>
+        </p>
+      </div>
 
-  <div class="table-container" *ngIf="filtered.length > 0">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Pet</th>
-          <th>Tutor</th>
-          <th>Veterinário</th>
-          <th>Data</th>
-          <th>Horário</th>
-          <th>Status</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        <ng-container *ngFor="let c of filtered; trackBy: trackById">
-          <tr>
-            <td>{{ c.petName }}</td>
-            <td>{{ c.customerName }}</td>
-            <td>{{ c.vetName || '—' }}</td>
-            <td>{{ formatDate(c.scheduledDate) }}</td>
-            <td>{{ c.scheduledTime || '—' }}</td>
-            <td><span class="status-badge" [ngClass]="c.status">{{ statusLabels[c.status] }}</span></td>
-            <td>
-              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="toggleExpand(c)"
-                      [attr.aria-expanded]="expandedId === c.id"
-                      [attr.aria-label]="(expandedId === c.id ? 'Fechar detalhes de ' : 'Detalhes da consulta de ') + c.petName">
-                {{ expandedId === c.id ? 'Fechar' : 'Detalhes' }}
-              </button>
-            </td>
-          </tr>
-          <tr class="detail-row" *ngIf="expandedId === c.id">
-            <td colspan="7">
-              <div class="consult-detail">
-                <div class="status-actions" role="group" aria-label="Alterar status">
-                  <span class="detail-label">Status:</span>
-                  <button type="button" class="btn btn-sm btn-outline-secondary" *ngIf="c.status === 'agendado'"
-                          (click)="setStatus(c, 'em_atendimento')">Iniciar atendimento</button>
-                  <button type="button" class="btn btn-sm btn-primary" *ngIf="c.status === 'em_atendimento'"
-                          (click)="setStatus(c, 'concluido')">Concluir</button>
-                  <button type="button" class="btn btn-sm btn-outline-danger"
-                          *ngIf="c.status === 'agendado' || c.status === 'em_atendimento'"
-                          (click)="setStatus(c, 'cancelado')">Cancelar consulta</button>
-                </div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="at-vet">Veterinário responsável</label>
+          <select id="at-vet" class="form-control" [(ngModel)]="editData.vetId">
+            <option [ngValue]="null">Sem vínculo</option>
+            <option *ngFor="let vet of activeVets; trackBy: trackById" [ngValue]="vet.id">{{ vet.name }}</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="at-time">Horário</label>
+          <input id="at-time" type="time" class="form-control" [(ngModel)]="editData.scheduledTime">
+        </div>
+        <div class="form-field form-field-wide">
+          <label for="at-reason">Motivo / Anamnese</label>
+          <textarea id="at-reason" class="form-control" rows="2" [(ngModel)]="editData.reason" maxlength="500"></textarea>
+        </div>
+        <div class="form-field">
+          <label for="at-weight">Peso (kg)</label>
+          <input id="at-weight" type="number" class="form-control" [(ngModel)]="editData.weight" min="0" step="0.01">
+        </div>
+        <div class="form-field">
+          <label for="at-temp">Temperatura (°C)</label>
+          <input id="at-temp" type="number" class="form-control" [(ngModel)]="editData.temperature" min="0" step="0.1">
+        </div>
+        <div class="form-field form-field-wide">
+          <label for="at-notes">Observações</label>
+          <textarea id="at-notes" class="form-control" rows="2" [(ngModel)]="editData.notes"></textarea>
+        </div>
+      </div>
 
-                <div class="form-grid">
-                  <div class="form-field">
-                    <label for="edit-vet-{{c.id}}">Veterinário</label>
-                    <select id="edit-vet-{{c.id}}" class="form-control" [(ngModel)]="editData.vetId">
-                      <option [ngValue]="null">Sem vínculo</option>
-                      <option *ngFor="let vet of activeVets; trackBy: trackById" [ngValue]="vet.id">{{ vet.name }}</option>
-                    </select>
-                  </div>
-                  <div class="form-field">
-                    <label for="edit-date-{{c.id}}">Data</label>
-                    <input id="edit-date-{{c.id}}" type="date" class="form-control" [(ngModel)]="editData.scheduledDate">
-                  </div>
-                  <div class="form-field">
-                    <label for="edit-time-{{c.id}}">Horário</label>
-                    <input id="edit-time-{{c.id}}" type="time" class="form-control" [(ngModel)]="editData.scheduledTime">
-                  </div>
-                  <div class="form-field">
-                    <label for="edit-reason-{{c.id}}">Motivo</label>
-                    <input id="edit-reason-{{c.id}}" type="text" class="form-control" [(ngModel)]="editData.reason" maxlength="200">
-                  </div>
-                  <div class="form-field">
-                    <label for="edit-weight-{{c.id}}">Peso (kg)</label>
-                    <input id="edit-weight-{{c.id}}" type="number" class="form-control" [(ngModel)]="editData.weight" min="0" step="0.01">
-                  </div>
-                  <div class="form-field">
-                    <label for="edit-temp-{{c.id}}">Temperatura (°C)</label>
-                    <input id="edit-temp-{{c.id}}" type="number" class="form-control" [(ngModel)]="editData.temperature" min="0" step="0.1">
-                  </div>
-                  <div class="form-field form-field-wide">
-                    <label for="edit-diag-{{c.id}}">Diagnóstico</label>
-                    <textarea id="edit-diag-{{c.id}}" class="form-control" rows="2" [(ngModel)]="editData.diagnosis"></textarea>
-                  </div>
-                  <div class="form-field form-field-wide">
-                    <label for="edit-notes-{{c.id}}">Observações</label>
-                    <textarea id="edit-notes-{{c.id}}" class="form-control" rows="2" [(ngModel)]="editData.notes"></textarea>
-                  </div>
-                </div>
-                <button type="button" class="btn btn-primary btn-sm" (click)="saveClinical(c)">Salvar dados</button>
+      <div class="step-actions">
+        <button type="button" class="btn btn-primary" (click)="startAttendance()">
+          {{ current.status === 'agendado' ? 'Iniciar atendimento' : 'Salvar e avançar' }}
+        </button>
+        <button type="button" class="btn btn-outline-danger" *ngIf="current.status !== 'concluido' && current.status !== 'cancelado'"
+                (click)="cancelConsultation()">Cancelar consulta</button>
+      </div>
+    </div>
+  </section>
 
-                <!-- Receita -->
-                <ng-container *ngIf="c.status === 'concluido'">
-                  <div class="rx-section">
-                    <h2>Receita</h2>
-                    <ng-container *ngIf="prescriptionFor(c) as rx; else rxEditor">
-                      <div class="rx-view">
-                        <p class="rx-meta">
-                          Emitida por {{ rx.vetName || '—' }}<ng-container *ngIf="rx.vetCrmv"> (CRMV {{ rx.vetCrmv }})</ng-container>
-                        </p>
-                        <ul class="rx-items">
-                          <li *ngFor="let item of rx.items; trackBy: trackByIndex">
-                            <strong>{{ item.medication }}</strong>
-                            <ng-container *ngIf="item.dosage"> — {{ item.dosage }}</ng-container>
-                            <ng-container *ngIf="item.frequency">, {{ item.frequency }}</ng-container>
-                            <ng-container *ngIf="item.duration">, por {{ item.duration }}</ng-container>
-                            <div class="rx-instructions" *ngIf="item.instructions">{{ item.instructions }}</div>
-                          </li>
-                        </ul>
-                        <p class="rx-notes" *ngIf="rx.notes">{{ rx.notes }}</p>
-                        <div class="rx-actions">
-                          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="initRxEditor(c); rxViewEditing = true">Editar e reemitir</button>
-                          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="printPrescription(c)">Imprimir</button>
-                          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="downloadPdf(rx)">Baixar PDF</button>
-                        </div>
-                      </div>
-                      <ng-container *ngIf="rxViewEditing">
-                        <ng-container *ngTemplateOutlet="rxForm"></ng-container>
-                      </ng-container>
-                    </ng-container>
-                    <ng-template #rxEditor>
-                      <ng-container *ngTemplateOutlet="rxForm"></ng-container>
-                    </ng-template>
-                    <ng-template #rxForm>
-                      <div class="rx-item-row" *ngFor="let item of rxItems; let i = index; trackBy: trackByIndex">
-                        <div class="form-grid">
-                          <div class="form-field">
-                            <label for="rx-med-{{c.id}}-{{i}}">Medicamento *</label>
-                            <input id="rx-med-{{c.id}}-{{i}}" type="text" class="form-control" [(ngModel)]="item.medication" maxlength="120">
-                          </div>
-                          <div class="form-field">
-                            <label for="rx-dose-{{c.id}}-{{i}}">Dosagem</label>
-                            <input id="rx-dose-{{c.id}}-{{i}}" type="text" class="form-control" [(ngModel)]="item.dosage" placeholder="Ex.: 10mg/kg">
-                          </div>
-                          <div class="form-field">
-                            <label for="rx-freq-{{c.id}}-{{i}}">Frequência</label>
-                            <input id="rx-freq-{{c.id}}-{{i}}" type="text" class="form-control" [(ngModel)]="item.frequency" placeholder="Ex.: 2x ao dia">
-                          </div>
-                          <div class="form-field">
-                            <label for="rx-dur-{{c.id}}-{{i}}">Duração</label>
-                            <input id="rx-dur-{{c.id}}-{{i}}" type="text" class="form-control" [(ngModel)]="item.duration" placeholder="Ex.: 7 dias">
-                          </div>
-                          <div class="form-field form-field-wide">
-                            <label for="rx-inst-{{c.id}}-{{i}}">Instruções</label>
-                            <input id="rx-inst-{{c.id}}-{{i}}" type="text" class="form-control" [(ngModel)]="item.instructions" placeholder="Ex.: dar com ração">
-                          </div>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger" *ngIf="rxItems.length > 1"
-                                (click)="removeRxItem(i)" [attr.aria-label]="'Remover medicamento ' + (i + 1)">Remover</button>
-                      </div>
-                      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="addRxItem()">+ Medicamento</button>
-                      <div class="form-field form-field-wide rx-notes-field">
-                        <label for="rx-notes-{{c.id}}">Observações da receita</label>
-                        <input id="rx-notes-{{c.id}}" type="text" class="form-control" [(ngModel)]="rxNotes" maxlength="300">
-                      </div>
-                      <button type="button" class="btn btn-primary btn-sm" [disabled]="rxSaving" (click)="emitPrescription(c)">
-                        {{ rxSaving ? 'Emitindo…' : (prescriptionFor(c) ? 'Atualizar receita' : 'Emitir receita') }}
-                      </button>
-                    </ng-template>
-                  </div>
-                </ng-container>
-              </div>
-            </td>
-          </tr>
-        </ng-container>
-      </tbody>
-    </table>
-  </div>
+  <!-- ETAPA 3 — Conduta -->
+  <section *ngIf="step === 3 && current" aria-label="Conduta">
+    <div class="panel">
+      <h2>Conduta — {{ current.petName }}</h2>
+      <p class="patient-meta" *ngIf="current.weight || current.temperature">
+        <ng-container *ngIf="current.weight">Peso: {{ current.weight }} kg</ng-container>
+        <ng-container *ngIf="current.temperature"> · Temp: {{ current.temperature }} °C</ng-container>
+      </p>
+      <div class="form-grid">
+        <div class="form-field form-field-wide">
+          <label for="cd-diag">Diagnóstico</label>
+          <textarea id="cd-diag" class="form-control" rows="3" [(ngModel)]="editData.diagnosis"></textarea>
+        </div>
+        <div class="form-field form-field-wide">
+          <label for="cd-notes">Notas clínicas</label>
+          <textarea id="cd-notes" class="form-control" rows="3" [(ngModel)]="editData.notes"></textarea>
+        </div>
+      </div>
+      <div class="step-actions">
+        <button type="button" class="btn btn-primary" (click)="conclude()">Concluir atendimento</button>
+        <button type="button" class="btn btn-outline-danger" (click)="cancelConsultation()">Cancelar consulta</button>
+        <button type="button" class="btn btn-outline-secondary" (click)="step = 2">Voltar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ETAPA 4 — Receita -->
+  <section *ngIf="step === 4 && current" aria-label="Receita">
+    <div class="panel">
+      <h2>Receita — {{ current.petName }}</h2>
+
+      <ng-container *ngIf="prescriptionFor(current) as rx">
+        <div class="rx-view">
+          <p class="rx-meta">Receita emitida por {{ rx.vetName || '—' }}<ng-container *ngIf="rx.vetCrmv"> (CRMV {{ rx.vetCrmv }})</ng-container>.</p>
+        </div>
+      </ng-container>
+
+      <div class="rx-item-row" *ngFor="let item of rxItems; let i = index; trackBy: trackByIndex">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="rx-med-{{i}}">Medicamento *</label>
+            <input id="rx-med-{{i}}" type="text" class="form-control" [(ngModel)]="item.medication" maxlength="120">
+          </div>
+          <div class="form-field">
+            <label for="rx-dose-{{i}}">Dosagem</label>
+            <input id="rx-dose-{{i}}" type="text" class="form-control" [(ngModel)]="item.dosage" placeholder="Ex.: 10mg/kg">
+          </div>
+          <div class="form-field">
+            <label for="rx-freq-{{i}}">Frequência</label>
+            <input id="rx-freq-{{i}}" type="text" class="form-control" [(ngModel)]="item.frequency" placeholder="Ex.: 2x ao dia">
+          </div>
+          <div class="form-field">
+            <label for="rx-dur-{{i}}">Duração</label>
+            <input id="rx-dur-{{i}}" type="text" class="form-control" [(ngModel)]="item.duration" placeholder="Ex.: 7 dias">
+          </div>
+          <div class="form-field form-field-wide">
+            <label for="rx-inst-{{i}}">Instruções</label>
+            <input id="rx-inst-{{i}}" type="text" class="form-control" [(ngModel)]="item.instructions" placeholder="Ex.: dar com ração">
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger" *ngIf="rxItems.length > 1"
+                (click)="removeRxItem(i)" [attr.aria-label]="'Remover medicamento ' + (i + 1)">Remover</button>
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="addRxItem()">+ Medicamento</button>
+      <div class="form-field form-field-wide rx-notes-field">
+        <label for="rx-notes">Observações da receita</label>
+        <input id="rx-notes" type="text" class="form-control" [(ngModel)]="rxNotes" maxlength="300">
+      </div>
+
+      <div class="step-actions">
+        <button type="button" class="btn btn-primary" [disabled]="rxSaving" (click)="emitPrescription()">
+          {{ rxSaving ? 'Emitindo…' : (prescriptionFor(current) ? 'Atualizar receita e finalizar' : 'Emitir receita e finalizar') }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="step = 5">Pular etapa</button>
+        <button type="button" class="btn btn-outline-secondary" (click)="step = 3">Voltar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ETAPA 5 — Finalização -->
+  <section *ngIf="step === 5 && current" aria-label="Finalização">
+    <div class="panel">
+      <h2>Atendimento finalizado</h2>
+      <dl class="summary-list">
+        <dt>Pet</dt><dd>{{ current.petName }}</dd>
+        <dt>Tutor</dt><dd>{{ current.customerName }}</dd>
+        <dt>Veterinário</dt><dd>{{ current.vetName || '—' }}</dd>
+        <dt>Data</dt><dd>{{ formatDate(current.scheduledDate) }}<ng-container *ngIf="current.scheduledTime"> {{ current.scheduledTime }}</ng-container></dd>
+        <dt>Status</dt><dd><span class="status-badge" [ngClass]="current.status">{{ statusLabels[current.status] }}</span></dd>
+        <dt *ngIf="current.weight">Peso</dt><dd *ngIf="current.weight">{{ current.weight }} kg</dd>
+        <dt *ngIf="current.temperature">Temperatura</dt><dd *ngIf="current.temperature">{{ current.temperature }} °C</dd>
+        <dt *ngIf="current.diagnosis">Diagnóstico</dt><dd *ngIf="current.diagnosis">{{ current.diagnosis }}</dd>
+      </dl>
+
+      <ng-container *ngIf="prescriptionFor(current) as rx">
+        <h3 class="summary-rx-title">Receita</h3>
+        <ul class="rx-items">
+          <li *ngFor="let item of rx.items; trackBy: trackByIndex">
+            <strong>{{ item.medication }}</strong>
+            <ng-container *ngIf="item.dosage"> — {{ item.dosage }}</ng-container>
+            <ng-container *ngIf="item.frequency">, {{ item.frequency }}</ng-container>
+            <ng-container *ngIf="item.duration">, por {{ item.duration }}</ng-container>
+            <div class="rx-instructions" *ngIf="item.instructions">{{ item.instructions }}</div>
+          </li>
+        </ul>
+        <div class="step-actions">
+          <button type="button" class="btn btn-outline-secondary" (click)="printPrescription()">Imprimir receita</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="downloadPdf(rx)">Baixar PDF</button>
+        </div>
+      </ng-container>
+
+      <div class="step-actions">
+        <button type="button" class="btn btn-primary" (click)="backToQueue()">Voltar à fila</button>
+        <button type="button" class="btn btn-outline-secondary" (click)="step = 4">Voltar à receita</button>
+      </div>
+    </div>
+  </section>
 </div>
 
 <!-- Versão para impressão da receita -->
