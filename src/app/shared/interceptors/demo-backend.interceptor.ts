@@ -20,6 +20,7 @@ interface DbState {
   cash: any[];
   audit: any[];
   dailyServices: any[];
+  medications: any[];
 }
 
 function getInitialDbState(): DbState {
@@ -406,6 +407,148 @@ function getInitialDbState(): DbState {
         readyAt: new Date(Date.now() - 900000).toISOString(),
         deliveredAt: null
       }
+    ],
+    medications: [
+      {
+        id: 1,
+        name: 'Apoquel 5.4mg',
+        activePrinciple: 'Maleato de Oclacitinib',
+        category: 'Anti-alérgico / Dermatológico',
+        presentation: 'Comprimido',
+        concentration: '5.4mg',
+        price: 220.0,
+        stock: 25,
+        unit: 'cx',
+        defaultDosage: '1 comprimido a cada 12 horas por 14 dias, depois 1 ao dia',
+        requiresPrescription: true,
+        active: true
+      },
+      {
+        id: 2,
+        name: 'Bravecto Cães 10 a 20kg',
+        activePrinciple: 'Fluralaner',
+        category: 'Antipulgas & Carrapatos',
+        presentation: 'Mastigável',
+        concentration: '500mg',
+        price: 249.9,
+        stock: 40,
+        unit: 'un',
+        defaultDosage: '1 comprimido mastigável dose única, proteção por 12 semanas',
+        requiresPrescription: false,
+        active: true
+      },
+      {
+        id: 3,
+        name: 'Simparic 20mg (10 a 20kg)',
+        activePrinciple: 'Sarolaner',
+        category: 'Antipulgas & Carrapatos',
+        presentation: 'Comprimido',
+        concentration: '20mg',
+        price: 115.0,
+        stock: 35,
+        unit: 'cx',
+        defaultDosage: '1 comprimido mastigável a cada 30 dias',
+        requiresPrescription: false,
+        active: true
+      },
+      {
+        id: 4,
+        name: 'Meloxicam 1mg',
+        activePrinciple: 'Meloxicam',
+        category: 'Anti-inflamatório & Analgésico',
+        presentation: 'Comprimido',
+        concentration: '1mg',
+        price: 42.5,
+        stock: 60,
+        unit: 'cx',
+        defaultDosage: '1 comprimido a cada 24 horas por 5 dias após refeição',
+        requiresPrescription: true,
+        active: true
+      },
+      {
+        id: 5,
+        name: 'Agemoxi CL 250mg',
+        activePrinciple: 'Amoxicilina + Ácido Clavulânico',
+        category: 'Antibiótico',
+        presentation: 'Comprimido',
+        concentration: '250mg',
+        price: 68.0,
+        stock: 30,
+        unit: 'cx',
+        defaultDosage: '1 comprimido a cada 12 horas por 7 a 10 dias consecutivos',
+        requiresPrescription: true,
+        active: true
+      },
+      {
+        id: 6,
+        name: 'Prednisolona 10mg',
+        activePrinciple: 'Prednisolona',
+        category: 'Anti-inflamatório / Corticoide',
+        presentation: 'Comprimido',
+        concentration: '10mg',
+        price: 28.0,
+        stock: 50,
+        unit: 'cx',
+        defaultDosage: '1/2 comprimido a cada 12 horas por 5 dias, depois desmame',
+        requiresPrescription: true,
+        active: true
+      },
+      {
+        id: 7,
+        name: 'Drontal Plus Cães 10kg',
+        activePrinciple: 'Praziquantel + Pamoato de Pirantel + Febantel',
+        category: 'Vermífugo',
+        presentation: 'Comprimido',
+        concentration: '660mg',
+        price: 38.9,
+        stock: 80,
+        unit: 'cx',
+        defaultDosage: '1 comprimido para cada 10kg de peso corporal em dose única, repetir em 15 dias',
+        requiresPrescription: false,
+        active: true
+      },
+      {
+        id: 8,
+        name: 'Otodem Plus 20ml',
+        activePrinciple: 'Sulfametoxazol + Gentamicina + Fluocinolona',
+        category: 'Otológico / Dermatológico',
+        presentation: 'Gotas',
+        concentration: '20ml',
+        price: 56.0,
+        stock: 20,
+        unit: 'frasco',
+        defaultDosage: '4 gotas em cada conduto auditivo a cada 12 horas por 7 dias após limpeza',
+        requiresPrescription: true,
+        active: true
+      },
+      {
+        id: 9,
+        name: 'Gaviz V 10mg',
+        activePrinciple: 'Omeprazol',
+        category: 'Protetor Gástrico',
+        presentation: 'Comprimido',
+        concentration: '10mg',
+        price: 34.9,
+        stock: 45,
+        unit: 'cx',
+        defaultDosage: '1 comprimido em jejum pela manhã por 10 dias',
+        requiresPrescription: false,
+        active: true
+      },
+      {
+        id: 10,
+        name: 'Shampoo Clorexiderm 200ml',
+        activePrinciple: 'Digluconato de Clorexidina 2%',
+        category: 'Dermatológico / Higiene Terapêutica',
+        presentation: 'Shampoo',
+        concentration: '200ml',
+        price: 59.9,
+        stock: 18,
+        unit: 'frasco',
+        defaultDosage: 'Banhos 2 vezes por semana, deixando agir por 10 minutos antes do enxágue',
+        requiresPrescription: false,
+        active: true
+      }
     ]
   };
 }
@@ -427,6 +570,10 @@ export class DemoBackendInterceptor implements HttpInterceptor {
         const parsed = JSON.parse(stored);
         if (!parsed.dailyServices || !parsed.dailyServices.length) {
           parsed.dailyServices = getInitialDbState().dailyServices;
+          this.saveDb(parsed);
+        }
+        if (!parsed.medications || !parsed.medications.length) {
+          parsed.medications = getInitialDbState().medications;
           this.saveDb(parsed);
         }
         return parsed;
@@ -759,6 +906,58 @@ export class DemoBackendInterceptor implements HttpInterceptor {
       db.dailyServices = (db.dailyServices || []).filter(d => d.id !== id);
       this.saveDb(db);
       return of(new HttpResponse({ status: 204, body: null }));
+    }
+
+    // Medications: GET /api/medications
+    if (path === '/api/medications' && method === 'GET') {
+      return of(new HttpResponse({ status: 200, body: db.medications || [] })).pipe(delay(30));
+    }
+    // Medications: GET /api/medications/:id
+    if (path.startsWith('/api/medications/') && method === 'GET') {
+      const id = +path.split('/')[3];
+      const med = (db.medications || []).find(m => m.id === id);
+      return of(new HttpResponse({ status: med ? 200 : 404, body: med || { error: 'Medicamento não encontrado' } })).pipe(delay(30));
+    }
+    // Medications: POST /api/medications
+    if (path === '/api/medications' && method === 'POST') {
+      const nextId = (db.medications || []).length ? Math.max(...db.medications.map(m => m.id)) + 1 : 1;
+      const newMed = {
+        id: nextId,
+        name: req.body.name,
+        activePrinciple: req.body.activePrinciple || '',
+        category: req.body.category || 'Outros',
+        presentation: req.body.presentation || 'Comprimido',
+        concentration: req.body.concentration || '',
+        price: Number(req.body.price) || 0,
+        stock: Number(req.body.stock) || 0,
+        unit: req.body.unit || 'cx',
+        defaultDosage: req.body.defaultDosage || '',
+        requiresPrescription: !!req.body.requiresPrescription,
+        active: req.body.active !== false,
+        createdAt: new Date().toISOString()
+      };
+      db.medications = db.medications || [];
+      db.medications.unshift(newMed);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 201, body: newMed })).pipe(delay(30));
+    }
+    // Medications: PUT /api/medications/:id
+    if (path.startsWith('/api/medications/') && method === 'PUT') {
+      const id = +path.split('/')[3];
+      const med = (db.medications || []).find(m => m.id === id);
+      if (med) {
+        Object.assign(med, req.body, { id, updatedAt: new Date().toISOString() });
+        this.saveDb(db);
+        return of(new HttpResponse({ status: 200, body: med })).pipe(delay(30));
+      }
+      return of(new HttpResponse({ status: 404, body: { error: 'Medicamento não encontrado' } }));
+    }
+    // Medications: DELETE /api/medications/:id
+    if (path.startsWith('/api/medications/') && method === 'DELETE') {
+      const id = +path.split('/')[3];
+      db.medications = (db.medications || []).filter(m => m.id !== id);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 200, body: { success: true } })).pipe(delay(30));
     }
 
     // 9. Orders: /api/orders

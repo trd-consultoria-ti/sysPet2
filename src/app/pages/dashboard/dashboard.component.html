@@ -33,7 +33,7 @@
         </li>
         <li class="sidebar-item">
           <a routerLink="/dashboard/vets" routerLinkActive="active">
-            <i class="fas fa-user-md" aria-hidden="true"></i> Veterinários
+            <i class="fas fa-user-md" aria-hidden="true"></i> Médicos Veterinários
           </a>
         </li>
         <li class="sidebar-item">
@@ -43,7 +43,12 @@
         </li>
         <li class="sidebar-item">
           <a routerLink="/dashboard/inventory" routerLinkActive="active">
-            <i class="fas fa-box" aria-hidden="true"></i> Estoque
+            <i class="fas fa-box" aria-hidden="true"></i> Produtos & Estoque
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a routerLink="/dashboard/medications" routerLinkActive="active">
+            <i class="fas fa-pills" aria-hidden="true"></i> Medicamentos
           </a>
         </li>
         <li class="sidebar-item" *ngIf="isAdmin">
@@ -53,7 +58,7 @@
         </li>
         <li class="sidebar-item" *ngIf="isAdmin">
           <a routerLink="/dashboard/users" routerLinkActive="active">
-            <i class="fas fa-user-cog" aria-hidden="true"></i> Usuários
+            <i class="fas fa-user-tie" aria-hidden="true"></i> Funcionários & Equipe
           </a>
         </li>
         <li class="sidebar-item" *ngIf="isAdmin">

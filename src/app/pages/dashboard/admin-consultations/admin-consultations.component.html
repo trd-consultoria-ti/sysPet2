@@ -211,7 +211,9 @@
         <div class="form-grid">
           <div class="form-field">
             <label for="rx-med-{{i}}">Medicamento *</label>
-            <input id="rx-med-{{i}}" type="text" class="form-control" [(ngModel)]="item.medication" maxlength="120">
+            <input id="rx-med-{{i}}" type="text" class="form-control" [(ngModel)]="item.medication"
+                   (change)="onMedicationSelect(item)" list="medications-catalog-list" maxlength="120"
+                   placeholder="Selecione do catálogo ou digite">
           </div>
           <div class="form-field">
             <label for="rx-dose-{{i}}">Dosagem</label>
@@ -238,6 +240,13 @@
         <label for="rx-notes">Observações da receita</label>
         <input id="rx-notes" type="text" class="form-control" [(ngModel)]="rxNotes" maxlength="300">
       </div>
+
+      <!-- Datalist integrado com catálogo de medicamentos da farmácia -->
+      <datalist id="medications-catalog-list">
+        <option *ngFor="let m of availableMedications" [value]="m.name">
+          {{ m.category }} · {{ m.activePrinciple }} ({{ m.presentation }} {{ m.concentration }})
+        </option>
+      </datalist>
 
       <div class="step-actions">
         <button type="button" class="btn btn-primary" [disabled]="rxSaving" (click)="emitPrescription()">

@@ -25,5 +25,6 @@ Cada atendimento de banho/tosa registra **quem executou** (1 ou 2 profissionais)
 
 - Nova entidade `groomers` (ou estender `users` role='groomer') + `service_staff`/`checkin_staff` N:N.
 - Importante: comissão é sobre o **serviço**, não sobre extras/táxi — confirmar se luvinha/desembolo entram na base.
+- Equipe confirmada: **3 tosadores** — cadastro inicial já sabe o tamanho.
 - Pendente com Thaina: rateio exato em dupla ("dividido por 2" — do valor ou da comissão? efeito prático igual se linear, mas documentar).
 - Integrar com `cash_movements` tipo 'saida' na hora do pagamento efetivo.

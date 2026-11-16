@@ -11,6 +11,10 @@ export interface User {
   role: 'admin' | 'collaborator' | 'customer';
   canManageProducts?: boolean;
   token?: string;
+  phone?: string;
+  jobTitle?: string;
+  commissionRate?: number;
+  active?: boolean;
 }
 
 @Injectable({

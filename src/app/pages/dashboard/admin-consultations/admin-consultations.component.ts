@@ -9,6 +9,8 @@ import { ConsultationService } from '../../../shared/services/consultation.servi
 import { VetService } from '../../../shared/services/vet.service';
 import { PrescriptionService } from '../../../shared/services/prescription.service';
 import { CustomerService } from '../../../shared/services/customer.service';
+import { MedicationService } from '../../../shared/services/medication.service';
+import { Medication } from '../../../shared/models/medication.model';
 
 interface PetOption {
   pet: Pet;
@@ -76,12 +78,14 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
   rxNotes = '';
   rxSaving = false;
   printRx: { consultation: Consultation; prescription: Prescription } | null = null;
+  availableMedications: Medication[] = [];
 
   constructor(
     private consultationService: ConsultationService,
     private vetService: VetService,
     private prescriptionService: PrescriptionService,
-    private customerService: CustomerService
+    private customerService: CustomerService,
+    private medicationService: MedicationService
   ) {}
 
   ngOnInit(): void {
@@ -103,6 +107,9 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
           this.petOptions.push({ pet: p, tutorName: c.name });
         }
       }
+    });
+    this.medicationService.list().pipe(takeUntil(this.destroy$)).subscribe(meds => {
+      this.availableMedications = meds.filter(m => m.active !== false);
     });
   }
 
@@ -239,6 +246,17 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
 
   emptyRxItem(): PrescriptionItem {
     return { medication: '', dosage: '', frequency: '', duration: '', instructions: '' };
+  }
+
+  onMedicationSelect(item: PrescriptionItem): void {
+    if (!item.medication) return;
+    const found = this.availableMedications.find(
+      m => m.name.toLowerCase() === item.medication.trim().toLowerCase()
+    );
+    if (found) {
+      if (!item.dosage && found.concentration) item.dosage = found.concentration;
+      if (!item.instructions && found.defaultDosage) item.instructions = found.defaultDosage;
+    }
   }
 
   addRxItem(): void {

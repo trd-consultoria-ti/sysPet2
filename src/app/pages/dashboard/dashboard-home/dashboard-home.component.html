@@ -107,6 +107,76 @@
     </div>
   </div>
 
+  <!-- Central de Cadastros Rápidos (Admin) -->
+  <div class="quick-registrations-section" *ngIf="isAdmin">
+    <div class="section-title-wrap">
+      <h3 class="section-title"><i class="fas fa-layer-group"></i> Central de Cadastros do Sistema</h3>
+      <p class="section-subtitle">Acesso direto para cadastrar funcionários, produtos, serviços, médicos e medicamentos</p>
+    </div>
+
+    <div class="quick-reg-grid">
+      <!-- 1. Funcionários -->
+      <a class="quick-reg-card" routerLink="/dashboard/users">
+        <div class="card-icon icon-team"><i class="fas fa-user-tie"></i></div>
+        <div class="card-info">
+          <h4>Funcionários & Equipe</h4>
+          <p>Tosadores, recepcionistas, comissões e acessos</p>
+          <span class="btn-action">+ Cadastrar Funcionário</span>
+        </div>
+      </a>
+
+      <!-- 2. Produtos -->
+      <a class="quick-reg-card" routerLink="/dashboard/inventory">
+        <div class="card-icon icon-products"><i class="fas fa-boxes-stacked"></i></div>
+        <div class="card-info">
+          <h4>Produtos & Estoque</h4>
+          <p>Rações, petiscos, brinquedos, acessórios e controle</p>
+          <span class="btn-action">+ Cadastrar Produto</span>
+        </div>
+      </a>
+
+      <!-- 3. Serviços -->
+      <a class="quick-reg-card" routerLink="/dashboard/services">
+        <div class="card-icon icon-services"><i class="fas fa-concierge-bell"></i></div>
+        <div class="card-info">
+          <h4>Serviços & Procedimentos</h4>
+          <p>Banho, tosa, hidratações, durações e preços</p>
+          <span class="btn-action">+ Cadastrar Serviço</span>
+        </div>
+      </a>
+
+      <!-- 4. Médicos Veterinários -->
+      <a class="quick-reg-card" routerLink="/dashboard/vets">
+        <div class="card-icon icon-vets"><i class="fas fa-user-md"></i></div>
+        <div class="card-info">
+          <h4>Médicos Veterinários</h4>
+          <p>CRMV, especialidades médicas e telefones</p>
+          <span class="btn-action">+ Cadastrar Veterinário</span>
+        </div>
+      </a>
+
+      <!-- 5. Medicamentos -->
+      <a class="quick-reg-card" routerLink="/dashboard/medications">
+        <div class="card-icon icon-meds"><i class="fas fa-pills"></i></div>
+        <div class="card-info">
+          <h4>Medicamentos & Farmácia</h4>
+          <p>Remédios, princípios ativos, posologias e receitas</p>
+          <span class="btn-action">+ Cadastrar Medicamento</span>
+        </div>
+      </a>
+
+      <!-- 6. Clientes & Pets -->
+      <a class="quick-reg-card" routerLink="/dashboard/customers">
+        <div class="card-icon icon-clients"><i class="fas fa-paw"></i></div>
+        <div class="card-info">
+          <h4>Clientes & Pets</h4>
+          <p>Tutores, animais, raças, históricos e fichas</p>
+          <span class="btn-action">+ Cadastrar Cliente / Pet</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
   <!-- Módulos do Sistema -->
   <h3 class="section-title">Módulos do Sistema</h3>
   <div class="modulos-sistema">

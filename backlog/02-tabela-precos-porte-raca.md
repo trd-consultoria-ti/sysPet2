@@ -34,4 +34,5 @@ Todo pet precisa ter **peso (kg)** no cadastro — é o que define o porte. O si
 - `pets` hoje: name/type/breed/age/image — **sem peso**. Adicionar `weight_kg NUMERIC` + `size_tier` derivado ou manual.
 - Substituir preço flat de `catalog_services` por `price_rules` (service × size_tier × breed_override) ou JSONB de matriz no serviço.
 - Pendências com Thaina: valores de tosa baby p/ portes médios/grandes (OCR incerto), valores exatos dos pacotes.
+- **Sem desconto multi-pet** (confirmado): tutor com 2+ pets paga tabela cheia de cada um — não implementar desconto progressivo.
 - Catálogo público (`GET /api/services`) deve expor a matriz pra futura vitrine/WhatsApp.

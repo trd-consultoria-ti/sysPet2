@@ -12,23 +12,44 @@ import { takeUntil } from 'rxjs/operators';
 export class AdminUsersComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   users: User[] = [];
+  filteredUsers: User[] = [];
   showForm = false;
+  editingUser: User | null = null;
   error = '';
+  success = '';
   userForm: FormGroup;
+
+  searchTerm = '';
+  selectedRoleFilter = 'todos';
 
   readonly roles = [
     { value: 'admin', label: 'Administrador' },
-    { value: 'collaborator', label: 'Funcionário' },
-    { value: 'customer', label: 'Cliente' }
+    { value: 'collaborator', label: 'Funcionário / Equipe' },
+    { value: 'customer', label: 'Cliente (Acesso Web)' }
+  ];
+
+  readonly jobTitles = [
+    'Tosador / Banhista',
+    'Médico Veterinário',
+    'Recepcionista / Balcão',
+    'Atendente de Loja',
+    'Gerente Geral',
+    'Auxiliar Veterinário',
+    'Motorista (Leva e Traz)',
+    'Outro'
   ];
 
   constructor(private fb: FormBuilder, private authService: AuthService) {
     this.userForm = this.fb.group({
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(100)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       role: ['collaborator', Validators.required],
-      canManageProducts: [false]
+      jobTitle: ['Tosador / Banhista'],
+      phone: [''],
+      commissionRate: [0, [Validators.min(0), Validators.max(100)]],
+      canManageProducts: [false],
+      active: [true]
     });
   }
 
@@ -37,7 +58,41 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   load(): void {
-    this.authService.listUsers().pipe(takeUntil(this.destroy$)).subscribe(u => this.users = u);
+    this.authService.listUsers().pipe(takeUntil(this.destroy$)).subscribe({
+      next: u => {
+        this.users = u;
+        this.applyFilter();
+      },
+      error: () => this.error = 'Erro ao carregar lista de usuários.'
+    });
+  }
+
+  applyFilter(): void {
+    let list = [...this.users];
+    if (this.selectedRoleFilter !== 'todos') {
+      list = list.filter(u => u.role === this.selectedRoleFilter);
+    }
+    if (this.searchTerm && this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase().trim();
+      list = list.filter(u =>
+        (u.name && u.name.toLowerCase().includes(term)) ||
+        (u.email && u.email.toLowerCase().includes(term)) ||
+        (u.jobTitle && u.jobTitle.toLowerCase().includes(term))
+      );
+    }
+    this.filteredUsers = list;
+  }
+
+  get totalEmployees(): number {
+    return this.users.filter(u => u.role === 'collaborator' || u.role === 'admin').length;
+  }
+
+  get totalGroomers(): number {
+    return this.users.filter(u => u.jobTitle && u.jobTitle.toLowerCase().includes('tosa')).length;
+  }
+
+  get totalAdmins(): number {
+    return this.users.filter(u => u.role === 'admin').length;
   }
 
   roleLabel(role: string): string {
@@ -45,25 +100,91 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   openCreate(): void {
+    this.editingUser = null;
     this.error = '';
-    this.userForm.reset({ name: '', email: '', password: '', role: 'collaborator', canManageProducts: false });
+    this.success = '';
+    this.userForm.reset({
+      name: '',
+      email: '',
+      password: '',
+      role: 'collaborator',
+      jobTitle: 'Tosador / Banhista',
+      phone: '',
+      commissionRate: 0,
+      canManageProducts: false,
+      active: true
+    });
+    this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
+    this.userForm.get('password')?.updateValueAndValidity();
+    this.showForm = true;
+  }
+
+  openEdit(user: User): void {
+    this.editingUser = user;
+    this.error = '';
+    this.success = '';
+    this.userForm.patchValue({
+      name: user.name,
+      email: user.email,
+      password: '',
+      role: user.role,
+      jobTitle: user.jobTitle || 'Tosador / Banhista',
+      phone: user.phone || '',
+      commissionRate: user.commissionRate || 0,
+      canManageProducts: !!user.canManageProducts,
+      active: user.active !== false
+    });
+    // Ao editar, senha é opcional
+    this.userForm.get('password')?.clearValidators();
+    this.userForm.get('password')?.updateValueAndValidity();
     this.showForm = true;
   }
 
   cancel(): void {
     this.showForm = false;
+    this.editingUser = null;
   }
 
   save(): void {
     if (this.userForm.invalid) return;
     this.error = '';
-    this.authService.createUser(this.userForm.value).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => {
-        this.showForm = false;
-        this.load();
-      },
-      error: err => this.error = err.error?.error || 'Erro ao cadastrar usuário'
-    });
+    const val = this.userForm.value;
+
+    if (this.editingUser) {
+      const updatePayload: any = {
+        name: val.name,
+        email: val.email,
+        role: val.role,
+        jobTitle: val.jobTitle,
+        phone: val.phone,
+        commissionRate: Number(val.commissionRate) || 0,
+        canManageProducts: !!val.canManageProducts,
+        active: val.active !== false
+      };
+      if (val.password && val.password.trim()) {
+        updatePayload.password = val.password;
+      }
+      this.authService.updateUser(this.editingUser.id, updatePayload).pipe(takeUntil(this.destroy$)).subscribe({
+        next: () => {
+          this.showForm = false;
+          this.editingUser = null;
+          this.success = 'Colaborador atualizado com sucesso!';
+          this.load();
+          setTimeout(() => this.success = '', 3000);
+        },
+        error: err => this.error = err.error?.error || 'Erro ao atualizar colaborador'
+      });
+    } else {
+      this.authService.createUser(val).pipe(takeUntil(this.destroy$)).subscribe({
+        next: () => {
+          this.showForm = false;
+          this.success = 'Funcionário cadastrado com sucesso!';
+          this.load();
+          setTimeout(() => this.success = '', 3000);
+        },
+        error: err => this.error = err.error?.error || 'Erro ao cadastrar funcionário'
+      });
+    }
   }
 
   changeRole(user: User, role: string): void {

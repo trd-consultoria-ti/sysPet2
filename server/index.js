@@ -1004,6 +1004,115 @@ app.delete('/api/daily-services/:id', requireAuth, requireStaff, async (req, res
   res.status(204).end();
 });
 
+// ---------- medications ----------
+
+app.get('/api/medications', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM medications ORDER BY name ASC');
+    res.json(rows.map(m => ({
+      id: m.id,
+      name: m.name,
+      activePrinciple: m.active_principle,
+      category: m.category,
+      presentation: m.presentation,
+      concentration: m.concentration,
+      price: num(m.price),
+      stock: m.stock,
+      unit: m.unit,
+      defaultDosage: m.default_dosage,
+      requiresPrescription: !!m.requires_prescription,
+      active: !!m.active,
+      createdAt: m.created_at,
+      updatedAt: m.updated_at
+    })));
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar medicamentos' });
+  }
+});
+
+app.post('/api/medications', requireAuth, requireStaff, async (req, res) => {
+  const { name, activePrinciple, category, presentation, concentration, price, stock, unit, defaultDosage, requiresPrescription, active } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Nome do medicamento é obrigatório' });
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO medications (name, active_principle, category, presentation, concentration, price, stock, unit, default_dosage, requires_prescription, active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      [name.trim(), activePrinciple || '', category || 'Outros', presentation || 'Comprimido', concentration || '', num(price) || 0, Math.max(0, parseInt(stock) || 0), unit || 'cx', defaultDosage || '', !!requiresPrescription, active !== false]
+    );
+    const m = rows[0];
+    audit('medications', m.id, 'create', { name: m.name }, null, req.user.id);
+    res.status(201).json({
+      id: m.id,
+      name: m.name,
+      activePrinciple: m.active_principle,
+      category: m.category,
+      presentation: m.presentation,
+      concentration: m.concentration,
+      price: num(m.price),
+      stock: m.stock,
+      unit: m.unit,
+      defaultDosage: m.default_dosage,
+      requiresPrescription: !!m.requires_prescription,
+      active: !!m.active
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao cadastrar medicamento' });
+  }
+});
+
+app.put('/api/medications/:id', requireAuth, requireStaff, async (req, res) => {
+  const { name, activePrinciple, category, presentation, concentration, price, stock, unit, defaultDosage, requiresPrescription, active } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE medications SET
+         name = COALESCE($1, name),
+         active_principle = COALESCE($2, active_principle),
+         category = COALESCE($3, category),
+         presentation = COALESCE($4, presentation),
+         concentration = COALESCE($5, concentration),
+         price = CASE WHEN $6::numeric IS NOT NULL THEN $6 ELSE price END,
+         stock = CASE WHEN $7::integer IS NOT NULL THEN $7 ELSE stock END,
+         unit = COALESCE($8, unit),
+         default_dosage = COALESCE($9, default_dosage),
+         requires_prescription = CASE WHEN $10::boolean IS NOT NULL THEN $10 ELSE requires_prescription END,
+         active = CASE WHEN $11::boolean IS NOT NULL THEN $11 ELSE active END,
+         updated_at = NOW()
+       WHERE id = $12 RETURNING *`,
+      [name, activePrinciple, category, presentation, concentration, price !== undefined ? num(price) : null, stock !== undefined ? parseInt(stock) : null, unit, defaultDosage, requiresPrescription !== undefined ? !!requiresPrescription : null, active !== undefined ? !!active : null, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Medicamento não encontrado' });
+    const m = rows[0];
+    audit('medications', m.id, 'update', { name: m.name }, null, req.user.id);
+    res.json({
+      id: m.id,
+      name: m.name,
+      activePrinciple: m.active_principle,
+      category: m.category,
+      presentation: m.presentation,
+      concentration: m.concentration,
+      price: num(m.price),
+      stock: m.stock,
+      unit: m.unit,
+      defaultDosage: m.default_dosage,
+      requiresPrescription: !!m.requires_prescription,
+      active: !!m.active
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao atualizar medicamento' });
+  }
+});
+
+app.delete('/api/medications/:id', requireAuth, requireStaff, async (req, res) => {
+  try {
+    const { rows } = await pool.query('DELETE FROM medications WHERE id = $1 RETURNING *', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'Medicamento não encontrado' });
+    audit('medications', req.params.id, 'delete', { name: rows[0].name }, null, req.user.id);
+    res.status(200).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao excluir medicamento' });
+  }
+});
+
 // ---------- orders ----------
 
 app.get('/api/orders', requireAuth, async (req, res) => {

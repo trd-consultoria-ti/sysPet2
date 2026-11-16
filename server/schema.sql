@@ -321,3 +321,24 @@ CREATE INDEX IF NOT EXISTS idx_daily_services_date_status ON daily_services(date
 CREATE INDEX IF NOT EXISTS idx_daily_services_customer ON daily_services(customer_id);
 CREATE INDEX IF NOT EXISTS idx_daily_services_pet ON daily_services(pet_id);
 CREATE INDEX IF NOT EXISTS idx_daily_services_appointment ON daily_services(appointment_id);
+
+-- Medicamentos e Farmácia Veterinária
+CREATE TABLE IF NOT EXISTS medications (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  active_principle VARCHAR(120),
+  category VARCHAR(60) NOT NULL DEFAULT 'Outros',
+  presentation VARCHAR(60) NOT NULL DEFAULT 'Comprimido',
+  concentration VARCHAR(60),
+  price NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  stock INTEGER NOT NULL DEFAULT 0,
+  unit VARCHAR(20) DEFAULT 'cx',
+  default_dosage TEXT,
+  requires_prescription BOOLEAN DEFAULT FALSE,
+  active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_medications_name ON medications(name);
+CREATE INDEX IF NOT EXISTS idx_medications_category ON medications(category);

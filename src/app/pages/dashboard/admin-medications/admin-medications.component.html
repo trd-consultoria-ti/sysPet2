@@ -1,0 +1,217 @@
+<div class="admin-page">
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Medicamentos & Farmácia Veterinária</h1>
+      <p class="subtitle">Catálogo de remédios, dosagens, controle de estoque e integração com receitas clínicas</p>
+    </div>
+    <div class="header-right">
+      <button type="button" class="btn btn-primary" (click)="openCreate()">
+        <i class="fas fa-plus"></i> Novo Medicamento
+      </button>
+    </div>
+  </div>
+
+  <!-- Alertas de Feedback -->
+  <p class="form-success" *ngIf="success" role="status">
+    <i class="fas fa-check-circle"></i> {{ success }}
+  </p>
+  <p class="form-error" *ngIf="error" role="alert">
+    <i class="fas fa-exclamation-circle"></i> {{ error }}
+  </p>
+
+  <!-- Métricas Rápidas de Farmácia -->
+  <div class="med-stats-grid">
+    <div class="med-stat-card">
+      <div class="stat-icon icon-blue"><i class="fas fa-pills"></i></div>
+      <div class="stat-body">
+        <span class="stat-num">{{ totalCount }}</span>
+        <span class="stat-lbl">Itens Cadastrados</span>
+      </div>
+    </div>
+    <div class="med-stat-card">
+      <div class="stat-icon icon-warning"><i class="fas fa-exclamation-triangle"></i></div>
+      <div class="stat-body">
+        <span class="stat-num text-warning">{{ lowStockCount }}</span>
+        <span class="stat-lbl">Estoque Baixo (&lt; 10 un)</span>
+      </div>
+    </div>
+    <div class="med-stat-card">
+      <div class="stat-icon icon-purple"><i class="fas fa-file-medical"></i></div>
+      <div class="stat-body">
+        <span class="stat-num text-purple">{{ prescriptionCount }}</span>
+        <span class="stat-lbl">Exigem Receita Médica</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulário de Cadastro / Edição -->
+  <form class="med-form" *ngIf="showForm" [formGroup]="form" (ngSubmit)="save()">
+    <div class="form-header">
+      <h2>{{ editingId ? 'Editar Medicamento' : 'Cadastrar Novo Medicamento' }}</h2>
+      <button type="button" class="close-btn" (click)="cancel()" title="Fechar">×</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group col-span-2">
+        <label for="med-name">Nome Comercial *</label>
+        <input id="med-name" type="text" formControlName="name" placeholder="Ex: Apoquel 5.4mg, Bravecto Cães, Simparic..." maxlength="120">
+      </div>
+
+      <div class="form-group col-span-2">
+        <label for="med-active">Princípio Ativo / Composição</label>
+        <input id="med-active" type="text" formControlName="activePrinciple" placeholder="Ex: Oclacitinib, Fluralaner, Meloxicam..." maxlength="120">
+      </div>
+
+      <div class="form-group">
+        <label for="med-cat">Categoria Terapêutica *</label>
+        <select id="med-cat" formControlName="category">
+          <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="med-pres">Forma Farmacêutica *</label>
+        <select id="med-pres" formControlName="presentation">
+          <option *ngFor="let pres of presentations" [value]="pres">{{ pres }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="med-conc">Concentração / Dosagem</label>
+        <input id="med-conc" type="text" formControlName="concentration" placeholder="Ex: 5.4mg, 20mg/ml, 250mg">
+      </div>
+
+      <div class="form-group">
+        <label for="med-unit">Unidade de Estoque</label>
+        <select id="med-unit" formControlName="unit">
+          <option value="cx">Caixa (cx)</option>
+          <option value="un">Unidade (un)</option>
+          <option value="frasco">Frasco</option>
+          <option value="ampola">Ampola</option>
+          <option value="bisnaga">Bisnaga</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="med-price">Preço de Venda (R$) *</label>
+        <input id="med-price" type="number" formControlName="price" min="0" step="0.01" placeholder="0.00">
+      </div>
+
+      <div class="form-group">
+        <label for="med-stock">Qtd em Estoque *</label>
+        <input id="med-stock" type="number" formControlName="stock" min="0" step="1" placeholder="0">
+      </div>
+
+      <div class="form-group col-span-4">
+        <label for="med-dosage">Posologia / Instrução Padrão (sugerida na receita do veterinário)</label>
+        <textarea id="med-dosage" rows="2" formControlName="defaultDosage" placeholder="Ex: Administrar 1 comprimido a cada 12 horas por 7 dias via oral..."></textarea>
+      </div>
+
+      <div class="form-group col-span-4 check-row">
+        <label class="custom-checkbox">
+          <input type="checkbox" formControlName="requiresPrescription">
+          <span><strong>Exige Receita Veterinária Retida / Controlado</strong></span>
+        </label>
+        <label class="custom-checkbox">
+          <input type="checkbox" formControlName="active">
+          <span>Medicamento Ativo para Prescrição e Venda</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="form.invalid">
+        <i class="fas fa-save"></i> {{ editingId ? 'Salvar Alterações' : 'Cadastrar Medicamento' }}
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">Cancelar</button>
+    </div>
+  </form>
+
+  <!-- Filtro e Busca -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <i class="fas fa-search search-icon"></i>
+      <input type="text" [(ngModel)]="searchTerm" (input)="applyFilter()" placeholder="Buscar por nome comercial ou princípio ativo...">
+      <button type="button" class="clear-search" *ngIf="searchTerm" (click)="searchTerm = ''; applyFilter()">×</button>
+    </div>
+
+    <div class="category-select-wrapper">
+      <select [(ngModel)]="selectedCategory" (change)="applyFilter()">
+        <option value="todas">Todas as Categorias ({{ medications.length }})</option>
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Estado Vazio -->
+  <div class="empty-state" *ngIf="filteredMedications.length === 0">
+    <i class="fas fa-prescription-bottle-alt empty-icon"></i>
+    <p>Nenhum medicamento encontrado para os filtros selecionados.</p>
+    <button type="button" class="btn btn-sm btn-outline-primary" *ngIf="searchTerm || selectedCategory !== 'todas'" (click)="searchTerm = ''; selectedCategory = 'todas'; applyFilter()">
+      Limpar Filtros
+    </button>
+  </div>
+
+  <!-- Tabela de Medicamentos -->
+  <div class="table-container" *ngIf="filteredMedications.length > 0">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Medicamento</th>
+          <th>Categoria & Forma</th>
+          <th>Posologia Padrão</th>
+          <th>Preço</th>
+          <th>Estoque</th>
+          <th>Receita</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let med of filteredMedications">
+          <td>
+            <div class="med-name-cell">
+              <strong class="med-title">{{ med.name }}</strong>
+              <span class="med-active-sub" *ngIf="med.activePrinciple">
+                <i class="fas fa-atom"></i> {{ med.activePrinciple }}
+              </span>
+            </div>
+          </td>
+          <td>
+            <div class="category-badge-wrap">
+              <span class="badge-category">{{ med.category }}</span>
+              <span class="badge-pres">{{ med.presentation }} {{ med.concentration ? '· ' + med.concentration : '' }}</span>
+            </div>
+          </td>
+          <td class="dosage-cell">
+            <span class="dosage-text" [title]="med.defaultDosage || 'Sem posologia padrão'">
+              {{ med.defaultDosage || '—' }}
+            </span>
+          </td>
+          <td class="price-cell">
+            <strong>R$ {{ formatPrice(med.price) }}</strong>
+            <span class="price-unit">/ {{ med.unit || 'cx' }}</span>
+          </td>
+          <td>
+            <span class="stock-pill" [ngClass]="{'stock-zero': med.stock <= 0, 'stock-low': med.stock > 0 && med.stock < 10, 'stock-ok': med.stock >= 10}">
+              {{ med.stock }} {{ med.unit || 'cx' }}
+            </span>
+          </td>
+          <td>
+            <span class="rx-badge" *ngIf="med.requiresPrescription" title="Exige receita médica veterinária">
+              <i class="fas fa-file-medical"></i> Retida
+            </span>
+            <span class="rx-free" *ngIf="!med.requiresPrescription">Livre</span>
+          </td>
+          <td class="actions-cell">
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="openEdit(med)" title="Editar">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(med)" title="Excluir">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

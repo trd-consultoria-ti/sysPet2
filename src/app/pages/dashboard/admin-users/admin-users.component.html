@@ -1,66 +1,177 @@
 <div class="admin-page">
   <div class="page-header">
-    <h1>Usuários</h1>
-    <button class="btn btn-primary" (click)="openCreate()">+ Novo usuário</button>
+    <div class="header-left">
+      <h1>Funcionários & Equipe</h1>
+      <p class="subtitle">Cadastre membros da equipe (tosadores, veterinários, recepcionistas, gerentes), permissões e comissões</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary" (click)="openCreate()">
+        <i class="fas fa-user-plus"></i> Novo Funcionário
+      </button>
+    </div>
   </div>
 
+  <!-- Alertas de Feedback -->
+  <p class="form-success" *ngIf="success" role="status">
+    <i class="fas fa-check-circle"></i> {{ success }}
+  </p>
+  <p class="form-error" *ngIf="error" role="alert">
+    <i class="fas fa-exclamation-circle"></i> {{ error }}
+  </p>
+
+  <!-- Métricas Rápidas da Equipe -->
+  <div class="user-stats-grid">
+    <div class="user-stat-card">
+      <div class="stat-icon icon-team"><i class="fas fa-users-cog"></i></div>
+      <div class="stat-body">
+        <span class="stat-num">{{ totalEmployees }}</span>
+        <span class="stat-lbl">Equipe / Colaboradores</span>
+      </div>
+    </div>
+    <div class="user-stat-card">
+      <div class="stat-icon icon-groomer"><i class="fas fa-cut"></i></div>
+      <div class="stat-body">
+        <span class="stat-num">{{ totalGroomers }}</span>
+        <span class="stat-lbl">Tosadores & Banhistas</span>
+      </div>
+    </div>
+    <div class="user-stat-card">
+      <div class="stat-icon icon-admin"><i class="fas fa-shield-alt"></i></div>
+      <div class="stat-body">
+        <span class="stat-num">{{ totalAdmins }}</span>
+        <span class="stat-lbl">Administradores</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulário de Criação / Edição -->
   <form class="user-form" *ngIf="showForm" [formGroup]="userForm" (ngSubmit)="save()">
-    <h2>Novo usuário</h2>
-    <p class="form-error" *ngIf="error" role="alert">{{ error }}</p>
-    <div class="form-row">
+    <div class="form-header">
+      <h2>{{ editingUser ? 'Editar Funcionário / Usuário' : 'Novo Funcionário / Membro da Equipe' }}</h2>
+      <button type="button" class="close-btn" (click)="cancel()">×</button>
+    </div>
+
+    <div class="form-grid">
       <div class="form-group">
-        <label for="user-name">Nome *</label>
-        <input id="user-name" type="text" formControlName="name">
+        <label for="user-name">Nome Completo *</label>
+        <input id="user-name" type="text" formControlName="name" placeholder="Ex: Carlos Silva, Mariana Santos...">
       </div>
+
       <div class="form-group">
-        <label for="user-email">Email *</label>
-        <input id="user-email" type="email" formControlName="email">
+        <label for="user-email">Email de Acesso *</label>
+        <input id="user-email" type="email" formControlName="email" placeholder="carlos@animalworld.com">
       </div>
+
       <div class="form-group">
-        <label for="user-password">Senha * (mín. 6)</label>
-        <input id="user-password" type="password" formControlName="password">
+        <label for="user-password">
+          Senha {{ editingUser ? '(deixe em branco para manter)' : '* (mín. 6 caracteres)' }}
+        </label>
+        <input id="user-password" type="password" formControlName="password" placeholder="••••••••">
       </div>
-      <div class="form-group form-group-sm">
-        <label for="user-role">Perfil</label>
+
+      <div class="form-group">
+        <label for="user-role">Nível de Acesso no Sistema</label>
         <select id="user-role" formControlName="role">
           <option *ngFor="let r of roles" [value]="r.value">{{ r.label }}</option>
         </select>
       </div>
+
+      <div class="form-group">
+        <label for="user-job">Função / Cargo na Loja</label>
+        <select id="user-job" formControlName="jobTitle">
+          <option *ngFor="let job of jobTitles" [value]="job">{{ job }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="user-phone">Telefone / WhatsApp</label>
+        <input id="user-phone" type="tel" formControlName="phone" placeholder="(11) 98888-7777">
+      </div>
+
+      <div class="form-group">
+        <label for="user-commission">Comissão em Serviços (%)</label>
+        <input id="user-commission" type="number" formControlName="commissionRate" min="0" max="100" step="0.5" placeholder="Ex: 10%">
+      </div>
+
+      <div class="form-group check-group">
+        <label class="perm-check">
+          <input type="checkbox" formControlName="canManageProducts">
+          <span>Pode gerenciar produtos no estoque</span>
+        </label>
+        <label class="perm-check">
+          <input type="checkbox" formControlName="active">
+          <span>Colaborador Ativo</span>
+        </label>
+      </div>
     </div>
-    <div class="form-row">
-      <label class="perm-check">
-        <input type="checkbox" formControlName="canManageProducts">
-        Pode gerenciar produtos no estoque
-      </label>
-    </div>
+
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid">Salvar</button>
+      <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid">
+        <i class="fas fa-save"></i> {{ editingUser ? 'Salvar Alterações' : 'Cadastrar Funcionário' }}
+      </button>
       <button type="button" class="btn btn-outline-secondary" (click)="cancel()">Cancelar</button>
     </div>
   </form>
 
+  <!-- Filtro e Busca -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <i class="fas fa-search search-icon"></i>
+      <input type="text" [(ngModel)]="searchTerm" (input)="applyFilter()" placeholder="Buscar por nome, email ou cargo...">
+    </div>
+    <div class="role-filter">
+      <select [(ngModel)]="selectedRoleFilter" (change)="applyFilter()">
+        <option value="todos">Todos os Perfis ({{ users.length }})</option>
+        <option *ngFor="let r of roles" [value]="r.value">{{ r.label }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Tabela de Usuários / Funcionários -->
   <div class="table-container">
     <table class="data-table">
       <thead>
         <tr>
-          <th>Nome</th>
-          <th>Email</th>
+          <th>Colaborador</th>
+          <th>Cargo / Função</th>
           <th>Perfil</th>
-          <th>Gerencia produtos</th>
+          <th>Contato</th>
+          <th>Comissão</th>
+          <th>Estoque</th>
+          <th>Ações</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let user of users">
-          <td>{{ user.name }}</td>
-          <td>{{ user.email }}</td>
+        <tr *ngFor="let user of filteredUsers">
+          <td>
+            <div class="user-name-cell">
+              <strong>{{ user.name }}</strong>
+              <span class="user-email-sub">{{ user.email }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge-job" [ngClass]="{'badge-groomer': user.jobTitle?.includes('Tosa'), 'badge-vet': user.jobTitle?.includes('Vet')}">
+              {{ user.jobTitle || 'Colaborador' }}
+            </span>
+          </td>
           <td>
             <select class="role-select" [value]="user.role" (change)="changeRole(user, $any($event.target).value)">
               <option *ngFor="let r of roles" [value]="r.value">{{ r.label }}</option>
             </select>
           </td>
+          <td>{{ user.phone || '—' }}</td>
+          <td>
+            <span class="commission-tag" *ngIf="user.commissionRate">{{ user.commissionRate }}%</span>
+            <span class="text-muted" *ngIf="!user.commissionRate">—</span>
+          </td>
           <td>
             <input type="checkbox" [checked]="!!user.canManageProducts" [disabled]="user.role !== 'collaborator'"
-                   (change)="toggleProductPermission(user, $event)">
+                   (change)="toggleProductPermission(user, $event)" title="Permissão para gerenciar estoque">
+          </td>
+          <td class="actions-cell">
+            <button class="btn btn-sm btn-outline-primary" (click)="openEdit(user)" title="Editar dados completos">
+              <i class="fas fa-edit"></i>
+            </button>
           </td>
         </tr>
       </tbody>

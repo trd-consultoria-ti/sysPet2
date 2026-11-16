@@ -14,6 +14,7 @@ import { AdminConsultationsComponent } from './admin-consultations/admin-consult
 import { AdminVetsComponent } from './admin-vets/admin-vets.component';
 import { AdminDailyQueueComponent } from './admin-daily-queue/admin-daily-queue.component';
 import { DailyQueueHeaderComponent } from './admin-daily-queue/daily-queue-header/daily-queue-header.component';
+import { AdminMedicationsComponent } from './admin-medications/admin-medications.component';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 
 const routes: Routes = [
@@ -29,6 +30,7 @@ const routes: Routes = [
       { path: 'vets', component: AdminVetsComponent },
       { path: 'orders', loadChildren: () => import('../orders/orders.module').then(m => m.OrdersModule) },
       { path: 'inventory', component: InventoryComponent },
+      { path: 'medications', component: AdminMedicationsComponent },
       { path: 'services', component: AdminServicesComponent, canActivate: [AdminGuard] },
       { path: 'users', component: AdminUsersComponent, canActivate: [AdminGuard] },
       { path: 'cash', component: AdminCashComponent, canActivate: [AdminGuard] },
@@ -45,6 +47,7 @@ const routes: Routes = [
     DailyQueueHeaderComponent,
     AdminAppointmentsComponent,
     InventoryComponent,
+    AdminMedicationsComponent,
     AdminServicesComponent,
     AdminUsersComponent,
     AdminCashComponent,
