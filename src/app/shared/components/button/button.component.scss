@@ -1,0 +1,30 @@
+:host {
+  display: inline-block;
+
+  &[block] {
+    display: block;
+    width: 100%;
+  }
+}
+
+.btn-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.btn-icon-loading,
+.btn-icon-left,
+.btn-icon-right {
+  font-size: 0.9em;
+  line-height: 1;
+}
+
+.btn-loading {
+  position: relative;
+  cursor: wait;
+}

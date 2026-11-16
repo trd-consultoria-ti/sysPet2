@@ -66,8 +66,12 @@
           </div>
           
           <div class="customer-actions">
-            <button class="btn btn-outline-primary view-profile-btn" [routerLink]="['/customers', customer.id]">Ver Perfil</button>
-            <button class="btn btn-outline-secondary manage-pets-btn" [routerLink]="['/customers', customer.id]">Gerenciar Pets</button>
+            <button class="btn btn-sm btn-outline-primary" [routerLink]="['/customers', customer.id]">
+              <i class="fas fa-user"></i> Ver Perfil
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" [routerLink]="['/customers', customer.id]">
+              <i class="fas fa-paw"></i> Gerenciar Pets
+            </button>
           </div>
         </div>
 

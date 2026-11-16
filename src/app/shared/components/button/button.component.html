@@ -1,0 +1,22 @@
+<button
+  [type]="type"
+  [ngClass]="buttonClasses"
+  [disabled]="disabled || loading"
+  [attr.aria-label]="ariaLabel || null"
+  [attr.title]="title || null"
+  (click)="onClick($event)">
+
+  <!-- Spinner de carregamento -->
+  <i *ngIf="loading" class="fas fa-spinner fa-spin btn-icon-loading" aria-hidden="true"></i>
+
+  <!-- Ícone à esquerda -->
+  <i *ngIf="icon && !loading && iconPosition === 'left'" [class]="icon" aria-hidden="true" class="btn-icon-left"></i>
+
+  <!-- Conteúdo transcluído (texto / badges) -->
+  <span class="btn-content">
+    <ng-content></ng-content>
+  </span>
+
+  <!-- Ícone à direita -->
+  <i *ngIf="icon && !loading && iconPosition === 'right'" [class]="icon" aria-hidden="true" class="btn-icon-right"></i>
+</button>

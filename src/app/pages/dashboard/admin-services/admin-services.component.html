@@ -5,9 +5,9 @@
       <p class="subtitle">Gerenciamento da tabela de serviços de banho, tosa, estética, durações e preços</p>
     </div>
     <div class="header-right">
-      <button class="btn btn-primary" (click)="openCreate()">
-        <i class="fas fa-plus"></i> Novo Serviço
-      </button>
+      <app-button variant="primary" icon="fas fa-plus" (btnClick)="openCreate()">
+        Novo Serviço
+      </app-button>
     </div>
   </div>
 
@@ -38,8 +38,8 @@
       </div>
     </div>
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="serviceForm.invalid">Salvar</button>
-      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">Cancelar</button>
+      <app-button type="submit" variant="primary" [disabled]="serviceForm.invalid">Salvar</app-button>
+      <app-button type="button" variant="outline-secondary" (btnClick)="cancel()">Cancelar</app-button>
     </div>
   </form>
 

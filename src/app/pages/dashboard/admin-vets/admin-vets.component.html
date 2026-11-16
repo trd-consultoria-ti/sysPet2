@@ -5,9 +5,9 @@
       <p class="subtitle">Cadastro do corpo clínico veterinário, registro de CRMV, especialidades e contatos</p>
     </div>
     <div class="header-right">
-      <button type="button" class="btn btn-primary btn-sm" (click)="openCreate()">
-        <i class="fas fa-user-md"></i> Novo Veterinário
-      </button>
+      <app-button variant="primary" size="sm" icon="fas fa-user-md" (btnClick)="openCreate()">
+        Novo Veterinário
+      </app-button>
     </div>
   </div>
 
@@ -39,8 +39,8 @@
       </div>
     </div>
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="saving">{{ saving ? 'Salvando…' : 'Salvar' }}</button>
-      <button type="button" class="btn btn-outline-secondary" (click)="showForm = false">Cancelar</button>
+      <app-button type="submit" variant="primary" [disabled]="saving">{{ saving ? 'Salvando…' : 'Salvar' }}</app-button>
+      <app-button type="button" variant="outline-secondary" (btnClick)="showForm = false">Cancelar</app-button>
     </div>
   </form>
 

@@ -6,6 +6,7 @@ import { CustomersComponent } from './customers.component';
 import { CustomerDetailsComponent } from './customer-details/customer-details.component';
 import { CustomerFormComponent } from './customer-form/customer-form.component';
 import { PetFormComponent } from './pet-form/pet-form.component';
+import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [
   { path: '', component: CustomersComponent },
@@ -26,6 +27,7 @@ const routes: Routes = [
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    SharedModule,
     RouterModule.forChild(routes)
   ]
 })

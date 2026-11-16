@@ -20,6 +20,7 @@ import { DurationFilterComponent } from './components/duration-filter/duration-f
 import { ItemCardComponent } from './components/item-card/item-card.component';
 import { ItemListComponent } from './components/item-list/item-list.component';
 import { GlobalNavMenuComponent } from './components/global-nav-menu/global-nav-menu.component';
+import { ButtonComponent } from './components/button/button.component';
 
 @NgModule({
   declarations: [
@@ -39,7 +40,8 @@ import { GlobalNavMenuComponent } from './components/global-nav-menu/global-nav-
     DurationFilterComponent,
     ItemCardComponent,
     ItemListComponent,
-    GlobalNavMenuComponent
+    GlobalNavMenuComponent,
+    ButtonComponent
   ],
   imports: [
     CommonModule,
@@ -64,6 +66,7 @@ import { GlobalNavMenuComponent } from './components/global-nav-menu/global-nav-
     ItemCardComponent,
     ItemListComponent,
     GlobalNavMenuComponent,
+    ButtonComponent,
     FormsModule
   ]
 })
