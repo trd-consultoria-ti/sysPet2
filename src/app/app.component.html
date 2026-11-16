@@ -1,7 +1,7 @@
 <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
-<app-global-nav-menu *ngIf="!isDashboard"></app-global-nav-menu>
-<app-navbar *ngIf="!isDashboard"></app-navbar>
-<main id="main-content" [class.dashboard-full-container]="isDashboard">
+<app-global-nav-menu></app-global-nav-menu>
+<app-navbar></app-navbar>
+<main id="main-content">
   <router-outlet></router-outlet>
 </main>
-<app-footer *ngIf="!isDashboard"></app-footer>
+<app-footer></app-footer>

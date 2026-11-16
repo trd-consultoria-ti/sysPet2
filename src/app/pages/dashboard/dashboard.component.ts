@@ -1,6 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
-import { User } from '../../shared/services/auth.service';
-import { AuthService } from '../../shared/services/auth.service';
+import { User, AuthService } from '../../shared/services/auth.service';
 import { GlobalNavService } from '../../shared/services/global-nav.service';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -15,33 +14,6 @@ export class DashboardComponent implements OnDestroy {
   private destroy$ = new Subject<void>();
   user: User | null = null;
   isAdmin = false;
-
-  // Controle de expansão/colapso dos setores com setas
-  sections: Record<string, boolean> = {
-    visaoGeral: true,
-    atendimento: true,
-    clinica: true,
-    cadastros: true,
-    financeiro: true
-  };
-
-  sidebarMobileOpen = false;
-
-  toggleSection(key: string): void {
-    this.sections[key] = !this.sections[key];
-  }
-
-  isSectionOpen(key: string): boolean {
-    return this.sections[key] !== false;
-  }
-
-  toggleMobileSidebar(): void {
-    this.sidebarMobileOpen = !this.sidebarMobileOpen;
-  }
-
-  closeMobileSidebar(): void {
-    this.sidebarMobileOpen = false;
-  }
 
   constructor(
     private authService: AuthService,
