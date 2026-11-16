@@ -1,7 +1,14 @@
 <div class="admin-page">
   <div class="page-header">
-    <h1>Estoque — Produtos</h1>
-    <button class="btn btn-primary" *ngIf="canManage" (click)="openCreate()">+ Novo produto</button>
+    <div class="header-left">
+      <h1>Produtos & Estoque</h1>
+      <p class="subtitle">Controle de inventário, níveis mínimos de estoque, preços e imagens dos produtos</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary" *ngIf="canManage" (click)="openCreate()">
+        <i class="fas fa-boxes-stacked"></i> Novo Produto
+      </button>
+    </div>
   </div>
 
   <form class="create-form" *ngIf="showCreateForm" [formGroup]="createForm" (ngSubmit)="saveCreate()">
@@ -86,8 +93,12 @@
             </td>
             <td>{{ product.rating }} ({{ product.reviews }})</td>
             <td class="actions-cell">
-              <button class="btn btn-sm btn-primary" (click)="saveEdit(product)" [attr.aria-label]="'Salvar ' + product.name">Salvar</button>
-              <button class="btn btn-sm btn-outline-secondary" (click)="cancelEdit()" [attr.aria-label]="'Cancelar edição de ' + product.name">Cancelar</button>
+              <button class="btn btn-sm btn-primary" (click)="saveEdit(product)" [attr.aria-label]="'Salvar ' + product.name">
+                <i class="fas fa-save"></i> Salvar
+              </button>
+              <button class="btn btn-sm btn-outline-secondary" (click)="cancelEdit()" [attr.aria-label]="'Cancelar edição de ' + product.name">
+                <i class="fas fa-times"></i> Cancelar
+              </button>
             </td>
           </ng-container>
           <ng-template #viewMode>
@@ -107,8 +118,12 @@
             </td>
             <td>{{ product.rating }} ({{ product.reviews }})</td>
             <td class="actions-cell" *ngIf="canManage">
-              <button class="btn btn-sm btn-outline-primary" (click)="startEdit(product)" [attr.aria-label]="'Editar ' + product.name">Editar</button>
-              <button class="btn btn-sm btn-outline-danger" (click)="remove(product)" [attr.aria-label]="'Excluir ' + product.name">Excluir</button>
+              <button class="btn btn-sm btn-outline-primary" (click)="startEdit(product)" [attr.aria-label]="'Editar ' + product.name">
+                <i class="fas fa-edit"></i> Editar
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="remove(product)" [attr.aria-label]="'Excluir ' + product.name">
+                <i class="fas fa-trash-alt"></i> Excluir
+              </button>
               <span class="saved-badge" *ngIf="savedId === product.id">Salvo!</span>
             </td>
             <td class="actions-cell" *ngIf="!canManage">

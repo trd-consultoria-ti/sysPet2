@@ -1,9 +1,14 @@
 <div class="customers-container">
-  <div class="customers-header">
-    <h1>Clientes & Pets</h1>
-    <button class="btn btn-primary add-customer-btn" [routerLink]="['/customers', 'new']">
-      <i class="fas fa-plus"></i> Adicionar Novo Cliente
-    </button>
+  <div class="customers-header page-header">
+    <div class="header-left">
+      <h1>Clientes & Pets</h1>
+      <p class="subtitle">Cadastro de tutores, fichas de animais, histórico de atendimentos e contatos</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary add-customer-btn" [routerLink]="['/customers', 'new']">
+        <i class="fas fa-user-plus"></i> Novo Cliente
+      </button>
+    </div>
   </div>
 
   <div class="customers-content">

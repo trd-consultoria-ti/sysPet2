@@ -1,7 +1,14 @@
 <div class="admin-page">
   <div class="page-header">
-    <h1>Caixa</h1>
-    <button class="btn btn-primary" (click)="openCreate()">+ Lançamento manual</button>
+    <div class="header-left">
+      <h1>Frente de Caixa (PDV)</h1>
+      <p class="subtitle">Controle financeiro do caixa, entradas, saídas manuais e saldo em tempo real</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary" (click)="openCreate()">
+        <i class="fas fa-plus-circle"></i> Lançamento Manual
+      </button>
+    </div>
   </div>
 
   <div class="balance-card">

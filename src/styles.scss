@@ -186,6 +186,51 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
   outline-offset: 2px;
 }
 
+/* ======================================================== */
+/* DESIGN SYSTEM UNIFICADO: PAGE HEADER & ADMIN PAGE       */
+/* ======================================================== */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  h1, .page-title {
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    line-height: 1.25;
+  }
+
+  .subtitle, .page-subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 0.9rem;
+    color: #64748b;
+  }
+
+  .header-left {
+    flex: 1;
+    min-width: 250px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+}
+
+.admin-page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
 /* Acessibilidade: skip-link */
 .skip-link {
   position: absolute;

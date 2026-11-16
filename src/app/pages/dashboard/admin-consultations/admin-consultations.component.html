@@ -1,12 +1,15 @@
 <div class="admin-page">
   <div class="page-header">
-    <h1>Consultório</h1>
-    <div class="header-actions">
+    <div class="header-left">
+      <h1>Consultório & Prontuários</h1>
+      <p class="subtitle">Fila médica veterinária, anamnese, conduta clínica e emissão de receitas</p>
+    </div>
+    <div class="header-right">
       <button type="button" class="btn btn-outline-secondary btn-sm" *ngIf="step > 1" (click)="backToQueue()">
-        ← Fila do dia
+        <i class="fas fa-arrow-left"></i> Fila do Dia
       </button>
       <button type="button" class="btn btn-primary btn-sm" *ngIf="step === 1" (click)="showForm = !showForm">
-        {{ showForm ? 'Fechar' : 'Nova consulta' }}
+        <i class="fas" [ngClass]="showForm ? 'fa-times' : 'fa-plus'"></i> {{ showForm ? 'Fechar' : 'Nova Consulta' }}
       </button>
     </div>
   </div>
