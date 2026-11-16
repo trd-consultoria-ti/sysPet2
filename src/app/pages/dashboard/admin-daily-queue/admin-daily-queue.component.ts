@@ -41,7 +41,7 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
   availableServices: Service[] = [];
 
   readonly columns: KanbanColumn[] = [
-    { key: 'aguardando', label: '1. Na Fila / Gaiola', icon: 'fas fa-clock', actionLabel: 'Iniciar Banho', badgeClass: 'waiting' },
+    { key: 'aguardando', label: '1. Gaiola', icon: 'fas fa-clock', actionLabel: 'Iniciar Banho', badgeClass: 'waiting' },
     { key: 'em_atendimento', label: '2. Em Banho & Tosa', icon: 'fas fa-bath', actionLabel: 'Marcar Pronto', badgeClass: 'in-progress' },
     { key: 'pronto', label: '3. Pronto para Retirada', icon: 'fas fa-check-circle', actionLabel: 'Entregar ao Tutor', badgeClass: 'ready' },
     { key: 'entregue', label: '4. Entregue / Concluído', icon: 'fas fa-paw', actionLabel: '', badgeClass: 'delivered' }
