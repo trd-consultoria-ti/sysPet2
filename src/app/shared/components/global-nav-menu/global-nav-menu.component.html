@@ -4,15 +4,12 @@
 <!-- Coluna Deslizante Lateral dividida por setores (Design System Animal World) -->
 <aside class="dashboard-sidebar-drawer" [class.open]="isOpen" role="dialog" aria-modal="true" aria-label="Navegação Geral Animal World">
 
-  <!-- Header idêntico à coluna original -->
+  <!-- Header: somente o logo e o botão de fechar X -->
   <div class="sidebar-header">
-    <div class="header-brand-wrap">
-      <button type="button" class="btn-sidebar-menu" (click)="close()" title="Fechar menu">
-        <i class="fas fa-bars"></i>
-      </button>
-      <span class="sidebar-brand">Animal World</span>
+    <div class="header-brand-wrap" (click)="close()">
+      <app-logo size="md"></app-logo>
     </div>
-    <button type="button" class="btn-close-subtle" (click)="close()" title="Fechar (ESC)">
+    <button type="button" class="btn-close-subtle" (click)="close()" title="Fechar menu (ESC)" aria-label="Fechar menu">
       <i class="fas fa-times"></i>
     </button>
   </div>
