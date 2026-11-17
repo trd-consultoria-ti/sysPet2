@@ -436,15 +436,15 @@
   <!-- ======================================================== -->
   <!-- 3. MODAL DE CHECK-IN DE BALCÃO    -->
   <!-- ======================================================== -->
-  <div class="modal-backdrop" *ngIf="showModal">
+  <div class="modal-backdrop" *ngIf="showModal" role="dialog" aria-modal="true" aria-labelledby="checkinModalTitle">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
           <div>
-            <h2>{{ isEditing ? 'Editar Atendimento' : 'Novo Check-in de Balcão (Fila do Dia)' }}</h2>
+            <h2 id="checkinModalTitle">{{ isEditing ? 'Editar Atendimento' : 'Novo Check-in de Balcão (Fila do Dia)' }}</h2>
             <p class="modal-subtitle">Precificação automática por porte/raça, cálculo de ETA e triagem</p>
           </div>
-          <button type="button" class="close-btn" (click)="closeModal()">&times;</button>
+          <button type="button" class="close-btn" (click)="closeModal()" aria-label="Fechar janela de check-in">&times;</button>
         </div>
 
         <form [formGroup]="checkinForm" (ngSubmit)="saveCheckin()">
@@ -741,18 +741,18 @@
   <!-- ======================================================== -->
   <!-- 4. MODAL DE VALIDAÇÃO HUMANA DE TOSA             -->
   <!-- ======================================================== -->
-  <div class="modal-backdrop" *ngIf="showTosaValidationModal && tosaTargetItem">
+  <div class="modal-backdrop" *ngIf="showTosaValidationModal && tosaTargetItem" role="dialog" aria-modal="true" aria-labelledby="tosaModalTitle">
     <div class="modal-dialog modal-tosa-dialog">
       <div class="modal-content">
         <div class="modal-header modal-tosa-header">
           <div class="header-title-wrap">
             <div class="header-tosa-icon"><i class="fas fa-shield-alt"></i></div>
             <div>
-              <h2>Validação Humana de Tosa</h2>
+              <h2 id="tosaModalTitle">Validação Humana de Tosa</h2>
               <p class="modal-subtitle">Regra de Segurança: Tosa nunca fecha sozinha sem alinhamento com o tutor</p>
             </div>
           </div>
-          <button type="button" class="close-btn" (click)="closeTosaValidationModal()">&times;</button>
+          <button type="button" class="close-btn" (click)="closeTosaValidationModal()" aria-label="Fechar janela de validação de tosa">&times;</button>
         </div>
 
         <form [formGroup]="tosaValidationForm" (ngSubmit)="confirmTosaValidation()">
@@ -806,25 +806,25 @@
   <!-- ======================================================== -->
   <!-- 5. MODAL DE CONFIGURAÇÃO DE CAPACIDADE & HORÁRIOS -->
   <!-- ======================================================== -->
-  <div class="modal-backdrop" *ngIf="showCapacityModal">
+  <div class="modal-backdrop" *ngIf="showCapacityModal" role="dialog" aria-modal="true" aria-labelledby="capacityModalTitle">
     <div class="modal-dialog modal-capacity-dialog">
       <div class="modal-content">
         <div class="modal-header">
           <div>
-            <h2>Configuração de Expediente & Capacidade da Fila</h2>
+            <h2 id="capacityModalTitle">Configuração de Expediente & Capacidade da Fila</h2>
             <p class="modal-subtitle">Defina o limite de pets por dia da semana e dias de funcionamento</p>
           </div>
-          <button type="button" class="close-btn" (click)="closeCapacityModal()">&times;</button>
+          <button type="button" class="close-btn" (click)="closeCapacityModal()" aria-label="Fechar janela de capacidade">&times;</button>
         </div>
 
         <div class="modal-body">
           <table class="table table-bordered capacity-config-table">
             <thead>
               <tr>
-                <th>Dia da Semana</th>
-                <th>Funcionamento</th>
-                <th>Capacidade (Vagas/Dia)</th>
-                <th>Horário de Atendimento</th>
+                <th scope="col">Dia da Semana</th>
+                <th scope="col">Funcionamento</th>
+                <th scope="col">Capacidade (Vagas/Dia)</th>
+                <th scope="col">Horário de Atendimento</th>
               </tr>
             </thead>
             <tbody>
@@ -875,18 +875,18 @@
   <!-- ======================================================== -->
   <!-- 6. MODAL DE ENCAMINHAMENTO AO CAIXA (PDV)                -->
   <!-- ======================================================== -->
-  <div class="modal-backdrop" *ngIf="showCashModal && cashTargetItem">
+  <div class="modal-backdrop" *ngIf="showCashModal && cashTargetItem" role="dialog" aria-modal="true" aria-labelledby="cashForwardModalTitle">
     <div class="modal-dialog modal-cash-dialog">
       <div class="modal-content">
         <div class="modal-header modal-cash-header">
           <div class="header-title-wrap">
             <div class="header-cash-icon"><i class="fas fa-cash-register"></i></div>
             <div>
-              <h2>Encaminhar ao Caixa (PDV)</h2>
+              <h2 id="cashForwardModalTitle">Encaminhar ao Caixa (PDV)</h2>
               <p class="modal-subtitle">Fim da Esteira de Delivery: finalize o atendimento com o pagamento</p>
             </div>
           </div>
-          <button type="button" class="close-btn" (click)="closeCashModal()">&times;</button>
+          <button type="button" class="close-btn" (click)="closeCashModal()" aria-label="Fechar encaminhamento de caixa">&times;</button>
         </div>
 
         <div class="modal-body cash-modal-body">
@@ -988,12 +988,12 @@
   <!-- ======================================================== -->
   <!-- 7. MODAL DE CADASTRO RÁPIDO DE REGIÃO TÁXI       -->
   <!-- ======================================================== -->
-  <div class="modal-backdrop" *ngIf="showQuickRegionModal">
+  <div class="modal-backdrop" *ngIf="showQuickRegionModal" role="dialog" aria-modal="true" aria-labelledby="quickRegionModalTitle">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h2><i class="fas fa-map-marker-alt text-primary"></i> Cadastrar Nova Região de Táxi Dog</h2>
-          <button type="button" class="close-btn" (click)="closeQuickRegionModal()">&times;</button>
+          <h2 id="quickRegionModalTitle"><i class="fas fa-map-marker-alt text-primary"></i> Cadastrar Nova Região de Táxi Dog</h2>
+          <button type="button" class="close-btn" (click)="closeQuickRegionModal()" aria-label="Fechar cadastro rápido de região">&times;</button>
         </div>
 
         <form [formGroup]="quickRegionForm" (ngSubmit)="saveQuickRegion()">
@@ -1033,18 +1033,18 @@
   <!-- ======================================================== -->
   <!-- 8. MODAL DE AVISO WHATSAPP MOTORISTA A CAMINHO    -->
   <!-- ======================================================== -->
-  <div class="modal-backdrop" *ngIf="showTaxiWaModal && taxiWaTargetItem">
+  <div class="modal-backdrop" *ngIf="showTaxiWaModal && taxiWaTargetItem" role="dialog" aria-modal="true" aria-labelledby="taxiWaModalTitle">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header wa-modal-header">
           <div class="d-flex align-items-center">
             <i class="fab fa-whatsapp fa-2x text-success mr-2"></i>
             <div>
-              <h2 class="mb-0">Aviso Táxi Dog: Motorista a Caminho</h2>
+              <h2 class="mb-0" id="taxiWaModalTitle">Aviso Táxi Dog: Motorista a Caminho</h2>
               <small class="text-muted">Notificação pré-formatada para o tutor</small>
             </div>
           </div>
-          <button type="button" class="close-btn" (click)="closeTaxiWaModal()">&times;</button>
+          <button type="button" class="close-btn" (click)="closeTaxiWaModal()" aria-label="Fechar aviso WhatsApp">&times;</button>
         </div>
 
         <div class="modal-body">

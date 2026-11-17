@@ -67,7 +67,12 @@
         <span class="badge-count">{{ conversations.length }}</span>
       </div>
 
-      <div class="conversations-list">
+      <div class="empty-conversations-state" *ngIf="conversations.length === 0">
+        <i class="fas fa-comments fa-2x text-muted mb-2"></i>
+        <p>Nenhuma conversa ativa no momento.</p>
+      </div>
+
+      <div class="conversations-list" *ngIf="conversations.length > 0">
         <div
           class="conversation-item"
           *ngFor="let conv of conversations"
@@ -94,6 +99,15 @@
             {{ conv.unreadCount }}
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Coluna Direita (Vazia): Placeholder quando nenhuma conversa selecionada -->
+    <div class="chat-column chat-unselected-column" *ngIf="!selectedConversation" [class.mobile-hidden]="mobileView === 'list'">
+      <div class="empty-chat-state">
+        <i class="fab fa-whatsapp fa-3x text-muted mb-3"></i>
+        <h3>Central de Atendimento WhatsApp</h3>
+        <p>Selecione uma conversa ao lado para visualizar as mensagens e responder ao cliente.</p>
       </div>
     </div>
 
@@ -143,6 +157,11 @@
 
       <!-- Área de Mensagens -->
       <div class="messages-container">
+        <div class="empty-messages-hint text-center py-4 text-muted" *ngIf="messages.length === 0">
+          <i class="far fa-comments fa-2x mb-2"></i>
+          <p>Nenhuma mensagem trocada ainda com este cliente.</p>
+        </div>
+
         <div
           class="message-bubble"
           *ngFor="let msg of messages"
@@ -212,15 +231,15 @@
   <!-- ======================================================== -->
   <!-- MODAL: ASSISTENTE DE COTAÇÃO RÁPIDA   -->
   <!-- ======================================================== -->
-  <div class="modal-backdrop" *ngIf="showQuoteHelper">
-    <div class="modal-dialog modal-lg">
+  <div class="modal-backdrop" *ngIf="showQuoteHelper" (click)="closeQuoteHelper()" role="dialog" aria-modal="true" aria-labelledby="quoteHelperTitle">
+    <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
       <div class="modal-content">
         <div class="modal-header">
           <div>
-            <h2 class="mb-0"><i class="fas fa-calculator text-primary"></i> Gerador de Cotação Inteligente</h2>
+            <h2 class="mb-0" id="quoteHelperTitle"><i class="fas fa-calculator text-primary"></i> Gerador de Cotação Inteligente</h2>
             <small class="text-muted">Calcula preço exato por porte, raça, extras e táxi dog</small>
           </div>
-          <button type="button" class="close-btn" (click)="closeQuoteHelper()">&times;</button>
+          <button type="button" class="close-btn" (click)="closeQuoteHelper()" aria-label="Fechar assistente de cotação">&times;</button>
         </div>
 
         <div class="modal-body">

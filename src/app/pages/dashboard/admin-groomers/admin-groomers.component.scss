@@ -172,8 +172,8 @@
   }
 
   &.inactive {
-    background: #f1f5f9;
-    color: #94a3b8;
+    background: #e2e8f0;
+    color: #475569; // Alto contraste WCAG AA (6.79:1)
   }
 }
 
@@ -408,7 +408,7 @@
     .sub-tutor {
       display: block;
       font-size: 0.74rem;
-      color: #94a3b8;
+      color: #475569; // Alto contraste WCAG AA
     }
 
     .mode-badge {

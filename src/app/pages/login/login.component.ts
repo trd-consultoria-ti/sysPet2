@@ -63,6 +63,18 @@ export class LoginComponent implements OnInit, OnDestroy {
       });
   }
 
+  fillAdmin(): void {
+    this.email = 'admin@animalworld.com';
+    this.password = 'animal123';
+    this.error = '';
+  }
+
+  fillCollab(): void {
+    this.email = 'func@animalworld.com';
+    this.password = 'animal123';
+    this.error = '';
+  }
+
   onSubmit(): void {
     this.error = '';
     if (this.isRegisterMode && !this.acceptTerms) {
@@ -80,9 +92,16 @@ export class LoginComponent implements OnInit, OnDestroy {
         this.router.navigate([this.returnUrl]);
       },
       error: err => {
-        this.error = err.error?.error || (this.isRegisterMode
-          ? 'Não foi possível criar a conta. Verifique os dados.'
-          : 'Falha na autenticação. Verifique suas credenciais.');
+        console.error('Login error:', err);
+        if (err.status === 0) {
+          this.error = 'Não foi possível conectar ao backend (http://localhost:3100). Verifique se o servidor está rodando.';
+        } else if (err.status === 429) {
+          this.error = 'Muitas tentativas de login. Aguarde alguns instantes.';
+        } else {
+          this.error = err.error?.error || (this.isRegisterMode
+            ? 'Não foi possível criar a conta. Verifique os dados.'
+            : 'Falha na autenticação. Verifique se o email e a senha estão corretos.');
+        }
         this.loading = false;
       },
       complete: () => {

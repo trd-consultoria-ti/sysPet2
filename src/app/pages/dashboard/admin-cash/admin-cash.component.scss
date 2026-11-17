@@ -1311,3 +1311,68 @@
     width: 100% !important;
   }
 }
+
+/* Media Queries Responsivas (Mobile & Tablet) */
+@media (max-width: 768px) {
+  .admin-cash-container {
+    padding: 1rem;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+
+    .header-actions {
+      width: 100%;
+      flex-wrap: wrap;
+
+      .btn {
+        flex: 1 1 auto;
+        justify-content: center;
+      }
+    }
+  }
+
+  .tab-navigation {
+    flex-wrap: wrap;
+
+    .tab-btn {
+      flex: 1 1 auto;
+      justify-content: center;
+    }
+  }
+
+  .payment-methods-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .cash-kpis {
+    grid-template-columns: 1fr !important;
+  }
+
+  .form-row-2, .form-row-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .receipt-modal-box, .payable-modal-box, .modal-card {
+    width: 95% !important;
+    margin: 1rem auto;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-cash-container {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .payment-methods-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pdv-cart-col {
+    padding: 1rem;
+  }
+}

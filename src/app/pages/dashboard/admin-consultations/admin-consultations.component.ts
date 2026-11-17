@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -121,6 +121,13 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     private businessProfileService: BusinessProfileService,
     private router: Router
   ) {}
+
+  @HostListener('window:keydown.escape')
+  handleEscape(): void {
+    if (this.showWalkInModal) this.closeWalkInModal();
+    if (this.showVaccineModal) this.closeVaccineModal();
+    if (this.showForm) this.showForm = false;
+  }
 
   ngOnInit(): void {
     this.consultationService.refresh();

@@ -552,15 +552,15 @@
 </article>
 
 <!-- MODAL CHEGADA PRESENCIAL / PRONTO ATENDIMENTO -->
-<div class="modal-backdrop" *ngIf="showWalkInModal" (click)="closeWalkInModal()">
+<div class="modal-backdrop" *ngIf="showWalkInModal" (click)="closeWalkInModal()" role="dialog" aria-modal="true" aria-labelledby="walkinModalTitle">
   <div class="modal-dialog modal-walkin-dialog" (click)="$event.stopPropagation()">
     <div class="modal-content">
       <div class="modal-header">
         <div>
-          <h3><i class="fas fa-user-clock text-warning"></i> Chegada Presencial (Pronto Atendimento)</h3>
+          <h3 id="walkinModalTitle"><i class="fas fa-user-clock text-warning"></i> Chegada Presencial (Pronto Atendimento)</h3>
           <p class="modal-subtitle">Atendimento por ordem de chegada no consultório com triagem rápida</p>
         </div>
-        <button type="button" class="close-btn" (click)="closeWalkInModal()">&times;</button>
+        <button type="button" class="close-btn" (click)="closeWalkInModal()" aria-label="Fechar janela de chegada presencial">&times;</button>
       </div>
 
       <div class="modal-body">
@@ -622,14 +622,14 @@
 </div>
 
 <!-- MODAL CARTEIRA DE VACINAÇÃO DO PET -->
-<div class="modal-backdrop" *ngIf="showVaccineModal" (click)="closeVaccineModal()">
+<div class="modal-backdrop" *ngIf="showVaccineModal" (click)="closeVaccineModal()" role="dialog" aria-modal="true" aria-labelledby="vaccineModalTitle">
   <div class="modal-dialog modal-vaccine-dialog" (click)="$event.stopPropagation()">
     <div class="modal-content">
       <div class="modal-header">
         <div class="vac-header-info">
           <div class="vac-badge"><i class="fas fa-passport"></i></div>
           <div>
-            <h3>Carteira Oficial de Vacinação</h3>
+            <h3 id="vaccineModalTitle">Carteira Oficial de Vacinação</h3>
             <p class="modal-subtitle">
               <strong>{{ selectedPetForVaccine?.petName }}</strong>
               <ng-container *ngIf="selectedPetForVaccine?.breed"> ({{ selectedPetForVaccine?.breed }})</ng-container>
@@ -641,7 +641,7 @@
           <button type="button" class="btn btn-outline-primary btn-sm" (click)="printVaccineCard()">
             <i class="fas fa-print"></i> Imprimir Carteirinha
           </button>
-          <button type="button" class="close-btn" (click)="closeVaccineModal()">&times;</button>
+          <button type="button" class="close-btn" (click)="closeVaccineModal()" aria-label="Fechar carteira de vacinação">&times;</button>
         </div>
       </div>
 
@@ -798,11 +798,11 @@
     <table class="vac-print-table">
       <thead>
         <tr>
-          <th>Vacina</th>
-          <th>Fabricante / Lote</th>
-          <th>Data Aplicação</th>
-          <th>Próximo Reforço</th>
-          <th>Veterinário(a) / CRMV</th>
+          <th scope="col">Vacina</th>
+          <th scope="col">Fabricante / Lote</th>
+          <th scope="col">Data Aplicação</th>
+          <th scope="col">Próximo Reforço</th>
+          <th scope="col">Veterinário(a) / CRMV</th>
         </tr>
       </thead>
       <tbody>

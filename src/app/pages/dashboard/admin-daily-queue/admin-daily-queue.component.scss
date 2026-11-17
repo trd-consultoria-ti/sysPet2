@@ -1547,6 +1547,48 @@
   }
 }
 
+@media (max-width: 768px) {
+  .queue-actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+
+    .btn {
+      width: 100%;
+    }
+  }
+
+  .modal-dialog {
+    max-width: 95vw !important;
+    margin: 1rem auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-daily-queue-container {
+    padding: 0.75rem 0.25rem;
+  }
+
+  .status-filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.5rem;
+  }
+
+  .queue-card {
+    padding: 0.875rem;
+  }
+
+  .card-footer-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+
+    .btn {
+      width: 100%;
+    }
+  }
+}
+
 
 
 

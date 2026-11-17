@@ -317,6 +317,10 @@ export class AdminSystemMapComponent implements OnInit {
     this.router.navigateByUrl(path);
   }
 
+  getTotalFilteredCount(): number {
+    return this.sections.reduce((acc, s) => acc + this.getFilteredItems(s).length, 0);
+  }
+
   getFilteredItems(section: SitemapSection): SitemapItem[] {
     const q = this.searchFilter.toLowerCase().trim();
     return section.items.filter(item => {

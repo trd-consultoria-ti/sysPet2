@@ -144,48 +144,59 @@
 
   <!-- Seções do Mapa -->
   <div class="sitemap-sections">
-    <div class="section-card" *ngFor="let section of sections" [class]="section.colorClass">
-      <div class="section-header">
-        <div class="section-title-wrap">
-          <div class="section-icon">
-            <i [class]="section.icon"></i>
-          </div>
-          <div>
-            <h2 class="section-title">{{ section.title }}</h2>
-            <p class="section-desc">{{ section.description }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="items-grid">
-        <div class="route-box" *ngFor="let item of getFilteredItems(section)">
-          <div class="route-box-header">
-            <div class="route-icon-badge">
-              <i [class]="item.icon"></i>
-            </div>
-            <div class="badges-wrap">
-              <span class="badge" [class]="item.badgeClass">{{ item.badge }}</span>
-            </div>
-          </div>
-
-          <h3 class="item-title">{{ item.title }}</h3>
-          <p class="item-desc">{{ item.description }}</p>
-
-          <div class="item-meta">
-            <span class="item-permission">
-              <i class="fas fa-lock-open" aria-hidden="true"></i> {{ item.permission }}
-            </span>
-            <span class="item-path">{{ item.path }}</span>
-          </div>
-
-          <div class="item-action">
-            <button type="button" class="btn btn-outline-primary btn-sm btn-access" (click)="navigate(item.path)">
-              Acessar Módulo <i class="fas fa-arrow-right"></i>
-            </button>
-          </div>
-        </div>
-      </div>
+    <div class="empty-sitemap-state" *ngIf="searchFilter && getTotalFilteredCount() === 0">
+      <i class="fas fa-search fa-3x text-muted mb-3"></i>
+      <h3>Nenhum módulo encontrado</h3>
+      <p>Nenhum resultado corresponde à sua pesquisa "{{ searchFilter }}". Verifique a ortografia ou limpe o filtro.</p>
+      <button type="button" class="btn btn-outline-primary btn-sm mt-2" (click)="searchFilter = ''">
+        <i class="fas fa-times"></i> Limpar Filtro
+      </button>
     </div>
+
+    <ng-container *ngFor="let section of sections">
+      <div class="section-card" [class]="section.colorClass" *ngIf="getFilteredItems(section).length > 0">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <div class="section-icon">
+              <i [class]="section.icon"></i>
+            </div>
+            <div>
+              <h2 class="section-title">{{ section.title }}</h2>
+              <p class="section-desc">{{ section.description }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="items-grid">
+          <div class="route-box" *ngFor="let item of getFilteredItems(section)">
+            <div class="route-box-header">
+              <div class="route-icon-badge">
+                <i [class]="item.icon"></i>
+              </div>
+              <div class="badges-wrap">
+                <span class="badge" [class]="item.badgeClass">{{ item.badge }}</span>
+              </div>
+            </div>
+
+            <h3 class="item-title">{{ item.title }}</h3>
+            <p class="item-desc">{{ item.description }}</p>
+
+            <div class="item-meta">
+              <span class="item-permission">
+                <i class="fas fa-lock-open" aria-hidden="true"></i> {{ item.permission }}
+              </span>
+              <span class="item-path">{{ item.path }}</span>
+            </div>
+
+            <div class="item-action">
+              <button type="button" class="btn btn-outline-primary btn-sm btn-access" (click)="navigate(item.path)">
+                Acessar Módulo <i class="fas fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
   </div>
 
 </div>

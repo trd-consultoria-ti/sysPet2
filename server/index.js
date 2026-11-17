@@ -75,13 +75,22 @@ pool.query(`
   ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT NULL;
 `).catch(err => console.error('Migration error:', err.message));
 
-// CORS: só as origens configuradas + a própria API (front estático servido de docs/)
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:4200')
-  .split(',').map(s => s.trim()).filter(Boolean);
-const SELF_ORIGINS = [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
+// CORS: origens configuradas + qualquer porta localhost / 127.0.0.1 em desenvolvimento
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:4200,http://127.0.0.1:4200,http://localhost:3100,http://127.0.0.1:3100')
+  .split(',').map(s => s.trim().replace(/\/$/, '')).filter(Boolean);
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  const normalized = origin.replace(/\/$/, '');
+  if (ALLOWED_ORIGINS.includes(normalized)) return true;
+  // Permite qualquer porta em localhost ou 127.0.0.1
+  if (/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(normalized)) return true;
+  return false;
+};
+
 app.use(cors({
-  origin: (origin, cb) =>
-    cb(null, !origin || ALLOWED_ORIGINS.includes(origin) || SELF_ORIGINS.includes(origin))
+  origin: (origin, cb) => cb(null, isAllowedOrigin(origin)),
+  credentials: true
 }));
 app.use(express.json({ limit: '10mb' })); // uploads chegam em base64
 
@@ -94,6 +103,11 @@ function createRateLimiter(windowMs, max, message) {
   }, windowMs);
   timer.unref();
   return (req, res, next) => {
+    // Em desenvolvimento ou localhost, não bloqueia requisições locais de desenvolvimento
+    const isLocal = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1' || req.ip?.endsWith('127.0.0.1');
+    if (process.env.NODE_ENV !== 'production' && isLocal) {
+      return next();
+    }
     const now = Date.now();
     let rec = hits.get(req.ip);
     if (!rec || now > rec.reset) {

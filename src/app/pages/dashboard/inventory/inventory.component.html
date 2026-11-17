@@ -93,7 +93,7 @@
   <form class="create-form" *ngIf="showCreateForm" [formGroup]="createForm" (ngSubmit)="saveCreate()">
     <div class="form-header">
       <h2><i class="fas fa-box-open"></i> Cadastrar Novo Produto</h2>
-      <button type="button" class="btn-close" (click)="cancelCreate()"><i class="fas fa-times"></i></button>
+      <button type="button" class="btn-close" (click)="cancelCreate()" aria-label="Fechar formulário de cadastro de produto"><i class="fas fa-times"></i></button>
     </div>
     <div class="form-row">
       <div class="form-group flex-2">
@@ -236,14 +236,14 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>Produto</th>
-          <th>Categoria</th>
-          <th>Preço Venda</th>
-          <th>Custo</th>
-          <th>Estoque / Mínimo</th>
-          <th>Status</th>
-          <th>Fornecedor</th>
-          <th>Ações</th>
+          <th scope="col">Produto</th>
+          <th scope="col">Categoria</th>
+          <th scope="col">Preço Venda</th>
+          <th scope="col">Custo</th>
+          <th scope="col">Estoque / Mínimo</th>
+          <th scope="col">Status</th>
+          <th scope="col">Fornecedor</th>
+          <th scope="col">Ações</th>
         </tr>
       </thead>
       <tbody>

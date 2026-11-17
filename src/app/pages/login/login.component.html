@@ -54,6 +54,18 @@
           {{ isRegisterMode ? 'Entrar' : 'Criar conta' }}
         </button>
       </p>
+
+      <div class="demo-quick-login" *ngIf="!isRegisterMode" style="margin-top: 1.25rem; padding: 0.85rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center;">
+        <p style="margin: 0 0 0.5rem; font-size: 0.8rem; font-weight: 600; color: #475569;">Acesso Rápido de Teste:</p>
+        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="fillAdmin()" style="font-size: 0.75rem; padding: 0.35rem 0.6rem; border-radius: 6px; border: 1px solid #94a3b8; background: #fff; color: #1e293b; font-weight: 500; cursor: pointer;" aria-label="Preencher credenciais do Administrador">
+            👑 Admin (admin@animalworld.com)
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="fillCollab()" style="font-size: 0.75rem; padding: 0.35rem 0.6rem; border-radius: 6px; border: 1px solid #94a3b8; background: #fff; color: #1e293b; font-weight: 500; cursor: pointer;" aria-label="Preencher credenciais da Equipe">
+            ✂️ Equipe (func@animalworld.com)
+          </button>
+        </div>
+      </div>
     </form>
   </div>
 </div>

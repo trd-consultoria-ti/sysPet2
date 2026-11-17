@@ -282,11 +282,11 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Data e Hora</th>
-            <th>Descrição do Movimento</th>
-            <th>Tipo</th>
-            <th>Pagamento</th>
-            <th>Valor</th>
+            <th scope="col">Data e Hora</th>
+            <th scope="col">Descrição do Movimento</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Pagamento</th>
+            <th scope="col">Valor</th>
           </tr>
         </thead>
         <tbody>
@@ -381,13 +381,13 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Vencimento</th>
-            <th>Descrição da Conta</th>
-            <th>Categoria</th>
-            <th>Fornecedor / Beneficiário</th>
-            <th>Valor</th>
-            <th>Status</th>
-            <th>Ações</th>
+            <th scope="col">Vencimento</th>
+            <th scope="col">Descrição da Conta</th>
+            <th scope="col">Categoria</th>
+            <th scope="col">Fornecedor / Beneficiário</th>
+            <th scope="col">Valor</th>
+            <th scope="col">Status</th>
+            <th scope="col">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -599,17 +599,17 @@
   <!-- ======================================================== -->
   <!-- MODAL: NOVA CONTA A PAGAR                        -->
   <!-- ======================================================== -->
-  <div class="modal-backdrop" *ngIf="showPayableModal" (click)="closePayableModal()">
+  <div class="modal-backdrop" *ngIf="showPayableModal" (click)="closePayableModal()" role="dialog" aria-modal="true" aria-labelledby="payableModalTitle">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="title-with-icon">
           <i class="fas fa-file-invoice-dollar text-primary"></i>
           <div>
-            <h3>Cadastrar Conta a Pagar</h3>
+            <h3 id="payableModalTitle">Cadastrar Conta a Pagar</h3>
             <p>Registre títulos de fornecedores, insumos, aluguel ou despesas</p>
           </div>
         </div>
-        <button type="button" class="btn-close" (click)="closePayableModal()"><i class="fas fa-times"></i></button>
+        <button type="button" class="btn-close" (click)="closePayableModal()" aria-label="Fechar janela de conta a pagar"><i class="fas fa-times"></i></button>
       </div>
 
       <form [formGroup]="payableForm" (ngSubmit)="saveNewPayable()">
@@ -665,17 +665,17 @@
   <!-- ======================================================== -->
   <!-- MODAL: BAIXAR / PAGAR CONTA-->
   <!-- ======================================================== -->
-  <div class="modal-backdrop" *ngIf="showPayModal" (click)="closePayModal()">
+  <div class="modal-backdrop" *ngIf="showPayModal" (click)="closePayModal()" role="dialog" aria-modal="true" aria-labelledby="payModalTitle">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="title-with-icon">
           <i class="fas fa-hand-holding-dollar text-success"></i>
           <div>
-            <h3>Quitar Conta a Pagar</h3>
+            <h3 id="payModalTitle">Quitar Conta a Pagar</h3>
             <p>O valor será debitado do caixa e registrado como saída automaticamente</p>
           </div>
         </div>
-        <button type="button" class="btn-close" (click)="closePayModal()"><i class="fas fa-times"></i></button>
+        <button type="button" class="btn-close" (click)="closePayModal()" aria-label="Fechar janela de quitação de conta"><i class="fas fa-times"></i></button>
       </div>
 
       <div class="pay-confirmation-details" *ngIf="payableToPay">

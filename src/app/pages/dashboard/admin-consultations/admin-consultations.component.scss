@@ -1306,3 +1306,23 @@ li.done .step-btn {
     }
   }
 }
+
+@media (max-width: 480px) {
+  .admin-consultations-container {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .steps li {
+    min-width: 100% !important;
+  }
+
+  .modal-walkin-dialog,
+  .modal-vaccine-dialog {
+    max-width: 95vw !important;
+    margin: 1rem auto;
+  }
+
+  .vac-add-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

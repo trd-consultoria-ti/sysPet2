@@ -99,13 +99,13 @@
           <table class="table table-hover taxi-table mb-0">
             <thead>
               <tr>
-                <th>Pet & Tutor</th>
-                <th>Endereço & Região</th>
-                <th>Trajeto</th>
-                <th>Tarifa</th>
-                <th>Motorista</th>
-                <th>Status Atual</th>
-                <th class="text-right">Ações & Avisos</th>
+                <th scope="col">Pet & Tutor</th>
+                <th scope="col">Endereço & Região</th>
+                <th scope="col">Trajeto</th>
+                <th scope="col">Tarifa</th>
+                <th scope="col">Motorista</th>
+                <th scope="col">Status Atual</th>
+                <th scope="col" class="text-right">Ações & Avisos</th>
               </tr>
             </thead>
             <tbody>
@@ -211,16 +211,16 @@
       </div>
 
       <div class="card-body p-0">
-        <div class="table-responsive">
+        <div class="table-responsive" *ngIf="regions.length > 0">
           <table class="table table-hover regions-table mb-0">
             <thead>
               <tr>
-                <th>Região / Bairro</th>
-                <th>Palavras-chave / Aliases (Busca Inteligente)</th>
-                <th>Tarifa Táxi</th>
-                <th>Status</th>
-                <th>Observações</th>
-                <th class="text-right">Ações</th>
+                <th scope="col">Região / Bairro</th>
+                <th scope="col">Palavras-chave / Aliases (Busca Inteligente)</th>
+                <th scope="col">Tarifa Táxi</th>
+                <th scope="col">Status</th>
+                <th scope="col">Observações</th>
+                <th scope="col" class="text-right">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -247,20 +247,35 @@
                 </td>
                 <td class="text-right">
                   <div class="btn-group">
-                    <button type="button" class="btn btn-xs btn-outline-primary" (click)="openEditRegionModal(reg)" title="Editar preço/nome">
+                    <button type="button" class="btn btn-xs btn-outline-primary" (click)="openEditRegionModal(reg)" [attr.aria-label]="'Editar região ' + reg.name" title="Editar preço/nome">
                       <i class="fas fa-edit"></i> Editar
                     </button>
-                    <button type="button" class="btn btn-xs btn-outline-secondary" (click)="toggleRegionActive(reg)" title="Ativar/desativar">
+                    <button type="button" class="btn btn-xs btn-outline-secondary" (click)="toggleRegionActive(reg)" [attr.aria-label]="(reg.active ? 'Desativar ' : 'Ativar ') + reg.name" title="Ativar/desativar">
                       <i class="fas" [ngClass]="reg.active ? 'fa-eye-slash' : 'fa-eye'"></i>
                     </button>
-                    <button type="button" class="btn btn-xs btn-outline-danger" (click)="deleteRegion(reg)" title="Excluir região">
+                    <button type="button" class="btn btn-xs btn-outline-danger" (click)="deleteRegion(reg)" [attr.aria-label]="'Excluir região ' + reg.name" title="Excluir região">
                       <i class="fas fa-trash-alt"></i>
                     </button>
                   </div>
                 </td>
               </tr>
+              <tr *ngIf="regions.length === 0">
+                <td colspan="6" class="text-center py-4 text-muted">
+                  <i class="fas fa-map-marked-alt fa-2x mb-2 d-block"></i>
+                  Nenhuma região tarifada cadastrada. Clique em "Cadastrar Região" para adicionar.
+                </td>
+              </tr>
             </tbody>
           </table>
+        </div>
+
+        <div class="empty-state p-5 text-center" *ngIf="regions.length === 0">
+          <i class="fas fa-map-marked-alt fa-3x text-muted mb-3"></i>
+          <h4>Nenhuma região de táxi cadastrada</h4>
+          <p class="text-muted">Cadastre os bairros atendidos com tarifa fixa para cotação automática.</p>
+          <button type="button" class="btn btn-primary btn-sm mt-2" (click)="openNewRegionModal()">
+            <i class="fas fa-plus"></i> Cadastrar Primeira Região
+          </button>
         </div>
       </div>
     </div>
