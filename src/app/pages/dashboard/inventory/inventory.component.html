@@ -2,7 +2,7 @@
   <div class="page-header">
     <div class="header-left">
       <h1>Produtos & Estoque</h1>
-      <p class="subtitle">Controle de inventário, níveis mínimos de segurança, reposição e compras (HU-20 & HU-21)</p>
+      <p class="subtitle">Controle de inventário, níveis mínimos de segurança, reposição e compras</p>
     </div>
     <div class="header-right">
       <button class="btn btn-secondary-brand" *ngIf="canManage" (click)="openRestock()">
@@ -14,7 +14,7 @@
     </div>
   </div>
 
-  <!-- Cards de KPI / Monitor de Estoque Mínimo (HU-21) -->
+  <!-- Cards de KPI / Monitor de Estoque Mínimo -->
   <div class="inventory-kpis">
     <div class="kpi-card" (click)="setFilter('all')" [class.active]="activeFilter === 'all'">
       <div class="kpi-icon icon-blue"><i class="fas fa-boxes"></i></div>
@@ -120,11 +120,11 @@
         <input type="number" id="create-stock" formControlName="stock" min="0" step="1" placeholder="Ex: 15">
       </div>
       <div class="form-group form-group-sm">
-        <label for="create-min-stock">Estoque Mínimo (Alerta HU-21) *</label>
+        <label for="create-min-stock">Estoque Mínimo de Segurança *</label>
         <input type="number" id="create-min-stock" formControlName="minStock" min="0" step="1" placeholder="Ex: 5">
       </div>
       <div class="form-group flex-2">
-        <label for="create-supplier">Fornecedor Principal (HU-20)</label>
+        <label for="create-supplier">Fornecedor Principal</label>
         <input type="text" id="create-supplier" formControlName="supplier" placeholder="Ex: Distribuidora Pet Brasil">
       </div>
     </div>
@@ -153,7 +153,7 @@
     </div>
   </form>
 
-  <!-- Modal de Entrada de Mercadoria / Reposição (HU-20) -->
+  <!-- Modal de Entrada de Mercadoria / Reposição -->
   <div class="modal-backdrop" *ngIf="showRestockModal" (click)="closeRestock()">
     <div class="restock-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
@@ -231,7 +231,7 @@
     </button>
   </div>
 
-  <!-- Tabela de Produtos com Estoque Mínimo & Ações Rápidas (HU-20 & HU-21) -->
+  <!-- Tabela de Produtos com Estoque Mínimo & Ações Rápidas -->
   <div class="table-container" *ngIf="filteredProducts.length > 0">
     <table class="data-table">
       <thead>
@@ -328,7 +328,7 @@
               {{ product.supplier || '—' }}
             </td>
             <td class="actions-cell" *ngIf="canManage">
-              <button class="btn btn-sm btn-restock" (click)="openRestock(product)" title="Dar Entrada de Mercadoria (HU-20)">
+              <button class="btn btn-sm btn-restock" (click)="openRestock(product)" title="Dar Entrada de Mercadoria">
                 <i class="fas fa-dolly"></i> Entrada
               </button>
               <button class="btn btn-sm btn-outline-primary" (click)="startEdit(product)" title="Editar Produto">

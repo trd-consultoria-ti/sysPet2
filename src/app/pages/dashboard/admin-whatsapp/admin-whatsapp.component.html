@@ -88,7 +88,7 @@
         </div>
       </div>
 
-      <!-- Banner de Sugestão de Resposta Inteligente (HU-16) -->
+      <!-- Banner de Sugestão de Resposta Inteligente -->
       <div class="smart-suggestion-banner" *ngIf="selectedConversation.suggestedReply">
         <div class="suggestion-left">
           <div class="suggestion-icon"><i class="fas fa-magic"></i></div>
@@ -175,14 +175,14 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL: ASSISTENTE DE COTAÇÃO RÁPIDA (HU-16 & HU-08/09)   -->
+  <!-- MODAL: ASSISTENTE DE COTAÇÃO RÁPIDA   -->
   <!-- ======================================================== -->
   <div class="modal-backdrop" *ngIf="showQuoteHelper">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
           <div>
-            <h2 class="mb-0"><i class="fas fa-calculator text-primary"></i> Gerador de Cotação Inteligente (HU-16)</h2>
+            <h2 class="mb-0"><i class="fas fa-calculator text-primary"></i> Gerador de Cotação Inteligente</h2>
             <small class="text-muted">Calcula preço exato por porte, raça, extras e táxi dog</small>
           </div>
           <button type="button" class="close-btn" (click)="closeQuoteHelper()">&times;</button>

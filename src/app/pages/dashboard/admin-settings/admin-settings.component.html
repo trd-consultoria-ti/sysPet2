@@ -2,7 +2,7 @@
   <div class="page-header">
     <div class="header-left">
       <h1>Configurações da Empresa</h1>
-      <p class="subtitle">Dados cadastrais nos documentos, horários de funcionamento e limites de vagas (HU-26 & HU-30)</p>
+      <p class="subtitle">Dados cadastrais nos documentos, horários de funcionamento e limites de vagas</p>
     </div>
   </div>
 
@@ -12,18 +12,18 @@
       class="tab-btn"
       [class.active]="activeTab === 'profile'"
       (click)="activeTab = 'profile'">
-      <i class="fas fa-building"></i> Dados da Empresa (HU-30)
+      <i class="fas fa-building"></i> Dados da Empresa
     </button>
     <button
       class="tab-btn"
       [class.active]="activeTab === 'hours'"
       (click)="activeTab = 'hours'">
-      <i class="fas fa-calendar-week"></i> Horários & Capacidade por Dia (HU-26)
+      <i class="fas fa-calendar-week"></i> Horários & Capacidade por Dia
     </button>
   </div>
 
   <!-- ======================================================== -->
-  <!-- ABA 1: DADOS DA EMPRESA (HU-30)                          -->
+  <!-- ABA 1: DADOS DA EMPRESA                          -->
   <!-- ======================================================== -->
   <div class="tab-content" *ngIf="activeTab === 'profile'">
     <div class="settings-grid">
@@ -134,7 +134,7 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- ABA 2: HORÁRIOS & CAPACIDADE POR DIA (HU-26)             -->
+  <!-- ABA 2: HORÁRIOS & CAPACIDADE POR DIA             -->
   <!-- ======================================================== -->
   <div class="tab-content" *ngIf="activeTab === 'hours'">
     <div class="alert-success" *ngIf="hoursSuccess">

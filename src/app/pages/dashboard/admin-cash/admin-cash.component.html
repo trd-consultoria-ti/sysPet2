@@ -2,7 +2,7 @@
   <div class="page-header">
     <div class="header-left">
       <h1>Frente de Caixa & Financeiro (PDV)</h1>
-      <p class="subtitle">PDV expresso de balcão, fluxo de caixa, contas a pagar e fechamento consolidado (HU-22, HU-23, HU-24)</p>
+      <p class="subtitle">PDV expresso de balcão, fluxo de caixa, contas a pagar e fechamento consolidado</p>
     </div>
     <div class="header-right">
       <div class="balance-badge" [class.negative]="balance < 0">
@@ -21,23 +21,23 @@
   <!-- Abas de Navegação -->
   <div class="tab-navigation">
     <button class="tab-btn" [class.active]="activeTab === 'pdv'" (click)="activeTab = 'pdv'">
-      <i class="fas fa-cash-register"></i> PDV Balcão Rápido (HU-22)
+      <i class="fas fa-cash-register"></i> PDV Balcão Rápido
       <span class="badge-cart" *ngIf="pdvCart.length">{{ pdvCart.length }}</span>
     </button>
     <button class="tab-btn" [class.active]="activeTab === 'movements'" (click)="activeTab = 'movements'">
       <i class="fas fa-exchange-alt"></i> Lançamentos & Caixa
     </button>
     <button class="tab-btn" [class.active]="activeTab === 'payables'" (click)="activeTab = 'payables'">
-      <i class="fas fa-file-invoice-dollar"></i> Contas a Pagar (HU-23)
+      <i class="fas fa-file-invoice-dollar"></i> Contas a Pagar
       <span class="badge-alert" *ngIf="overduePayablesCount">{{ overduePayablesCount }} vencida(s)</span>
     </button>
     <button class="tab-btn" [class.active]="activeTab === 'closure'" (click)="activeTab = 'closure'">
-      <i class="fas fa-clipboard-check"></i> Fechamento Consolidado (HU-24)
+      <i class="fas fa-clipboard-check"></i> Fechamento Consolidado
     </button>
   </div>
 
   <!-- ======================================================== -->
-  <!-- ABA 1: PDV DE BALCÃO RÁPIDO (HU-22)                      -->
+  <!-- ABA 1: PDV DE BALCÃO RÁPIDO                      -->
   <!-- ======================================================== -->
   <div class="tab-content pdv-terminal" *ngIf="activeTab === 'pdv'">
     <div class="pdv-layout">
@@ -311,7 +311,7 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- ABA 3: CONTAS A PAGAR COMO FLUXO (HU-23)                 -->
+  <!-- ABA 3: CONTAS A PAGAR COMO FLUXO                 -->
   <!-- ======================================================== -->
   <div class="tab-content" *ngIf="activeTab === 'payables'">
     <!-- KPIs de Contas a Pagar -->
@@ -440,7 +440,7 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- ABA 4: FECHAMENTO CONSOLIDADO DO DIA (HU-24)             -->
+  <!-- ABA 4: FECHAMENTO CONSOLIDADO DO DIA             -->
   <!-- ======================================================== -->
   <div class="tab-content" *ngIf="activeTab === 'closure'">
     <div class="closure-toolbar">
@@ -481,7 +481,7 @@
         </div>
 
         <div class="sheet-card">
-          <h3><i class="fas fa-percentage"></i> 2. Comissões da Equipe (HU-19)</h3>
+          <h3><i class="fas fa-percentage"></i> 2. Comissões da Equipe</h3>
           <div class="sheet-row">
             <span>Taxa Padrão:</span>
             <strong>15% solo / 7,5% duplas</strong>
@@ -527,7 +527,7 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL: RECIBO DE VENDA PDV (HU-22)                       -->
+  <!-- MODAL: RECIBO DE VENDA PDV                       -->
   <!-- ======================================================== -->
   <div class="modal-backdrop" *ngIf="pdvReceiptModal" (click)="closeReceiptModal()">
     <div class="receipt-modal-box" (click)="$event.stopPropagation()">
@@ -597,7 +597,7 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL: NOVA CONTA A PAGAR (HU-23)                        -->
+  <!-- MODAL: NOVA CONTA A PAGAR                        -->
   <!-- ======================================================== -->
   <div class="modal-backdrop" *ngIf="showPayableModal" (click)="closePayableModal()">
     <div class="modal-card" (click)="$event.stopPropagation()">
@@ -663,7 +663,7 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL: BAIXAR / PAGAR CONTA (HU-23 -> GERA SAÍDA NO CAIXA)-->
+  <!-- MODAL: BAIXAR / PAGAR CONTA-->
   <!-- ======================================================== -->
   <div class="modal-backdrop" *ngIf="showPayModal" (click)="closePayModal()">
     <div class="modal-card" (click)="$event.stopPropagation()">

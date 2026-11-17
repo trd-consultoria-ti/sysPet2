@@ -2,7 +2,7 @@
   <div class="page-header">
     <div class="header-left">
       <h1>Tosadores & Comissões</h1>
-      <p class="subtitle">Cadastro de profissionais, comissão padrão de 15%, rateio em dupla (7,5%) e fechamento (HU-18 & HU-19)</p>
+      <p class="subtitle">Cadastro de profissionais, comissão padrão de 15%, rateio em dupla (7,5%) e fechamento</p>
     </div>
     <div class="header-right">
       <button class="btn btn-primary" (click)="openNewGroomerModal()" *ngIf="activeTab === 'groomers'">
@@ -25,19 +25,19 @@
       class="tab-btn"
       [class.active]="activeTab === 'groomers'"
       (click)="activeTab = 'groomers'">
-      <i class="fas fa-users-cog"></i> Equipe de Tosadores (HU-18)
+      <i class="fas fa-users-cog"></i> Equipe de Tosadores
       <span class="badge-count">{{ groomers.length }}</span>
     </button>
     <button
       class="tab-btn"
       [class.active]="activeTab === 'commissions'"
       (click)="activeTab = 'commissions'">
-      <i class="fas fa-percentage"></i> Relatório de Comissões (HU-19)
+      <i class="fas fa-percentage"></i> Relatório de Comissões
     </button>
   </div>
 
   <!-- ======================================================== -->
-  <!-- ABA 1: CADASTRO & GESTÃO DE TOSADORES (HU-18)            -->
+  <!-- ABA 1: CADASTRO & GESTÃO DE TOSADORES            -->
   <!-- ======================================================== -->
   <div class="tab-content" *ngIf="activeTab === 'groomers'">
     <div class="groomers-grid">
@@ -88,7 +88,7 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- ABA 2: RELATÓRIO DE COMISSÕES (HU-19)                    -->
+  <!-- ABA 2: RELATÓRIO DE COMISSÕES                    -->
   <!-- ======================================================== -->
   <div class="tab-content" *ngIf="activeTab === 'commissions'">
 
@@ -111,7 +111,7 @@
       </div>
     </div>
 
-    <!-- Cards de Resumo Consolidado (HU-19) -->
+    <!-- Cards de Resumo Consolidado -->
     <div class="commission-kpis">
       <div class="kpi-box">
         <div class="kpi-icon icon-blue"><i class="fas fa-cut"></i></div>
@@ -141,7 +141,7 @@
       </div>
     </div>
 
-    <!-- Lista de Fechamento por Profissional (HU-19 + HU-23) -->
+    <!-- Lista de Fechamento por Profissional -->
     <div class="groomer-reports-container">
       <div class="report-groomer-card" *ngFor="let rep of filteredReports">
         <div class="rep-header">
@@ -176,7 +176,7 @@
               class="btn btn-sm btn-primary"
               [disabled]="rep.totalCommissionDue <= 0"
               (click)="launchToPayables(rep)"
-              title="Lançar como Conta a Pagar no Financeiro (HU-23)">
+              title="Lançar como Conta a Pagar no Financeiro">
               <i class="fas fa-file-invoice-dollar"></i> Lançar Conta a Pagar
             </button>
           </div>
@@ -229,7 +229,7 @@
     </div>
   </div>
 
-  <!-- Modal de Cadastro / Edição de Tosador (HU-18) -->
+  <!-- Modal de Cadastro / Edição de Tosador -->
   <div class="modal-backdrop" *ngIf="showGroomerModal" (click)="closeGroomerModal()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">

@@ -82,7 +82,7 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- TAB 1: CORRIDAS DO DIA (HU-13 & HU-15)    -->
+  <!-- TAB 1: CORRIDAS DO DIA    -->
   <!-- ========================================== -->
   <div class="tab-pane" *ngIf="activeTab === 'corridas'">
     <div class="card panel-card">
@@ -143,7 +143,7 @@
                 </td>
                 <td class="text-right">
                   <div class="actions-group">
-                    <!-- Avanço de Status (HU-13) -->
+                    <!-- Avanço de Status -->
                     <button
                       *ngIf="trip.status === 'a_caminho_buscar'"
                       type="button"
@@ -171,7 +171,7 @@
                       <i class="fas fa-check"></i> Concluir
                     </button>
 
-                    <!-- Botão WhatsApp Aviso Motorista (HU-15) -->
+                    <!-- Botão WhatsApp Aviso Motorista -->
                     <button
                       type="button"
                       class="btn btn-sm btn-whatsapp"
@@ -196,7 +196,7 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- TAB 2: TABELA DE REGIÕES CRUD (HU-12)      -->
+  <!-- TAB 2: TABELA DE REGIÕES CRUD      -->
   <!-- ========================================== -->
   <div class="tab-pane" *ngIf="activeTab === 'regioes'">
     <div class="card panel-card">
@@ -329,7 +329,7 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- MODAL: CRUD DE REGIÃO (HU-12)              -->
+  <!-- MODAL: CRUD DE REGIÃO              -->
   <!-- ========================================== -->
   <div class="modal-backdrop" *ngIf="showRegionModal">
     <div class="modal-dialog">
@@ -383,7 +383,7 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- MODAL: AVISO WHATSAPP MOTORISTA (HU-15)    -->
+  <!-- MODAL: AVISO WHATSAPP MOTORISTA    -->
   <!-- ========================================== -->
   <div class="modal-backdrop" *ngIf="showWaModal && waTargetTrip">
     <div class="modal-dialog">
@@ -392,7 +392,7 @@
           <div class="d-flex align-items-center">
             <i class="fab fa-whatsapp fa-2x text-success mr-2"></i>
             <div>
-              <h2 class="mb-0">Aviso: Motorista a Caminho (HU-15)</h2>
+              <h2 class="mb-0">Aviso: Motorista a Caminho</h2>
               <small class="text-muted">Notificação transacional para o tutor</small>
             </div>
           </div>
