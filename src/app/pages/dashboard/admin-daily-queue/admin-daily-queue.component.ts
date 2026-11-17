@@ -13,6 +13,8 @@ import { getPetSizeTier, getPetSizeLabel } from '../../../shared/models/pet.mode
 import { TaxiService } from '../../../shared/services/taxi.service';
 import { WhatsappService } from '../../../shared/services/whatsapp.service';
 import { TaxiRegion, TaxiTripStatus, TAXI_STATUS_LABELS } from '../../../shared/models/taxi.model';
+import { GroomerService } from '../../../shared/services/groomer.service';
+import { Groomer } from '../../../shared/models/groomer.model';
 
 export interface KanbanColumn {
   key: DailyServiceStatus;
@@ -99,6 +101,9 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
   taxiWaTargetItem: DailyService | null = null;
   taxiWaMessageText = '';
 
+  // Tosadores e Rateio de Comissão (HU-18 / HU-19)
+  groomers: Groomer[] = [];
+
   private sub: Subscription = new Subscription();
 
   constructor(
@@ -107,6 +112,7 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     public pricingService: PricingService,
     public taxiService: TaxiService,
     public waService: WhatsappService,
+    public groomerService: GroomerService,
     private fb: FormBuilder,
     private router: Router,
     private cashService: CashService,
@@ -123,6 +129,7 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     this.initQuickRegionForm();
     this.loadCatalog();
     this.loadTaxiRegions();
+    this.loadGroomers();
 
     this.sub.add(
       this.dailyService.queue$.subscribe(res => {
@@ -159,7 +166,11 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       serviceName: ['Banho Completo', Validators.required],
       estimatedPrice: [50.00, [Validators.required, Validators.min(0)]],
       cageNumber: [''],
+      groomerId: [null],
       groomerName: [''],
+      isGroomerPair: [false],
+      secondGroomerId: [null],
+      secondGroomerName: [''],
       notes: [''],
       tosaNotes: [''],
       health_skin: [false],
@@ -184,6 +195,21 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     this.checkinForm.get('petBreed')?.valueChanges.subscribe(() => this.recalculateQuote());
     this.checkinForm.get('petWeightKg')?.valueChanges.subscribe(() => this.recalculateQuote());
     this.checkinForm.get('hasTaxi')?.valueChanges.subscribe(() => this.recalculateQuote());
+
+    // Sincronização do nome do tosador ao selecionar pelo ID
+    this.checkinForm.get('groomerId')?.valueChanges.subscribe(id => {
+      if (id !== null && id !== undefined) {
+        const g = this.groomers.find(x => x.id === +id);
+        this.checkinForm.patchValue({ groomerName: g ? g.name : '' }, { emitEvent: false });
+      }
+    });
+
+    this.checkinForm.get('secondGroomerId')?.valueChanges.subscribe(id => {
+      if (id !== null && id !== undefined) {
+        const g = this.groomers.find(x => x.id === +id);
+        this.checkinForm.patchValue({ secondGroomerName: g ? g.name : '' }, { emitEvent: false });
+      }
+    });
   }
 
   private initTosaValidationForm(): void {
@@ -192,6 +218,14 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       validatedBy: ['', Validators.required],
       tosaNotes: ['', Validators.required]
     });
+  }
+
+  private loadGroomers(): void {
+    this.sub.add(
+      this.groomerService.getGroomers().subscribe(list => {
+        this.groomers = list.filter(g => g.active);
+      })
+    );
   }
 
   private loadCatalog(): void {
@@ -751,7 +785,11 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       serviceName: 'Banho Completo',
       estimatedPrice: 50.00,
       cageNumber: '',
+      groomerId: null,
       groomerName: '',
+      isGroomerPair: false,
+      secondGroomerId: null,
+      secondGroomerName: '',
       notes: '',
       tosaNotes: '',
       health_skin: false,
@@ -802,7 +840,11 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       selectedExtras: this.selectedExtras,
       estimatedPrice: val.estimatedPrice,
       cageNumber: val.cageNumber,
+      groomerId: val.groomerId ? Number(val.groomerId) : undefined,
       groomerName: val.groomerName,
+      isGroomerPair: !!val.isGroomerPair,
+      secondGroomerId: val.isGroomerPair && val.secondGroomerId ? Number(val.secondGroomerId) : undefined,
+      secondGroomerName: val.isGroomerPair ? val.secondGroomerName : undefined,
       notes: val.notes,
       tosaNotes: val.tosaNotes,
       healthChecklist,

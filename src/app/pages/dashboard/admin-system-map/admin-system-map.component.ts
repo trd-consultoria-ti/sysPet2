@@ -167,6 +167,16 @@ export class AdminSystemMapComponent implements OnInit {
           adminOnly: true
         },
         {
+          title: 'Tosadores & Comissões',
+          path: '/dashboard/groomers',
+          description: 'Gestão de tosadores, comissão padrão de 15%, rateio igualitário em duplas (7,5%) e geração de contas a pagar.',
+          icon: 'fas fa-scissors',
+          badge: 'Equipe',
+          badgeClass: 'badge-team',
+          permission: 'Somente Administrador',
+          adminOnly: true
+        },
+        {
           title: 'Gestão de Pedidos da Loja',
           path: '/dashboard/orders',
           description: 'Acompanhamento do ciclo de vida de pedidos online e vendas diretas do balcão.',

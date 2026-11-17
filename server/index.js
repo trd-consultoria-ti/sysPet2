@@ -40,6 +40,21 @@ const pool = new Pool({
 });
 pool.on('error', err => console.error('PostgreSQL idle client error:', err.message));
 
+// Garante colunas de P0/P1 na inicialização do servidor
+pool.query(`
+  ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS pet_weight_kg NUMERIC(6,2) DEFAULT NULL;
+  ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS pet_size_tier TEXT DEFAULT '';
+  ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS selected_extras JSONB DEFAULT '[]';
+  ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS tosa_notes TEXT DEFAULT '';
+  ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS estimated_ready_at TEXT DEFAULT NULL;
+  ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS requires_validation BOOLEAN NOT NULL DEFAULT FALSE;
+  ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS validation_confirmed BOOLEAN NOT NULL DEFAULT TRUE;
+  ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS validated_by TEXT DEFAULT '';
+  ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS validated_at TIMESTAMPTZ DEFAULT NULL;
+  ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS paid BOOLEAN DEFAULT FALSE;
+  ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT NULL;
+`).catch(err => console.error('Migration error:', err.message));
+
 // CORS: só as origens configuradas + a própria API (front estático servido de docs/)
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:4200')
   .split(',').map(s => s.trim()).filter(Boolean);
@@ -524,6 +539,44 @@ app.delete('/api/products/:id', requireAuth, requireProductManager, async (req, 
   const { rowCount } = await pool.query('DELETE FROM products WHERE id=$1', [req.params.id]);
   if (!rowCount) return res.status(404).json({ error: 'Produto não encontrado' });
   res.status(204).end();
+});
+
+// ---------- entrada de mercadoria & estoque (HU-20 & HU-21) ----------
+app.post('/api/products/:id/stock', requireAuth, requireProductManager, async (req, res) => {
+  const { quantity, type, supplier, costPrice, notes } = req.body;
+  const q = parseInt(quantity, 10);
+  if (isNaN(q) || q <= 0) return res.status(400).json({ error: 'Quantidade inválida' });
+
+  try {
+    const { rows: prodRows } = await pool.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
+    if (!prodRows.length) return res.status(404).json({ error: 'Produto não encontrado' });
+    const prod = prodRows[0];
+
+    const currentStock = prod.stock === null ? 0 : Number(prod.stock);
+    const newStock = type === 'adjust' || type === 'initial' ? q : currentStock + q;
+
+    const { rows: updatedRows } = await pool.query(
+      `UPDATE products SET stock = $1, cost_price = COALESCE($2, cost_price), supplier = COALESCE($3, supplier) WHERE id = $4 RETURNING *`,
+      [newStock, costPrice !== undefined ? num(costPrice) : null, supplier || null, req.params.id]
+    );
+
+    await pool.query(
+      `INSERT INTO stock_movements (product_id, quantity, type, supplier, cost_price, notes, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [req.params.id, q, type || 'in', supplier || null, costPrice !== undefined ? num(costPrice) : null, notes || '', req.user.id]
+    );
+
+    const updated = updatedRows[0];
+    res.json({
+      ...updated,
+      price: num(updated.price),
+      rating: num(updated.rating),
+      costPrice: num(updated.cost_price),
+      minStock: updated.min_stock
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao registrar entrada de estoque' });
+  }
 });
 
 // ---------- catalog services ----------
@@ -1350,6 +1403,183 @@ app.delete('/api/taxi/trips/:id', requireAuth, requireStaff, async (req, res) =>
     res.status(200).json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao excluir corrida' });
+  }
+});
+
+// ---------- groomers / tosadores & comissoes (HU-18 & HU-19) ----------
+
+app.get('/api/groomers', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM groomers ORDER BY active DESC, name ASC');
+    res.json(rows.map(g => ({
+      id: g.id,
+      name: g.name,
+      phone: g.phone || '',
+      commissionRate: num(g.commission_rate) || 15.0,
+      active: !!g.active,
+      userId: g.user_id,
+      createdAt: g.created_at,
+      updatedAt: g.updated_at
+    })));
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar tosadores' });
+  }
+});
+
+app.post('/api/groomers', requireAuth, requireStaff, async (req, res) => {
+  const { name, phone, commissionRate, active, userId } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Nome do tosador é obrigatório' });
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO groomers (name, phone, commission_rate, active, user_id)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [name.trim(), phone || '', commissionRate !== undefined ? num(commissionRate) : 15.0, active !== false, userId || null]
+    );
+    const g = rows[0];
+    res.status(201).json({
+      id: g.id,
+      name: g.name,
+      phone: g.phone || '',
+      commissionRate: num(g.commission_rate),
+      active: !!g.active,
+      userId: g.user_id
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao cadastrar tosador' });
+  }
+});
+
+app.put('/api/groomers/:id', requireAuth, requireStaff, async (req, res) => {
+  const { name, phone, commissionRate, active, userId } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE groomers SET
+         name = COALESCE($1, name),
+         phone = COALESCE($2, phone),
+         commission_rate = CASE WHEN $3::numeric IS NOT NULL THEN $3 ELSE commission_rate END,
+         active = CASE WHEN $4::boolean IS NOT NULL THEN $4 ELSE active END,
+         user_id = COALESCE($5, user_id),
+         updated_at = NOW()
+       WHERE id = $6 RETURNING *`,
+      [name, phone, commissionRate !== undefined ? num(commissionRate) : null, active !== undefined ? !!active : null, userId || null, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Tosador não encontrado' });
+    const g = rows[0];
+    res.json({
+      id: g.id,
+      name: g.name,
+      phone: g.phone || '',
+      commissionRate: num(g.commission_rate),
+      active: !!g.active,
+      userId: g.user_id
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao atualizar tosador' });
+  }
+});
+
+app.delete('/api/groomers/:id', requireAuth, requireStaff, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM groomers WHERE id = $1', [req.params.id]);
+    res.status(200).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao excluir tosador' });
+  }
+});
+
+// ---------- payables / contas a pagar (HU-23 & HU-24) ----------
+
+app.get('/api/payables', requireAuth, requireStaff, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM payables ORDER BY status ASC, due_date ASC');
+    res.json(rows.map(p => ({
+      id: p.id,
+      description: p.description,
+      amount: num(p.amount),
+      dueDate: p.due_date ? p.due_date.toISOString().split('T')[0] : '',
+      category: p.category,
+      supplier: p.supplier || '',
+      status: p.status,
+      paidAt: p.paid_at,
+      paymentMethod: p.payment_method,
+      cashMovementId: p.cash_movement_id,
+      groomerId: p.groomer_id,
+      notes: p.notes || '',
+      createdAt: p.created_at,
+      updatedAt: p.updated_at
+    })));
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar contas a pagar' });
+  }
+});
+
+app.post('/api/payables', requireAuth, requireStaff, async (req, res) => {
+  const { description, amount, dueDate, category, supplier, status, notes, groomerId } = req.body;
+  if (!description || !amount || !dueDate) return res.status(400).json({ error: 'Descrição, valor e vencimento são obrigatórios' });
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO payables (description, amount, due_date, category, supplier, status, notes, groomer_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [description, num(amount), dueDate, category || 'outro', supplier || '', status || 'previsto', notes || '', groomerId || null]
+    );
+    const p = rows[0];
+    res.status(201).json({
+      id: p.id,
+      description: p.description,
+      amount: num(p.amount),
+      dueDate: p.due_date ? p.due_date.toISOString().split('T')[0] : '',
+      category: p.category,
+      supplier: p.supplier || '',
+      status: p.status,
+      notes: p.notes || ''
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao cadastrar conta a pagar' });
+  }
+});
+
+app.put('/api/payables/:id', requireAuth, requireStaff, async (req, res) => {
+  const { description, amount, dueDate, category, supplier, status, paidAt, paymentMethod, notes } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE payables SET
+         description = COALESCE($1, description),
+         amount = CASE WHEN $2::numeric IS NOT NULL THEN $2 ELSE amount END,
+         due_date = CASE WHEN $3::date IS NOT NULL THEN $3 ELSE due_date END,
+         category = COALESCE($4, category),
+         supplier = COALESCE($5, supplier),
+         status = COALESCE($6, status),
+         paid_at = CASE WHEN $7::timestamptz IS NOT NULL THEN $7 ELSE paid_at END,
+         payment_method = COALESCE($8, payment_method),
+         notes = COALESCE($9, notes),
+         updated_at = NOW()
+       WHERE id = $10 RETURNING *`,
+      [description, amount !== undefined ? num(amount) : null, dueDate || null, category, supplier, status, paidAt || null, paymentMethod, notes, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Conta a pagar não encontrada' });
+    const p = rows[0];
+    res.json({
+      id: p.id,
+      description: p.description,
+      amount: num(p.amount),
+      dueDate: p.due_date ? p.due_date.toISOString().split('T')[0] : '',
+      category: p.category,
+      supplier: p.supplier || '',
+      status: p.status,
+      paidAt: p.paid_at,
+      paymentMethod: p.payment_method
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao atualizar conta a pagar' });
+  }
+});
+
+app.delete('/api/payables/:id', requireAuth, requireStaff, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM payables WHERE id = $1', [req.params.id]);
+    res.status(200).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao excluir conta a pagar' });
   }
 });
 

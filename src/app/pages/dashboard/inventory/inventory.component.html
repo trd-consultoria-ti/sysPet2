@@ -2,75 +2,252 @@
   <div class="page-header">
     <div class="header-left">
       <h1>Produtos & Estoque</h1>
-      <p class="subtitle">Controle de inventário, níveis mínimos de estoque, preços e imagens dos produtos</p>
+      <p class="subtitle">Controle de inventário, níveis mínimos de segurança, reposição e compras (HU-20 & HU-21)</p>
     </div>
     <div class="header-right">
+      <button class="btn btn-secondary-brand" *ngIf="canManage" (click)="openRestock()">
+        <i class="fas fa-dolly"></i> + Entrada de Mercadoria
+      </button>
       <button class="btn btn-primary" *ngIf="canManage" (click)="openCreate()">
-        <i class="fas fa-boxes-stacked"></i> Novo Produto
+        <i class="fas fa-boxes-stacked"></i> + Novo Produto
       </button>
     </div>
   </div>
 
-  <form class="create-form" *ngIf="showCreateForm" [formGroup]="createForm" (ngSubmit)="saveCreate()">
-    <h2>Novo produto</h2>
-    <div class="form-row">
-      <div class="form-group">
-        <label for="create-name">Nome *</label>
-        <input type="text" id="create-name" formControlName="name">
+  <!-- Cards de KPI / Monitor de Estoque Mínimo (HU-21) -->
+  <div class="inventory-kpis">
+    <div class="kpi-card" (click)="setFilter('all')" [class.active]="activeFilter === 'all'">
+      <div class="kpi-icon icon-blue"><i class="fas fa-boxes"></i></div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total de Produtos</span>
+        <strong class="kpi-value">{{ totalProducts }}</strong>
+        <span class="kpi-sub">Cadastrados no catálogo</span>
       </div>
-      <div class="form-group form-group-sm">
-        <label for="create-price">Preço (R$) *</label>
-        <input type="number" id="create-price" formControlName="price" min="0" step="0.01">
+    </div>
+
+    <div class="kpi-card kpi-warning" (click)="setFilter('low')" [class.active]="activeFilter === 'low'">
+      <div class="kpi-icon icon-yellow"><i class="fas fa-exclamation-circle"></i></div>
+      <div class="kpi-info">
+        <span class="kpi-label">Estoque Baixo (<= Mínimo)</span>
+        <strong class="kpi-value text-warning">{{ lowStockProducts.length }}</strong>
+        <span class="kpi-sub">Atingiram margem de alerta</span>
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-danger" (click)="setFilter('out')" [class.active]="activeFilter === 'out'">
+      <div class="kpi-icon icon-red"><i class="fas fa-triangle-exclamation"></i></div>
+      <div class="kpi-info">
+        <span class="kpi-label">Ruptura (Esgotados)</span>
+        <strong class="kpi-value text-danger">{{ outOfStockProducts.length }}</strong>
+        <span class="kpi-sub">Saldo físico zerado</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon icon-green"><i class="fas fa-coins"></i></div>
+      <div class="kpi-info">
+        <span class="kpi-label">Valor do Estoque (Custo)</span>
+        <strong class="kpi-value">R$ {{ formatPrice(totalInventoryCost) }}</strong>
+        <span class="kpi-sub">Capital imobilizado</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de Busca e Filtros Rápidos -->
+  <div class="inventory-toolbar">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input
+        type="text"
+        placeholder="Buscar por nome, categoria ou fornecedor..."
+        [(ngModel)]="searchQuery"
+        (input)="onSearchChange()">
+      <button class="clear-btn" *ngIf="searchQuery" (click)="searchQuery = ''; onSearchChange()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="filter-chips">
+      <button
+        class="chip"
+        [class.active]="activeFilter === 'all'"
+        (click)="setFilter('all')">
+        Todos ({{ totalProducts }})
+      </button>
+      <button
+        class="chip chip-warning"
+        [class.active]="activeFilter === 'low'"
+        (click)="setFilter('low')">
+        <i class="fas fa-exclamation-circle"></i> Estoque Baixo ({{ lowStockProducts.length }})
+      </button>
+      <button
+        class="chip chip-danger"
+        [class.active]="activeFilter === 'out'"
+        (click)="setFilter('out')">
+        <i class="fas fa-triangle-exclamation"></i> Ruptura ({{ outOfStockProducts.length }})
+      </button>
+    </div>
+  </div>
+
+  <!-- Formulário de Criação de Produto -->
+  <form class="create-form" *ngIf="showCreateForm" [formGroup]="createForm" (ngSubmit)="saveCreate()">
+    <div class="form-header">
+      <h2><i class="fas fa-box-open"></i> Cadastrar Novo Produto</h2>
+      <button type="button" class="btn-close" (click)="cancelCreate()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-row">
+      <div class="form-group flex-2">
+        <label for="create-name">Nome do Produto *</label>
+        <input type="text" id="create-name" formControlName="name" placeholder="Ex: Ração Premium Adulto 15kg">
       </div>
       <div class="form-group">
         <label for="create-category">Categoria *</label>
-        <input type="text" id="create-category" formControlName="category">
+        <input type="text" id="create-category" formControlName="category" placeholder="Ex: Ração, Acessórios">
       </div>
       <div class="form-group form-group-sm">
-        <label for="create-stock">Estoque</label>
-        <input type="number" id="create-stock" formControlName="stock" min="0" step="1" placeholder="Ilimitado">
+        <label for="create-price">Preço Venda (R$) *</label>
+        <input type="number" id="create-price" formControlName="price" min="0" step="0.01">
       </div>
-      <div class="form-group">
+      <div class="form-group form-group-sm">
+        <label for="create-cost">Preço Custo (R$)</label>
+        <input type="number" id="create-cost" formControlName="costPrice" min="0" step="0.01" placeholder="Ex: 85.00">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group form-group-sm">
+        <label for="create-stock">Estoque Inicial</label>
+        <input type="number" id="create-stock" formControlName="stock" min="0" step="1" placeholder="Ex: 15">
+      </div>
+      <div class="form-group form-group-sm">
+        <label for="create-min-stock">Estoque Mínimo (Alerta HU-21) *</label>
+        <input type="number" id="create-min-stock" formControlName="minStock" min="0" step="1" placeholder="Ex: 5">
+      </div>
+      <div class="form-group flex-2">
+        <label for="create-supplier">Fornecedor Principal (HU-20)</label>
+        <input type="text" id="create-supplier" formControlName="supplier" placeholder="Ex: Distribuidora Pet Brasil">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group flex-2">
         <label for="create-image">Imagem (URL)</label>
         <input type="url" id="create-image" formControlName="image" placeholder="https://..." (input)="onImageUrlChange()">
       </div>
-      <div class="form-group">
+      <div class="form-group flex-2">
         <label for="create-image-file">Ou enviar arquivo</label>
         <input type="file" id="create-image-file" accept="image/*" (change)="onFileSelected($event, 'create')">
-        <img *ngIf="createPreview" [src]="createPreview" alt="Pré-visualização da imagem do produto" class="image-preview">
+        <img *ngIf="createPreview" [src]="createPreview" alt="Pré-visualização" class="image-preview">
         <span class="uploading-hint" *ngIf="uploading">Enviando...</span>
       </div>
-      <div class="form-group">
-        <label for="create-description">Descrição</label>
-        <input type="text" id="create-description" formControlName="description">
+      <div class="form-group flex-2">
+        <label for="create-description">Descrição Comercial</label>
+        <input type="text" id="create-description" formControlName="description" placeholder="Detalhes do produto...">
       </div>
     </div>
+
     <p class="error-text" *ngIf="uploadError" role="alert">{{ uploadError }}</p>
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="createForm.invalid || uploading">Salvar</button>
+      <button type="submit" class="btn btn-primary" [disabled]="createForm.invalid || uploading">Salvar Produto</button>
       <button type="button" class="btn btn-outline-secondary" (click)="cancelCreate()">Cancelar</button>
     </div>
   </form>
 
-  <div class="empty-state" *ngIf="products.length === 0">
-    <p>Nenhum produto cadastrado.</p>
+  <!-- Modal de Entrada de Mercadoria / Reposição (HU-20) -->
+  <div class="modal-backdrop" *ngIf="showRestockModal" (click)="closeRestock()">
+    <div class="restock-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fas fa-dolly"></i>
+          <div>
+            <h3>Entrada de Mercadoria / Reposição</h3>
+            <p>Registre compras de fornecedores ou balanços de estoque</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close" (click)="closeRestock()"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div class="alert-success" *ngIf="restockSuccessMsg">
+        <i class="fas fa-check-circle"></i> {{ restockSuccessMsg }}
+      </div>
+
+      <form [formGroup]="restockForm" (ngSubmit)="submitRestock()" *ngIf="!restockSuccessMsg">
+        <div class="form-group">
+          <label for="restock-product">Produto *</label>
+          <select id="restock-product" formControlName="productId" (change)="onRestockProductChange()">
+            <option *ngFor="let p of products" [value]="p.id">
+              {{ p.name }} (Estoque atual: {{ p.stock ?? 'Ilimitado' }} un.)
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="restock-type">Tipo de Movimentação *</label>
+            <select id="restock-type" formControlName="type">
+              <option value="in">➕ Entrada / Compra (Soma ao saldo atual)</option>
+              <option value="adjust">⚖️ Ajuste Físico (Define novo saldo exato)</option>
+              <option value="initial">🏷️ Saldo Inicial</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="restock-quantity">Quantidade *</label>
+            <input type="number" id="restock-quantity" formControlName="quantity" min="1" step="1" placeholder="Ex: 20">
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="restock-cost">Custo Unitário da Nota (R$)</label>
+            <input type="number" id="restock-cost" formControlName="costPrice" min="0" step="0.01" placeholder="Ex: 45.00">
+          </div>
+          <div class="form-group">
+            <label for="restock-supplier">Fornecedor / Distribuidor</label>
+            <input type="text" id="restock-supplier" formControlName="supplier" placeholder="Ex: Premier Pet DF">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="restock-notes">Nota Fiscal / Observações</label>
+          <input type="text" id="restock-notes" formControlName="notes" placeholder="Ex: NF-e 9104, Lote 2026A">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeRestock()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="restockForm.invalid">
+            <i class="fas fa-check"></i> Confirmar Entrada no Estoque
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
-  <div class="table-container" *ngIf="products.length > 0">
+  <!-- Estado Vazio -->
+  <div class="empty-state" *ngIf="filteredProducts.length === 0">
+    <i class="fas fa-box-open fa-3x"></i>
+    <p>Nenhum produto encontrado com os filtros aplicados.</p>
+    <button class="btn btn-outline-secondary" (click)="setFilter('all'); searchQuery = ''; applyFilters()">
+      Limpar Filtros
+    </button>
+  </div>
+
+  <!-- Tabela de Produtos com Estoque Mínimo & Ações Rápidas (HU-20 & HU-21) -->
+  <div class="table-container" *ngIf="filteredProducts.length > 0">
     <table class="data-table">
       <thead>
         <tr>
           <th>Produto</th>
           <th>Categoria</th>
-          <th>Preço</th>
-          <th>Estoque</th>
-          <th>Imagem</th>
-          <th>Avaliação</th>
+          <th>Preço Venda</th>
+          <th>Custo</th>
+          <th>Estoque / Mínimo</th>
+          <th>Status</th>
+          <th>Fornecedor</th>
           <th>Ações</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let product of products">
+        <tr *ngFor="let product of filteredProducts" [class.row-alert]="isOutOfStock(product)" [class.row-warning]="isLowStock(product)">
           <ng-container *ngIf="editingId === product.id; else viewMode">
             <td>
               <input type="text" class="table-input" [formControl]="ctrl(product.id, 'name')">
@@ -82,52 +259,88 @@
               <input type="number" class="table-input table-input-sm" [formControl]="ctrl(product.id, 'price')" min="0" step="0.01">
             </td>
             <td>
-              <input type="number" class="table-input table-input-sm" [formControl]="ctrl(product.id, 'stock')" min="0" step="1" placeholder="Ilimitado">
+              <input type="number" class="table-input table-input-sm" [formControl]="ctrl(product.id, 'costPrice')" min="0" step="0.01" placeholder="Custo">
             </td>
             <td>
-              <input type="url" class="table-input" [formControl]="ctrl(product.id, 'image')" placeholder="URL da imagem">
-              <label class="file-mini">
-                Arquivo
-                <input type="file" accept="image/*" (change)="onFileSelected($event, product.id)">
-              </label>
+              <div class="stock-edit-group">
+                <input type="number" class="table-input table-input-xs" [formControl]="ctrl(product.id, 'stock')" min="0" step="1" placeholder="Saldo">
+                <span>/</span>
+                <input type="number" class="table-input table-input-xs" [formControl]="ctrl(product.id, 'minStock')" min="0" step="1" title="Estoque Mínimo" placeholder="Mín">
+              </div>
             </td>
-            <td>{{ product.rating }} ({{ product.reviews }})</td>
+            <td>
+              <span class="stock-badge stock-edit">Editando</span>
+            </td>
+            <td>
+              <input type="text" class="table-input" [formControl]="ctrl(product.id, 'supplier')" placeholder="Fornecedor">
+            </td>
             <td class="actions-cell">
               <button class="btn btn-sm btn-primary" (click)="saveEdit(product)" [attr.aria-label]="'Salvar ' + product.name">
-                <i class="fas fa-save"></i> Salvar
+                <i class="fas fa-save"></i>
               </button>
-              <button class="btn btn-sm btn-outline-secondary" (click)="cancelEdit()" [attr.aria-label]="'Cancelar edição de ' + product.name">
-                <i class="fas fa-times"></i> Cancelar
+              <button class="btn btn-sm btn-outline-secondary" (click)="cancelEdit()" [attr.aria-label]="'Cancelar ' + product.name">
+                <i class="fas fa-times"></i>
               </button>
             </td>
           </ng-container>
+
           <ng-template #viewMode>
-            <td>{{ product.name }}</td>
-            <td>{{ product.category }}</td>
-            <td>R$ {{ formatPrice(product.price) }}</td>
+            <td class="product-cell">
+              <img *ngIf="product.image" [src]="product.image" [alt]="product.name" class="thumb">
+              <div class="no-thumb" *ngIf="!product.image"><i class="fas fa-box"></i></div>
+              <div class="prod-info">
+                <strong>{{ product.name }}</strong>
+                <span class="prod-desc" *ngIf="product.description">{{ product.description | slice:0:45 }}...</span>
+              </div>
+            </td>
             <td>
-              <span *ngIf="product.stock === null || product.stock === undefined" class="stock-badge stock-unlimited">Ilimitado</span>
-              <span *ngIf="product.stock === 0" class="stock-badge stock-out">Esgotado</span>
-              <span *ngIf="product.stock !== null && product.stock !== undefined && product.stock > 0" class="stock-badge" [class.stock-low]="product.stock <= 5">
-                {{ product.stock }} <span *ngIf="product.stock <= 5">— baixo</span>
+              <span class="cat-pill">{{ product.category }}</span>
+            </td>
+            <td>
+              <strong>R$ {{ formatPrice(product.price) }}</strong>
+            </td>
+            <td class="text-muted">
+              R$ {{ formatPrice(product.costPrice) }}
+            </td>
+            <td>
+              <div class="stock-indicator">
+                <strong>{{ product.stock !== null && product.stock !== undefined ? product.stock : '∞' }}</strong>
+                <span class="stock-min-label" *ngIf="product.stock !== null">
+                  / mín: {{ product.minStock !== null && product.minStock !== undefined ? product.minStock : 5 }}
+                </span>
+              </div>
+            </td>
+            <td>
+              <span *ngIf="isOutOfStock(product)" class="stock-badge stock-out">
+                <i class="fas fa-triangle-exclamation"></i> Ruptura
+              </span>
+              <span *ngIf="isLowStock(product)" class="stock-badge stock-low">
+                <i class="fas fa-exclamation-circle"></i> Estoque Baixo
+              </span>
+              <span *ngIf="!isOutOfStock(product) && !isLowStock(product) && product.stock !== null && product.stock !== undefined" class="stock-badge stock-ok">
+                <i class="fas fa-check"></i> Normal
+              </span>
+              <span *ngIf="product.stock === null || product.stock === undefined" class="stock-badge stock-unlimited">
+                Ilimitado
               </span>
             </td>
-            <td>
-              <img *ngIf="product.image" [src]="product.image" [alt]="product.name" class="thumb">
-              <span *ngIf="!product.image" class="no-image">—</span>
+            <td class="supplier-cell">
+              {{ product.supplier || '—' }}
             </td>
-            <td>{{ product.rating }} ({{ product.reviews }})</td>
             <td class="actions-cell" *ngIf="canManage">
-              <button class="btn btn-sm btn-outline-primary" (click)="startEdit(product)" [attr.aria-label]="'Editar ' + product.name">
-                <i class="fas fa-edit"></i> Editar
+              <button class="btn btn-sm btn-restock" (click)="openRestock(product)" title="Dar Entrada de Mercadoria (HU-20)">
+                <i class="fas fa-dolly"></i> Entrada
               </button>
-              <button class="btn btn-sm btn-outline-danger" (click)="remove(product)" [attr.aria-label]="'Excluir ' + product.name">
-                <i class="fas fa-trash-alt"></i> Excluir
+              <button class="btn btn-sm btn-outline-primary" (click)="startEdit(product)" title="Editar Produto">
+                <i class="fas fa-edit"></i>
               </button>
-              <span class="saved-badge" *ngIf="savedId === product.id">Salvo!</span>
+              <button class="btn btn-sm btn-outline-danger" (click)="remove(product)" title="Excluir Produto">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+              <span class="saved-badge" *ngIf="savedId === product.id"><i class="fas fa-check"></i></span>
             </td>
             <td class="actions-cell" *ngIf="!canManage">
-              <span class="readonly-badge">Somente leitura</span>
+              <span class="readonly-badge">Leitura</span>
             </td>
           </ng-template>
         </tr>

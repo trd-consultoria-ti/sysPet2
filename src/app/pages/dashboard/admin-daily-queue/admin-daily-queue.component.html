@@ -122,6 +122,9 @@
               <span class="weight-pill" *ngIf="item.petWeightKg">
                 <i class="fas fa-weight-hanging"></i> {{ item.petWeightKg }}kg
               </span>
+              <span class="porte-pill" *ngIf="item.petSizeTier">
+                <i class="fas fa-paw"></i> {{ item.petSizeTier }}
+              </span>
             </div>
             <!-- Extras Selecionados (HU-09) -->
             <div class="extras-chips" *ngIf="item.selectedExtras?.length">
@@ -140,8 +143,14 @@
             <div class="detail-row" *ngIf="item.cageNumber">
               <i class="fas fa-home"></i> <strong>{{ item.cageNumber }}</strong>
             </div>
-            <div class="detail-row" *ngIf="item.groomerName">
-              <i class="fas fa-cut"></i> <span>{{ item.groomerName }}</span>
+            <div class="detail-row groomer-detail" *ngIf="item.groomerName">
+              <i class="fas fa-cut"></i>
+              <span>
+                {{ item.groomerName }}
+                <strong *ngIf="item.isGroomerPair && item.secondGroomerName" class="pair-tag">
+                  + {{ item.secondGroomerName }} (Dupla 7,5%)
+                </strong>
+              </span>
             </div>
           </div>
 
@@ -353,7 +362,10 @@
             <span><i class="fas fa-user"></i> {{ item.customerName }}</span>
             <span *ngIf="item.phone"><i class="fas fa-phone-alt"></i> {{ item.phone }}</span>
             <span *ngIf="item.cageNumber" class="box-tag"><i class="fas fa-home"></i> {{ item.cageNumber }}</span>
-            <span *ngIf="item.groomerName" class="groomer-tag"><i class="fas fa-cut"></i> {{ item.groomerName }}</span>
+            <span *ngIf="item.groomerName" class="groomer-tag">
+              <i class="fas fa-cut"></i> {{ item.groomerName }}
+              <strong *ngIf="item.isGroomerPair && item.secondGroomerName"> & {{ item.secondGroomerName }}</strong>
+            </span>
           </div>
 
           <!-- Validação de Tosa na Lista -->
@@ -615,8 +627,34 @@
                 <input type="text" formControlName="cageNumber" class="form-control" placeholder="Ex: Box 02, Gaiola 05">
               </div>
               <div class="form-group col-6">
-                <label>Tosador / Banhista</label>
-                <input type="text" formControlName="groomerName" class="form-control" placeholder="Ex: Carlos, Mariana">
+                <label><i class="fas fa-scissors"></i> Tosador / Banhista (HU-18)</label>
+                <select formControlName="groomerId" class="form-control">
+                  <option [ngValue]="null">-- Selecione o tosador --</option>
+                  <option *ngFor="let g of groomers" [value]="g.id">
+                    {{ g.name }} (Comissão: {{ g.commissionRate }}%)
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Atendimento em Dupla com Rateio 7,5% cada (HU-18 & HU-19) -->
+            <div class="pair-groomer-box">
+              <label class="custom-checkbox-row">
+                <input type="checkbox" formControlName="isGroomerPair">
+                <span><i class="fas fa-user-friends"></i> Atendimento em Dupla (Rateio 7,5% cada um - Regra HU-19)</span>
+              </label>
+
+              <div class="pair-select-group" *ngIf="checkinForm.get('isGroomerPair')?.value">
+                <label><i class="fas fa-user-plus"></i> 2º Tosador / Parceiro de Dupla</label>
+                <select formControlName="secondGroomerId" class="form-control">
+                  <option [ngValue]="null">-- Selecione o 2º profissional parceiro --</option>
+                  <option *ngFor="let g of groomers" [value]="g.id">
+                    {{ g.name }}
+                  </option>
+                </select>
+                <span class="pair-hint">
+                  <i class="fas fa-info-circle"></i> A comissão total de 15% sobre o serviço é rateada igualmente em 7,5% para cada tosador.
+                </span>
               </div>
             </div>
 

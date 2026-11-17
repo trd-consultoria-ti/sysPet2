@@ -33,7 +33,11 @@ export interface DailyService {
   estimatedPrice: number;
   finalPrice?: number | null;
   cageNumber?: string;
+  groomerId?: number | null;
   groomerName?: string;
+  secondGroomerId?: number | null;
+  secondGroomerName?: string | null;
+  isGroomerPair?: boolean;
   requiresValidation: boolean;
   validationConfirmed: boolean;
   validatedBy?: string | null;

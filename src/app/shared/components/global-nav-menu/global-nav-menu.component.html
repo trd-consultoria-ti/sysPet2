@@ -143,6 +143,11 @@
             <i class="fas fa-user-tie" aria-hidden="true"></i> Funcionários & Equipe
           </a>
         </li>
+        <li class="sidebar-item" *ngIf="isAdmin">
+          <a (click)="navigate('/dashboard/groomers')">
+            <i class="fas fa-scissors" aria-hidden="true"></i> Tosadores & Comissões
+          </a>
+        </li>
         <li class="sidebar-item">
           <a (click)="navigate('/dashboard/rotas')">
             <i class="fas fa-sitemap" aria-hidden="true"></i> Mapa do Sistema

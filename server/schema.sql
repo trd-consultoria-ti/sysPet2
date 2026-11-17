@@ -404,3 +404,59 @@ CREATE TABLE IF NOT EXISTS wa_messages (
 );
 CREATE INDEX IF NOT EXISTS idx_wa_messages_jid ON wa_messages(remote_jid);
 
+-- P2: Estoque Mínimo e Custos em Produtos (HU-20 & HU-21)
+ALTER TABLE products ADD COLUMN IF NOT EXISTS min_stock INTEGER DEFAULT 5;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_price NUMERIC(10,2);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS supplier TEXT;
+
+CREATE TABLE IF NOT EXISTS stock_movements (
+  id SERIAL PRIMARY KEY,
+  product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+  quantity INTEGER NOT NULL,
+  type VARCHAR(20) NOT NULL CHECK (type IN ('in', 'out', 'adjust', 'initial')),
+  supplier TEXT,
+  cost_price NUMERIC(10,2),
+  notes TEXT,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- P2: Cadastro de Tosadores e Comissões (HU-18 & HU-19)
+CREATE TABLE IF NOT EXISTS groomers (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  phone VARCHAR(40),
+  commission_rate NUMERIC(5,2) NOT NULL DEFAULT 15.00,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS groomer_id INTEGER REFERENCES groomers(id) ON DELETE SET NULL;
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS second_groomer_id INTEGER REFERENCES groomers(id) ON DELETE SET NULL;
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS second_groomer_name TEXT;
+ALTER TABLE daily_services ADD COLUMN IF NOT EXISTS is_groomer_pair BOOLEAN DEFAULT FALSE;
+
+-- P2: Contas a Pagar (HU-23 & HU-24)
+CREATE TABLE IF NOT EXISTS payables (
+  id SERIAL PRIMARY KEY,
+  description TEXT NOT NULL,
+  amount NUMERIC(10,2) NOT NULL,
+  due_date DATE NOT NULL,
+  category VARCHAR(30) NOT NULL DEFAULT 'outro' CHECK (category IN ('fornecedor', 'aluguel', 'insumo', 'comissao', 'servico', 'outro')),
+  supplier TEXT,
+  status VARCHAR(20) NOT NULL DEFAULT 'previsto' CHECK (status IN ('previsto', 'pago', 'cancelado')),
+  paid_at TIMESTAMPTZ,
+  payment_method VARCHAR(30),
+  cash_movement_id INTEGER REFERENCES cash_movements(id) ON DELETE SET NULL,
+  groomer_id INTEGER REFERENCES groomers(id) ON DELETE SET NULL,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_payables_due_date ON payables(due_date);
+CREATE INDEX IF NOT EXISTS idx_payables_status ON payables(status);
+
+

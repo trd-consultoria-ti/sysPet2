@@ -23,6 +23,8 @@ interface DbState {
   medications: any[];
   taxiRegions: any[];
   taxiTrips: any[];
+  groomers: any[];
+  payables: any[];
 }
 
 function getInitialDbState(): DbState {
@@ -600,6 +602,59 @@ function getInitialDbState(): DbState {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
+    ],
+    groomers: [
+      { id: 1, name: 'Carlos Silva (Tosador)', phone: '(61) 99111-2233', active: true, commissionRate: 15.0, createdAt: new Date().toISOString() },
+      { id: 2, name: 'Mariana Costa (Banhista / Tosa)', phone: '(61) 98222-3344', active: true, commissionRate: 15.0, createdAt: new Date().toISOString() },
+      { id: 3, name: 'Roberto Peixoto (Tosador Especialista)', phone: '(61) 99333-4455', active: true, commissionRate: 15.0, createdAt: new Date().toISOString() }
+    ],
+    payables: [
+      {
+        id: 1,
+        description: 'Aluguel do Ponto Comercial — Riacho Fundo QC 3',
+        amount: 2500.00,
+        dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString().split('T')[0],
+        category: 'aluguel',
+        supplier: 'Imobiliária Central DF',
+        status: 'previsto',
+        notes: 'Boleto mensal do imóvel',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        description: 'Fornecedor Premier Pet — Reposição de Rações e Sachês',
+        amount: 1840.50,
+        dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString().split('T')[0],
+        category: 'fornecedor',
+        supplier: 'Distribuidora Pet Brasil Ltda',
+        status: 'previsto',
+        notes: 'Nota Fiscal 48192',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 3,
+        description: 'Insumos de Banho & Tosa — Shampoos Hipoalergênicos e Toalhas',
+        amount: 620.00,
+        dueDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString().split('T')[0],
+        category: 'insumo',
+        supplier: 'PetCare Cosméticos',
+        status: 'pago',
+        paidAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(),
+        paymentMethod: 'pix',
+        notes: 'Pago via Pix pelo celular da dona',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString()
+      },
+      {
+        id: 4,
+        description: 'Distribuidora Vet Farma — Antipulgas e Vermífugos',
+        amount: 950.00,
+        dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 12).toISOString().split('T')[0],
+        category: 'fornecedor',
+        supplier: 'Vet Farma DF Distribuição',
+        status: 'previsto',
+        notes: 'Apoquel e Bravecto em estoque',
+        createdAt: new Date().toISOString()
+      }
     ]
   };
 }
@@ -633,6 +688,14 @@ export class DemoBackendInterceptor implements HttpInterceptor {
         }
         if (!parsed.taxiTrips) {
           parsed.taxiTrips = getInitialDbState().taxiTrips;
+          this.saveDb(parsed);
+        }
+        if (!parsed.groomers || !parsed.groomers.length) {
+          parsed.groomers = getInitialDbState().groomers;
+          this.saveDb(parsed);
+        }
+        if (!parsed.payables || !parsed.payables.length) {
+          parsed.payables = getInitialDbState().payables;
           this.saveDb(parsed);
         }
         return parsed;
@@ -739,6 +802,22 @@ export class DemoBackendInterceptor implements HttpInterceptor {
       db.products = db.products.filter(p => p.id !== id);
       this.saveDb(db);
       return of(new HttpResponse({ status: 204, body: null }));
+    }
+
+    // Products Stock Adjustment & Restock (HU-20 & HU-21)
+    if (path.includes('/stock') && path.startsWith('/api/products/') && method === 'POST') {
+      const id = +path.split('/')[3];
+      const prod = db.products.find(p => p.id === id);
+      if (prod) {
+        const q = Number(req.body.quantity) || 0;
+        const current = prod.stock === null || prod.stock === undefined ? 0 : Number(prod.stock);
+        prod.stock = req.body.type === 'adjust' || req.body.type === 'initial' ? q : current + q;
+        if (req.body.supplier) prod.supplier = req.body.supplier;
+        if (req.body.costPrice !== undefined) prod.costPrice = Number(req.body.costPrice);
+        this.saveDb(db);
+        return of(new HttpResponse({ status: 200, body: prod })).pipe(delay(30));
+      }
+      return of(new HttpResponse({ status: 404, body: { error: 'Produto não encontrado' } }));
     }
 
     // 5. Services: /api/services
@@ -1142,6 +1221,85 @@ export class DemoBackendInterceptor implements HttpInterceptor {
     if (path.startsWith('/api/taxi/trips/') && method === 'DELETE') {
       const id = path.split('/')[4];
       db.taxiTrips = (db.taxiTrips || []).filter(t => t.id !== id);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 200, body: { success: true } })).pipe(delay(20));
+    }
+
+    // Groomers / Tosadores (HU-18 & HU-19): GET /api/groomers
+    if (path === '/api/groomers' && method === 'GET') {
+      return of(new HttpResponse({ status: 200, body: db.groomers || [] })).pipe(delay(20));
+    }
+    // Groomers: POST /api/groomers
+    if (path === '/api/groomers' && method === 'POST') {
+      const newGroomer = {
+        id: db.groomers.length ? Math.max(...db.groomers.map(g => g.id)) + 1 : 1,
+        name: req.body.name,
+        phone: req.body.phone || '',
+        commissionRate: Number(req.body.commissionRate) || 15.0,
+        active: req.body.active !== false,
+        createdAt: new Date().toISOString()
+      };
+      db.groomers = db.groomers || [];
+      db.groomers.push(newGroomer);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 201, body: newGroomer })).pipe(delay(20));
+    }
+    // Groomers: PUT /api/groomers/:id
+    if (path.startsWith('/api/groomers/') && method === 'PUT') {
+      const id = +path.split('/')[3];
+      const groomer = (db.groomers || []).find(g => g.id === id);
+      if (groomer) {
+        Object.assign(groomer, req.body, { id, updatedAt: new Date().toISOString() });
+        this.saveDb(db);
+        return of(new HttpResponse({ status: 200, body: groomer })).pipe(delay(20));
+      }
+      return of(new HttpResponse({ status: 404, body: { error: 'Tosador não encontrado' } }));
+    }
+    // Groomers: DELETE /api/groomers/:id
+    if (path.startsWith('/api/groomers/') && method === 'DELETE') {
+      const id = +path.split('/')[3];
+      db.groomers = (db.groomers || []).filter(g => g.id !== id);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 200, body: { success: true } })).pipe(delay(20));
+    }
+
+    // Payables / Contas a Pagar (HU-23): GET /api/payables
+    if (path === '/api/payables' && method === 'GET') {
+      return of(new HttpResponse({ status: 200, body: db.payables || [] })).pipe(delay(20));
+    }
+    // Payables: POST /api/payables
+    if (path === '/api/payables' && method === 'POST') {
+      const newPayable = {
+        id: db.payables.length ? Math.max(...db.payables.map(p => p.id)) + 1 : 1,
+        description: req.body.description,
+        amount: Number(req.body.amount) || 0,
+        dueDate: req.body.dueDate,
+        category: req.body.category || 'outro',
+        supplier: req.body.supplier || '',
+        status: req.body.status || 'previsto',
+        notes: req.body.notes || '',
+        createdAt: new Date().toISOString()
+      };
+      db.payables = db.payables || [];
+      db.payables.unshift(newPayable);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 201, body: newPayable })).pipe(delay(20));
+    }
+    // Payables: PUT /api/payables/:id
+    if (path.startsWith('/api/payables/') && method === 'PUT') {
+      const id = +path.split('/')[3];
+      const payable = (db.payables || []).find(p => p.id === id);
+      if (payable) {
+        Object.assign(payable, req.body, { id, updatedAt: new Date().toISOString() });
+        this.saveDb(db);
+        return of(new HttpResponse({ status: 200, body: payable })).pipe(delay(20));
+      }
+      return of(new HttpResponse({ status: 404, body: { error: 'Conta a pagar não encontrada' } }));
+    }
+    // Payables: DELETE /api/payables/:id
+    if (path.startsWith('/api/payables/') && method === 'DELETE') {
+      const id = +path.split('/')[3];
+      db.payables = (db.payables || []).filter(p => p.id !== id);
       this.saveDb(db);
       return of(new HttpResponse({ status: 200, body: { success: true } })).pipe(delay(20));
     }

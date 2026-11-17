@@ -43,6 +43,31 @@ export class ProductService {
     );
   }
 
+  /**
+   * Entrada de Mercadoria e Ajuste de Estoque (HU-20 & HU-21)
+   */
+  restock(
+    id: number,
+    quantity: number,
+    type: 'in' | 'adjust' | 'initial' = 'in',
+    supplier?: string,
+    costPrice?: number,
+    notes?: string
+  ): Observable<Product> {
+    return this.http.post<Product>(`${this.url}/${id}/stock`, {
+      quantity: Number(quantity),
+      type,
+      supplier,
+      costPrice: costPrice !== undefined ? Number(costPrice) : undefined,
+      notes
+    }).pipe(
+      tap(updated => {
+        const list = this.productsSubject.value.map(p => p.id === updated.id ? updated : p);
+        this.productsSubject.next(list);
+      })
+    );
+  }
+
   uploadImage(file: File): Observable<{ url: string }> {
     return new Observable<{ url: string }>(observer => {
       const reader = new FileReader();

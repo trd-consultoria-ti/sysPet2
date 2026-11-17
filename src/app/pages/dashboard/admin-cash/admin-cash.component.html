@@ -1,89 +1,712 @@
 <div class="admin-page">
   <div class="page-header">
     <div class="header-left">
-      <h1>Frente de Caixa (PDV)</h1>
-      <p class="subtitle">Controle financeiro do caixa, entradas, saídas manuais e saldo em tempo real</p>
+      <h1>Frente de Caixa & Financeiro (PDV)</h1>
+      <p class="subtitle">PDV expresso de balcão, fluxo de caixa, contas a pagar e fechamento consolidado (HU-22, HU-23, HU-24)</p>
     </div>
     <div class="header-right">
-      <app-button variant="primary" icon="fas fa-plus-circle" (btnClick)="openCreate()">
-        Lançamento Manual
-      </app-button>
+      <div class="balance-badge" [class.negative]="balance < 0">
+        <span class="lbl">Saldo em Caixa:</span>
+        <strong>R$ {{ formatPrice(balance) }}</strong>
+      </div>
+      <button class="btn btn-outline-primary" (click)="openCreate()" *ngIf="activeTab === 'movements'">
+        <i class="fas fa-plus-circle"></i> Lançamento Avulso
+      </button>
+      <button class="btn btn-secondary-brand" (click)="openNewPayableModal()" *ngIf="activeTab === 'payables'">
+        <i class="fas fa-file-invoice-dollar"></i> + Nova Conta a Pagar
+      </button>
     </div>
   </div>
 
-  <div class="balance-card">
-    <span class="balance-label">Saldo do caixa</span>
-    <span class="balance-value" [class.negative]="balance < 0">R$ {{ formatPrice(balance) }}</span>
+  <!-- Abas de Navegação -->
+  <div class="tab-navigation">
+    <button class="tab-btn" [class.active]="activeTab === 'pdv'" (click)="activeTab = 'pdv'">
+      <i class="fas fa-cash-register"></i> PDV Balcão Rápido (HU-22)
+      <span class="badge-cart" *ngIf="pdvCart.length">{{ pdvCart.length }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'movements'" (click)="activeTab = 'movements'">
+      <i class="fas fa-exchange-alt"></i> Lançamentos & Caixa
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'payables'" (click)="activeTab = 'payables'">
+      <i class="fas fa-file-invoice-dollar"></i> Contas a Pagar (HU-23)
+      <span class="badge-alert" *ngIf="overduePayablesCount">{{ overduePayablesCount }} vencida(s)</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'closure'" (click)="activeTab = 'closure'">
+      <i class="fas fa-clipboard-check"></i> Fechamento Consolidado (HU-24)
+    </button>
   </div>
 
-  <form class="movement-form" *ngIf="showForm" [formGroup]="movementForm" (ngSubmit)="save()">
-    <h2>Novo lançamento</h2>
+  <!-- ======================================================== -->
+  <!-- ABA 1: PDV DE BALCÃO RÁPIDO (HU-22)                      -->
+  <!-- ======================================================== -->
+  <div class="tab-content pdv-terminal" *ngIf="activeTab === 'pdv'">
+    <div class="pdv-layout">
 
-    <!-- Banner de Encaminhamento da Esteira de Delivery -->
-    <div class="origin-banner" *ngIf="originSource === 'daily-queue'">
-      <div class="banner-icon"><i class="fas fa-paw"></i></div>
-      <div class="banner-text">
-        <strong>Recebimento da Esteira de Delivery</strong>
-        <p>Atendimento concluído para o pet <strong>{{ originDetails.petName }}</strong> (Tutor: {{ originDetails.customerName }}). Confirme a forma de pagamento e finalize a entrada.</p>
+      <!-- Coluna Esquerda: Catálogo Rápido de Produtos -->
+      <div class="pdv-catalog-col">
+        <div class="catalog-header">
+          <div class="pdv-search-box">
+            <i class="fas fa-barcode"></i>
+            <input
+              type="text"
+              placeholder="Buscar por produto, código de barras ou categoria..."
+              [(ngModel)]="pdvSearch"
+              (input)="filterPdvProducts()">
+            <button class="btn-clear" *ngIf="pdvSearch" (click)="pdvSearch = ''; filterPdvProducts()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="pdv-product-grid">
+          <div
+            class="pdv-prod-card"
+            *ngFor="let p of filteredPdvProducts"
+            (click)="addToPdvCart(p)"
+            [class.out-of-stock]="p.stock !== null && p.stock !== undefined && p.stock <= 0">
+            <div class="prod-thumb-wrap">
+              <img *ngIf="p.image" [src]="p.image" [alt]="p.name" class="prod-thumb">
+              <div class="no-thumb" *ngIf="!p.image"><i class="fas fa-box"></i></div>
+              <span class="stock-pill" [class.out]="p.stock === 0" [class.low]="p.stock !== null && p.stock !== undefined && p.stock > 0 && p.stock <= 5">
+                {{ p.stock !== null && p.stock !== undefined ? p.stock + ' un' : '∞' }}
+              </span>
+            </div>
+            <div class="prod-details">
+              <span class="prod-category">{{ p.category }}</span>
+              <strong class="prod-title">{{ p.name }}</strong>
+              <span class="prod-price">R$ {{ formatPrice(p.price) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-catalog" *ngIf="filteredPdvProducts.length === 0">
+          <p>Nenhum produto encontrado para "{{ pdvSearch }}".</p>
+        </div>
+      </div>
+
+      <!-- Coluna Direita: Caixa Terminal / Cesto de Balcão -->
+      <div class="pdv-cart-col">
+        <div class="terminal-card">
+          <div class="terminal-header">
+            <h3><i class="fas fa-shopping-basket"></i> Cesta de Compras</h3>
+            <button class="btn-clear-cart" *ngIf="pdvCart.length" (click)="clearPdvCart()" title="Limpar tudo">
+              <i class="fas fa-trash-alt"></i> Limpar
+            </button>
+          </div>
+
+          <!-- Identificação do Cliente -->
+          <div class="customer-info-bar">
+            <div class="input-inline">
+              <i class="fas fa-user"></i>
+              <input type="text" [(ngModel)]="pdvCustomerName" placeholder="Nome do Cliente (Balcão)">
+            </div>
+            <div class="input-inline">
+              <i class="fas fa-phone-alt"></i>
+              <input type="text" [(ngModel)]="pdvCustomerPhone" placeholder="WhatsApp (opcional)">
+            </div>
+          </div>
+
+          <!-- Itens Adicionados -->
+          <div class="cart-items-container">
+            <div class="cart-empty-hint" *ngIf="pdvCart.length === 0">
+              <i class="fas fa-basket-shopping fa-2x"></i>
+              <p>Clique nos produtos ao lado para adicionar ao pedido do balcão</p>
+            </div>
+
+            <div class="cart-item-row" *ngFor="let item of pdvCart; let i = index">
+              <div class="item-info">
+                <strong>{{ item.product.name }}</strong>
+                <span class="unit-price">R$ {{ formatPrice(item.unitPrice) }} un.</span>
+              </div>
+
+              <div class="item-qty-controls">
+                <button type="button" class="btn-qty" (click)="updatePdvQty(i, -1)"><i class="fas fa-minus"></i></button>
+                <span class="qty-display">{{ item.quantity }}</span>
+                <button type="button" class="btn-qty" (click)="updatePdvQty(i, 1)"><i class="fas fa-plus"></i></button>
+              </div>
+
+              <div class="item-subtotal">
+                <strong>R$ {{ formatPrice(item.quantity * item.unitPrice) }}</strong>
+              </div>
+
+              <button type="button" class="btn-remove-item" (click)="removeFromPdvCart(i)" title="Remover item">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Totalizadores & Desconto -->
+          <div class="cart-summary-section" *ngIf="pdvCart.length > 0">
+            <div class="summary-line">
+              <span>Subtotal:</span>
+              <span>R$ {{ formatPrice(pdvSubtotal) }}</span>
+            </div>
+
+            <div class="summary-line">
+              <label for="pdv-discount">Desconto (R$):</label>
+              <input
+                id="pdv-discount"
+                type="number"
+                class="discount-input"
+                min="0"
+                step="0.50"
+                [(ngModel)]="pdvDiscount"
+                placeholder="0,00">
+            </div>
+
+            <div class="summary-line total-line">
+              <span>TOTAL A PAGAR:</span>
+              <strong class="total-amount">R$ {{ formatPrice(pdvTotal) }}</strong>
+            </div>
+
+            <!-- Forma de Pagamento -->
+            <div class="payment-methods-selector">
+              <label>Forma de Pagamento:</label>
+              <div class="methods-grid">
+                <button
+                  type="button"
+                  class="method-btn"
+                  [class.active]="pdvPaymentMethod === 'pix'"
+                  (click)="pdvPaymentMethod = 'pix'">
+                  <i class="fa-brands fa-pix"></i> Pix
+                </button>
+                <button
+                  type="button"
+                  class="method-btn"
+                  [class.active]="pdvPaymentMethod === 'dinheiro'"
+                  (click)="pdvPaymentMethod = 'dinheiro'">
+                  <i class="fas fa-money-bill-wave"></i> Dinheiro
+                </button>
+                <button
+                  type="button"
+                  class="method-btn"
+                  [class.active]="pdvPaymentMethod === 'cartao_debito'"
+                  (click)="pdvPaymentMethod = 'cartao_debito'">
+                  <i class="fas fa-credit-card"></i> Débito
+                </button>
+                <button
+                  type="button"
+                  class="method-btn"
+                  [class.active]="pdvPaymentMethod === 'cartao_credito'"
+                  (click)="pdvPaymentMethod = 'cartao_credito'">
+                  <i class="fas fa-credit-card"></i> Crédito
+                </button>
+              </div>
+            </div>
+
+            <!-- Campo de Troco para Dinheiro -->
+            <div class="cash-change-calculator" *ngIf="pdvPaymentMethod === 'dinheiro'">
+              <div class="change-row">
+                <label for="cash-received">Valor Recebido (R$):</label>
+                <input
+                  id="cash-received"
+                  type="number"
+                  class="cash-input"
+                  min="0"
+                  step="1.00"
+                  [(ngModel)]="pdvCashReceived"
+                  placeholder="Ex: 100,00">
+              </div>
+              <div class="change-result">
+                <span>Troco a Devolver:</span>
+                <strong [class.has-change]="pdvChange > 0">R$ {{ formatPrice(pdvChange) }}</strong>
+              </div>
+            </div>
+
+            <!-- Botão de Finalizar Venda -->
+            <button
+              type="button"
+              class="btn-finalize-pdv"
+              (click)="finalizePdvSale()">
+              <i class="fas fa-check-circle"></i> Finalizar Venda no Caixa (R$ {{ formatPrice(pdvTotal) }})
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group form-group-sm">
-        <label for="cash-type">Tipo *</label>
-        <select id="cash-type" formControlName="type">
-          <option value="entrada">Entrada</option>
-          <option value="saida">Saída</option>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- ABA 2: LANÇAMENTOS E FLUXO DE CAIXA                      -->
+  <!-- ======================================================== -->
+  <div class="tab-content" *ngIf="activeTab === 'movements'">
+    <!-- Formulário de Lançamento Manual / Encaminhamento da Fila -->
+    <form class="movement-form" *ngIf="showForm" [formGroup]="movementForm" (ngSubmit)="save()">
+      <h2>Novo lançamento</h2>
+
+      <div class="origin-banner" *ngIf="originSource === 'daily-queue'">
+        <div class="banner-icon"><i class="fas fa-paw"></i></div>
+        <div class="banner-text">
+          <strong>Recebimento da Esteira de Delivery</strong>
+          <p>Atendimento concluído para o pet <strong>{{ originDetails.petName }}</strong> (Tutor: {{ originDetails.customerName }}). Confirme a forma de pagamento e finalize a entrada.</p>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group form-group-sm">
+          <label for="cash-type">Tipo *</label>
+          <select id="cash-type" formControlName="type">
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída / Sangria</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="cash-description">Descrição *</label>
+          <input id="cash-description" type="text" formControlName="description" placeholder="Ex: Compra de ração, Banho pet">
+        </div>
+        <div class="form-group form-group-sm">
+          <label for="cash-amount">Valor (R$) *</label>
+          <input id="cash-amount" type="number" formControlName="amount" min="0.01" step="0.01">
+        </div>
+        <div class="form-group form-group-sm">
+          <label for="cash-payment-method">Forma de pagamento</label>
+          <select id="cash-payment-method" formControlName="paymentMethod">
+            <option value="pix">Pix</option>
+            <option value="dinheiro">Dinheiro</option>
+            <option value="cartao_debito">Cartão de Débito</option>
+            <option value="cartao_credito">Cartão de Crédito</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="movementForm.invalid">Salvar Lançamento</button>
+        <button type="button" class="btn btn-outline-secondary" (click)="cancel()">Cancelar</button>
+      </div>
+    </form>
+
+    <div class="empty-state" *ngIf="movements.length === 0">
+      <p>Nenhum movimento no caixa ainda.</p>
+    </div>
+
+    <div class="table-container" *ngIf="movements.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Data e Hora</th>
+            <th>Descrição do Movimento</th>
+            <th>Tipo</th>
+            <th>Pagamento</th>
+            <th>Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of movements">
+            <td>{{ formatDate(m.createdAt) }}</td>
+            <td>{{ m.description }}</td>
+            <td>
+              <span class="type-badge" [class.entrada]="m.type === 'entrada'" [class.saida]="m.type === 'saida'">
+                {{ m.type === 'entrada' ? 'Entrada' : 'Saída' }}
+              </span>
+            </td>
+            <td>
+              <span class="method-tag">{{ getPaymentMethodLabel(m.paymentMethod || '') }}</span>
+            </td>
+            <td [class.negative]="m.type === 'saida'" class="amount-cell">
+              {{ m.type === 'entrada' ? '+' : '-' }} R$ {{ formatPrice(m.amount) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- ABA 3: CONTAS A PAGAR COMO FLUXO (HU-23)                 -->
+  <!-- ======================================================== -->
+  <div class="tab-content" *ngIf="activeTab === 'payables'">
+    <!-- KPIs de Contas a Pagar -->
+    <div class="payables-kpis">
+      <div class="pay-kpi">
+        <div class="kpi-icon icon-yellow"><i class="fas fa-clock"></i></div>
+        <div class="kpi-text">
+          <span class="lbl">A Pagar (Previsto)</span>
+          <strong class="val text-warning">R$ {{ formatPrice(totalPayablesDue) }}</strong>
+          <span class="sub">Compromissos pendentes</span>
+        </div>
+      </div>
+
+      <div class="pay-kpi">
+        <div class="kpi-icon icon-green"><i class="fas fa-check-double"></i></div>
+        <div class="kpi-text">
+          <span class="lbl">Total Pago</span>
+          <strong class="val text-success">R$ {{ formatPrice(totalPayablesPaid) }}</strong>
+          <span class="sub">Baixados no caixa</span>
+        </div>
+      </div>
+
+      <div class="pay-kpi" [class.alert]="overduePayablesCount > 0">
+        <div class="kpi-icon icon-red"><i class="fas fa-triangle-exclamation"></i></div>
+        <div class="kpi-text">
+          <span class="lbl">Contas Vencidas</span>
+          <strong class="val text-danger">{{ overduePayablesCount }}</strong>
+          <span class="sub">Exigem quitação imediata</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="payables-filter-bar">
+      <div class="filter-chips">
+        <button class="chip" [class.active]="payableFilter === 'todos'" (click)="payableFilter = 'todos'">
+          Todas as Contas ({{ payables.length }})
+        </button>
+        <button class="chip chip-warning" [class.active]="payableFilter === 'previsto'" (click)="payableFilter = 'previsto'">
+          <i class="fas fa-clock"></i> Pendentes / Previstas
+        </button>
+        <button class="chip chip-success" [class.active]="payableFilter === 'pago'" (click)="payableFilter = 'pago'">
+          <i class="fas fa-check"></i> Pagas
+        </button>
+      </div>
+
+      <div class="category-select">
+        <label>Categoria:</label>
+        <select [(ngModel)]="payableCategoryFilter">
+          <option value="todas">Todas as Categorias</option>
+          <option value="fornecedor">Fornecedores / Estoque</option>
+          <option value="aluguel">Aluguel do Imóvel</option>
+          <option value="insumo">Insumos de Banho/Tosa</option>
+          <option value="comissao">Comissões de Tosadores</option>
+          <option value="energia_agua">Energia, Água & Internet</option>
+          <option value="outros">Outras Despesas</option>
         </select>
       </div>
-      <div class="form-group">
-        <label for="cash-description">Descrição *</label>
-        <input id="cash-description" type="text" formControlName="description" placeholder="Ex: Compra de ração">
-      </div>
-      <div class="form-group form-group-sm">
-        <label for="cash-amount">Valor (R$) *</label>
-        <input id="cash-amount" type="number" formControlName="amount" min="0.01" step="0.01">
-      </div>
-      <div class="form-group">
-        <label for="cash-payment-method">Forma de pagamento</label>
-        <input id="cash-payment-method" type="text" formControlName="paymentMethod" placeholder="Ex: dinheiro, pix">
-      </div>
     </div>
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="movementForm.invalid">Salvar</button>
-      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">Cancelar</button>
-    </div>
-  </form>
 
-  <div class="empty-state" *ngIf="movements.length === 0">
-    <p>Nenhum movimento no caixa ainda.</p>
+    <!-- Tabela de Contas a Pagar -->
+    <div class="empty-state" *ngIf="filteredPayables.length === 0">
+      <p>Nenhuma conta a pagar encontrada com os filtros selecionados.</p>
+    </div>
+
+    <div class="table-container" *ngIf="filteredPayables.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Vencimento</th>
+            <th>Descrição da Conta</th>
+            <th>Categoria</th>
+            <th>Fornecedor / Beneficiário</th>
+            <th>Valor</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of filteredPayables" [class.row-overdue]="isPayableOverdue(p)">
+            <td>
+              <strong>{{ formatDateShort(p.dueDate) }}</strong>
+              <span class="badge-overdue" *ngIf="isPayableOverdue(p)">Vencida!</span>
+            </td>
+            <td>
+              <div class="payable-title">
+                <strong>{{ p.description }}</strong>
+                <span class="payable-notes" *ngIf="p.notes">{{ p.notes }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="cat-pill-payable">{{ p.category | uppercase }}</span>
+            </td>
+            <td>{{ p.supplier || '—' }}</td>
+            <td>
+              <strong class="payable-amount">R$ {{ formatPrice(p.amount) }}</strong>
+            </td>
+            <td>
+              <span class="status-payable-badge" [class.previsto]="p.status === 'previsto'" [class.pago]="p.status === 'pago'">
+                <i class="fas" [ngClass]="p.status === 'pago' ? 'fa-check' : 'fa-clock'"></i>
+                {{ p.status === 'pago' ? 'Pago' : 'Previsto' }}
+              </span>
+              <span class="paid-date" *ngIf="p.status === 'pago' && p.paidAt">
+                {{ formatDate(p.paidAt) }} ({{ getPaymentMethodLabel(p.paymentMethod || '') }})
+              </span>
+            </td>
+            <td class="actions-cell">
+              <button
+                class="btn btn-sm btn-success-pay"
+                *ngIf="p.status === 'previsto'"
+                (click)="openPayModal(p)"
+                title="Efetuar pagamento e lançar saída no caixa automaticamente">
+                <i class="fas fa-hand-holding-dollar"></i> Pagar Agora
+              </button>
+              <button
+                class="btn btn-sm btn-outline-danger"
+                (click)="deletePayable(p)"
+                title="Excluir conta">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="table-container" *ngIf="movements.length > 0">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Descrição</th>
-          <th>Tipo</th>
-          <th>Pagamento</th>
-          <th>Valor</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let m of movements">
-          <td>{{ formatDate(m.createdAt) }}</td>
-          <td>{{ m.description }}</td>
-          <td>
-            <span class="type-badge" [class.entrada]="m.type === 'entrada'" [class.saida]="m.type === 'saida'">
-              {{ m.type === 'entrada' ? 'Entrada' : 'Saída' }}
-            </span>
-          </td>
-          <td>{{ m.paymentMethod || '—' }}</td>
-          <td [class.negative]="m.type === 'saida'">
-            {{ m.type === 'entrada' ? '+' : '-' }} R$ {{ formatPrice(m.amount) }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- ======================================================== -->
+  <!-- ABA 4: FECHAMENTO CONSOLIDADO DO DIA (HU-24)             -->
+  <!-- ======================================================== -->
+  <div class="tab-content" *ngIf="activeTab === 'closure'">
+    <div class="closure-toolbar">
+      <div class="date-selector">
+        <label><i class="fas fa-calendar-alt"></i> Data do Fechamento:</label>
+        <input type="date" [(ngModel)]="closureDate">
+      </div>
+      <button class="btn btn-primary" (click)="printClosureReport()">
+        <i class="fas fa-print"></i> Imprimir / Exportar Fechamento
+      </button>
+    </div>
+
+    <div class="closure-report-sheet">
+      <div class="closure-header-sheet">
+        <div class="sheet-title">
+          <h2>Animal World Pet Shop — Fechamento Consolidado do Caixa</h2>
+          <p>Relatório diário unificado de Esteira de Banho & Tosa, Vendas PDV e Contas Pagas (HU-24)</p>
+          <span class="closure-date-tag">Competência: {{ formatDateShort(closureDate) }}</span>
+        </div>
+      </div>
+
+      <!-- Resumo de Operações e Entradas -->
+      <div class="sheet-grid">
+        <div class="sheet-card">
+          <h3><i class="fas fa-cut"></i> 1. Banho & Tosa (Esteira Delivery)</h3>
+          <div class="sheet-row">
+            <span>Atendimentos Concluídos:</span>
+            <strong>{{ closureServicesCount }} pets</strong>
+          </div>
+          <div class="sheet-row">
+            <span>Receita de Serviços de Estética:</span>
+            <strong>R$ {{ formatPrice(closureServicesTotal) }}</strong>
+          </div>
+          <div class="sheet-row">
+            <span>Receita de Táxi Dog Integrado:</span>
+            <strong>R$ {{ formatPrice(closureTaxiTotal) }}</strong>
+          </div>
+        </div>
+
+        <div class="sheet-card">
+          <h3><i class="fas fa-percentage"></i> 2. Comissões da Equipe (HU-19)</h3>
+          <div class="sheet-row">
+            <span>Taxa Padrão:</span>
+            <strong>15% solo / 7,5% duplas</strong>
+          </div>
+          <div class="sheet-row">
+            <span>Total de Comissões Geradas:</span>
+            <strong class="text-warning">R$ {{ formatPrice(closureCommissionsTotal) }}</strong>
+          </div>
+          <small class="sheet-note">* Provisionado para os tosadores escalados na data.</small>
+        </div>
+
+        <div class="sheet-card">
+          <h3><i class="fas fa-money-bill-trend-up"></i> 3. Movimento de Caixa Realizado</h3>
+          <div class="sheet-row">
+            <span>Total Entradas Registradas (PDV + Atendimentos):</span>
+            <strong class="text-success">+ R$ {{ formatPrice(closureInflows) }}</strong>
+          </div>
+          <div class="sheet-row">
+            <span>Total Saídas & Contas Pagas:</span>
+            <strong class="text-danger">- R$ {{ formatPrice(closureOutflows) }}</strong>
+          </div>
+          <div class="sheet-row highlight-net">
+            <span>RESULTADO LÍQUIDO DO DIA:</span>
+            <strong [class.text-danger]="closureNetResult < 0" class="text-success">
+              R$ {{ formatPrice(closureNetResult) }}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detalhamento por Forma de Pagamento -->
+      <div class="payment-method-closure">
+        <h3><i class="fas fa-wallet"></i> Entradas por Meio de Pagamento</h3>
+        <div class="methods-summary-grid">
+          <div class="method-box" *ngFor="let item of closureMethodBreakdown">
+            <span class="m-title">{{ item.method }}</span>
+            <strong class="m-val">R$ {{ formatPrice(item.total) }}</strong>
+            <span class="m-cnt">{{ item.count }} transação(ões)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: RECIBO DE VENDA PDV (HU-22)                       -->
+  <!-- ======================================================== -->
+  <div class="modal-backdrop" *ngIf="pdvReceiptModal" (click)="closeReceiptModal()">
+    <div class="receipt-modal-box" (click)="$event.stopPropagation()">
+      <div class="receipt-header">
+        <i class="fas fa-check-circle receipt-icon"></i>
+        <h3>Venda Realizada com Sucesso!</h3>
+        <p>Cupom não fiscal de balcão impresso e registrado no caixa.</p>
+      </div>
+
+      <div class="receipt-paper" *ngIf="lastSaleReceipt">
+        <div class="paper-brand">
+          <h4>ANIMAL WORLD PET SHOP</h4>
+          <p>Riacho Fundo I — QC 3 / Brasília-DF</p>
+          <span class="paper-id">CUPOM BALCÃO: {{ lastSaleReceipt.id }}</span>
+          <span class="paper-date">{{ lastSaleReceipt.date }}</span>
+        </div>
+
+        <div class="paper-divider">----------------------------------------</div>
+
+        <div class="paper-customer">
+          <span>Cliente: <strong>{{ lastSaleReceipt.customerName }}</strong></span>
+          <span *ngIf="lastSaleReceipt.customerPhone">Tel: {{ lastSaleReceipt.customerPhone }}</span>
+        </div>
+
+        <div class="paper-divider">----------------------------------------</div>
+
+        <div class="paper-items">
+          <div class="paper-item" *ngFor="let it of lastSaleReceipt.items">
+            <span>{{ it.quantity }}x {{ it.name }}</span>
+            <strong>R$ {{ formatPrice(it.subtotal) }}</strong>
+          </div>
+        </div>
+
+        <div class="paper-divider">----------------------------------------</div>
+
+        <div class="paper-totals">
+          <div class="p-row" *ngIf="lastSaleReceipt.discount > 0">
+            <span>Desconto:</span>
+            <span>- R$ {{ formatPrice(lastSaleReceipt.discount) }}</span>
+          </div>
+          <div class="p-row total-bold">
+            <span>TOTAL PAGO:</span>
+            <strong>R$ {{ formatPrice(lastSaleReceipt.total) }}</strong>
+          </div>
+          <div class="p-row">
+            <span>Forma de Pagamento:</span>
+            <span>{{ lastSaleReceipt.paymentMethod }}</span>
+          </div>
+          <div class="p-row" *ngIf="lastSaleReceipt.cashReceived">
+            <span>Valor Recebido:</span>
+            <span>R$ {{ formatPrice(lastSaleReceipt.cashReceived) }}</span>
+          </div>
+          <div class="p-row" *ngIf="lastSaleReceipt.change">
+            <span>Troco:</span>
+            <strong>R$ {{ formatPrice(lastSaleReceipt.change) }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="receipt-actions">
+        <button class="btn btn-outline-secondary" (click)="closeReceiptModal()">Fechar</button>
+        <button class="btn btn-primary" (click)="printReceipt()"><i class="fas fa-print"></i> Imprimir Cupom</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: NOVA CONTA A PAGAR (HU-23)                        -->
+  <!-- ======================================================== -->
+  <div class="modal-backdrop" *ngIf="showPayableModal" (click)="closePayableModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="title-with-icon">
+          <i class="fas fa-file-invoice-dollar text-primary"></i>
+          <div>
+            <h3>Cadastrar Conta a Pagar</h3>
+            <p>Registre títulos de fornecedores, insumos, aluguel ou despesas</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close" (click)="closePayableModal()"><i class="fas fa-times"></i></button>
+      </div>
+
+      <form [formGroup]="payableForm" (ngSubmit)="saveNewPayable()">
+        <div class="form-group">
+          <label for="pay-desc">Descrição da Conta / Título *</label>
+          <input type="text" id="pay-desc" formControlName="description" placeholder="Ex: Fornecedor Premier Pet - NF 5892">
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="pay-amount">Valor (R$) *</label>
+            <input type="number" id="pay-amount" formControlName="amount" min="0.01" step="0.01" placeholder="Ex: 850.00">
+          </div>
+          <div class="form-group">
+            <label for="pay-due">Data de Vencimento *</label>
+            <input type="date" id="pay-due" formControlName="dueDate">
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="pay-cat">Categoria *</label>
+            <select id="pay-cat" formControlName="category">
+              <option value="fornecedor">Fornecedor / Estoque</option>
+              <option value="aluguel">Aluguel do Imóvel</option>
+              <option value="insumo">Insumo de Banho & Tosa</option>
+              <option value="comissao">Comissão de Profissional</option>
+              <option value="energia_agua">Energia, Água & Internet</option>
+              <option value="outros">Outras Despesas</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="pay-supp">Fornecedor / Beneficiário</label>
+            <input type="text" id="pay-supp" formControlName="supplier" placeholder="Ex: Imobiliária Central DF">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="pay-notes">Observações / Número do Boleto</label>
+          <input type="text" id="pay-notes" formControlName="notes" placeholder="Ex: Código de barras ou instruções de pagamento">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closePayableModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="payableForm.invalid">
+            <i class="fas fa-save"></i> Salvar Conta
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: BAIXAR / PAGAR CONTA (HU-23 -> GERA SAÍDA NO CAIXA)-->
+  <!-- ======================================================== -->
+  <div class="modal-backdrop" *ngIf="showPayModal" (click)="closePayModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="title-with-icon">
+          <i class="fas fa-hand-holding-dollar text-success"></i>
+          <div>
+            <h3>Quitar Conta a Pagar</h3>
+            <p>O valor será debitado do caixa e registrado como saída automaticamente</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close" (click)="closePayModal()"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div class="pay-confirmation-details" *ngIf="payableToPay">
+        <div class="detail-line">
+          <span>Título:</span>
+          <strong>{{ payableToPay.description }}</strong>
+        </div>
+        <div class="detail-line">
+          <span>Beneficiário:</span>
+          <span>{{ payableToPay.supplier || 'Não informado' }}</span>
+        </div>
+        <div class="detail-line highlight">
+          <span>Valor a Pagar:</span>
+          <strong class="text-danger">R$ {{ formatPrice(payableToPay.amount) }}</strong>
+        </div>
+
+        <div class="form-group" style="margin-top: 1rem;">
+          <label for="pay-method-select">Forma de Pagamento Utilizada:</label>
+          <select id="pay-method-select" [(ngModel)]="payablePaymentMethod" class="form-control">
+            <option value="pix">Pix (Transferência Bancária)</option>
+            <option value="dinheiro">Dinheiro em Espécie (Gaveta do Caixa)</option>
+            <option value="cartao_debito">Cartão de Débito</option>
+            <option value="cartao_credito">Cartão de Crédito</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" (click)="closePayModal()">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="confirmPayment()">
+          <i class="fas fa-check"></i> Confirmar Pagamento e Baixar no Caixa
+        </button>
+      </div>
+    </div>
   </div>
 </div>

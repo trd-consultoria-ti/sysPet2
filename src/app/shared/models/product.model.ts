@@ -8,4 +8,8 @@ export interface Product {
   category: string;
   description: string;
   stock?: number | null;
+  minStock?: number | null;
+  costPrice?: number | null;
+  supplier?: string;
+  barcode?: string;
 }

@@ -18,6 +18,7 @@ import { AdminTaxiComponent } from './admin-taxi/admin-taxi.component';
 import { AdminWhatsappComponent } from './admin-whatsapp/admin-whatsapp.component';
 import { AdminMedicationsComponent } from './admin-medications/admin-medications.component';
 import { AdminSystemMapComponent } from './admin-system-map/admin-system-map.component';
+import { AdminGroomersComponent } from './admin-groomers/admin-groomers.component';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { SharedModule } from '../../shared/shared.module';
 
@@ -37,6 +38,7 @@ const routes: Routes = [
       { path: 'vets', component: AdminVetsComponent },
       { path: 'orders', loadChildren: () => import('../orders/orders.module').then(m => m.OrdersModule) },
       { path: 'inventory', component: InventoryComponent },
+      { path: 'groomers', component: AdminGroomersComponent, canActivate: [AdminGuard] },
       { path: 'medications', component: AdminMedicationsComponent },
       { path: 'services', component: AdminServicesComponent, canActivate: [AdminGuard] },
       { path: 'users', component: AdminUsersComponent, canActivate: [AdminGuard] },
@@ -63,6 +65,7 @@ const routes: Routes = [
     AdminReportsComponent,
     AdminConsultationsComponent,
     AdminVetsComponent,
+    AdminGroomersComponent,
     AdminSystemMapComponent
   ],
   imports: [

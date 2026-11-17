@@ -1,0 +1,281 @@
+<div class="admin-page">
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Tosadores & Comissões</h1>
+      <p class="subtitle">Cadastro de profissionais, comissão padrão de 15%, rateio em dupla (7,5%) e fechamento (HU-18 & HU-19)</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary" (click)="openNewGroomerModal()" *ngIf="activeTab === 'groomers'">
+        <i class="fas fa-plus"></i> + Novo Tosador
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast de Notificação -->
+  <div class="toast-alert" *ngIf="toastMessage" [ngClass]="'toast-' + toastType">
+    <i class="fas fa-check-circle" *ngIf="toastType === 'success'"></i>
+    <i class="fas fa-info-circle" *ngIf="toastType === 'info'"></i>
+    <i class="fas fa-exclamation-triangle" *ngIf="toastType === 'warning'"></i>
+    <span>{{ toastMessage }}</span>
+  </div>
+
+  <!-- Abas de Navegação -->
+  <div class="tab-navigation">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'groomers'"
+      (click)="activeTab = 'groomers'">
+      <i class="fas fa-users-cog"></i> Equipe de Tosadores (HU-18)
+      <span class="badge-count">{{ groomers.length }}</span>
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'commissions'"
+      (click)="activeTab = 'commissions'">
+      <i class="fas fa-percentage"></i> Relatório de Comissões (HU-19)
+    </button>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- ABA 1: CADASTRO & GESTÃO DE TOSADORES (HU-18)            -->
+  <!-- ======================================================== -->
+  <div class="tab-content" *ngIf="activeTab === 'groomers'">
+    <div class="groomers-grid">
+      <div class="groomer-card" *ngFor="let g of groomers" [class.inactive]="!g.active">
+        <div class="card-avatar">
+          <i class="fas fa-user-tie"></i>
+        </div>
+        <div class="card-body">
+          <div class="card-title-row">
+            <h3>{{ g.name }}</h3>
+            <span class="status-pill" [class.active]="g.active" [class.inactive]="!g.active">
+              {{ g.active ? 'Ativo' : 'Inativo' }}
+            </span>
+          </div>
+
+          <div class="card-detail">
+            <i class="fas fa-phone-alt"></i>
+            <span>{{ g.phone || 'Sem telefone' }}</span>
+          </div>
+
+          <div class="card-detail highlight">
+            <i class="fas fa-percentage"></i>
+            <span>Comissão Base: <strong>{{ g.commissionRate }}%</strong></span>
+            <span class="pair-rate-tag">(7,5% em dupla)</span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-sm btn-outline-info" (click)="openWhatsAppGroomer(g)" title="WhatsApp">
+            <i class="fab fa-whatsapp"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-primary" (click)="openEditGroomerModal(g)" title="Editar">
+            <i class="fas fa-edit"></i> Editar
+          </button>
+          <button
+            class="btn btn-sm"
+            [ngClass]="g.active ? 'btn-outline-warning' : 'btn-outline-success'"
+            (click)="toggleActive(g)"
+            [title]="g.active ? 'Desativar da Fila' : 'Ativar na Fila'">
+            <i class="fas" [ngClass]="g.active ? 'fa-user-slash' : 'fa-user-check'"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger" (click)="deleteGroomer(g)" title="Excluir">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- ABA 2: RELATÓRIO DE COMISSÕES (HU-19)                    -->
+  <!-- ======================================================== -->
+  <div class="tab-content" *ngIf="activeTab === 'commissions'">
+
+    <!-- Filtros de Período e Tosador -->
+    <div class="commission-filter-bar">
+      <div class="filter-group">
+        <label><i class="fas fa-calendar-alt"></i> Período De:</label>
+        <input type="date" [(ngModel)]="startDate" (change)="onDateFilterChange()">
+      </div>
+      <div class="filter-group">
+        <label>Até:</label>
+        <input type="date" [(ngModel)]="endDate" (change)="onDateFilterChange()">
+      </div>
+      <div class="filter-group flex-1">
+        <label><i class="fas fa-user-tag"></i> Filtrar Tosador:</label>
+        <select [(ngModel)]="selectedGroomerFilter" (change)="onGroomerFilterChange()">
+          <option value="all">Todos os Tosadores</option>
+          <option *ngFor="let g of groomers" [value]="g.id">{{ g.name }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Cards de Resumo Consolidado (HU-19) -->
+    <div class="commission-kpis">
+      <div class="kpi-box">
+        <div class="kpi-icon icon-blue"><i class="fas fa-cut"></i></div>
+        <div class="kpi-text">
+          <span class="label">Total de Atendimentos</span>
+          <strong class="value">{{ totalServicesCountOverall }} pets</strong>
+          <span class="sub">Banho e tosa no período</span>
+        </div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-icon icon-green"><i class="fas fa-receipt"></i></div>
+        <div class="kpi-text">
+          <span class="label">Base de Serviços (Sem Táxi)</span>
+          <strong class="value">R$ {{ formatPrice(totalServiceRevenueOverall) }}</strong>
+          <span class="sub">Exclusivo serviços de estética</span>
+        </div>
+      </div>
+
+      <div class="kpi-box highlight-box">
+        <div class="kpi-icon icon-teal"><i class="fas fa-hand-holding-dollar"></i></div>
+        <div class="kpi-text">
+          <span class="label">Total de Comissões Devidas</span>
+          <strong class="value text-teal">R$ {{ formatPrice(totalCommissionDueOverall) }}</strong>
+          <span class="sub">Rateio 15% individual / 7,5% duplas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista de Fechamento por Profissional (HU-19 + HU-23) -->
+    <div class="groomer-reports-container">
+      <div class="report-groomer-card" *ngFor="let rep of filteredReports">
+        <div class="rep-header">
+          <div class="rep-info">
+            <h3><i class="fas fa-scissors"></i> {{ rep.groomerName }}</h3>
+            <span class="rep-phone" *ngIf="rep.phone"><i class="fas fa-phone-alt"></i> {{ rep.phone }}</span>
+          </div>
+
+          <div class="rep-summary-stats">
+            <div class="stat-pill">
+              <span class="lbl">Atendimentos:</span>
+              <strong>{{ rep.totalServices }}</strong>
+            </div>
+            <div class="stat-pill">
+              <span class="lbl">Faturamento Base:</span>
+              <strong>R$ {{ formatPrice(rep.totalServiceRevenue) }}</strong>
+            </div>
+            <div class="stat-pill pill-commission">
+              <span class="lbl">Comissão a Pagar:</span>
+              <strong class="text-brand">R$ {{ formatPrice(rep.totalCommissionDue) }}</strong>
+            </div>
+          </div>
+
+          <div class="rep-actions">
+            <button
+              class="btn btn-sm btn-outline-success"
+              (click)="openWhatsAppGroomer(rep)"
+              title="Enviar extrato de comissão por WhatsApp">
+              <i class="fab fa-whatsapp"></i> Extrato WhatsApp
+            </button>
+            <button
+              class="btn btn-sm btn-primary"
+              [disabled]="rep.totalCommissionDue <= 0"
+              (click)="launchToPayables(rep)"
+              title="Lançar como Conta a Pagar no Financeiro (HU-23)">
+              <i class="fas fa-file-invoice-dollar"></i> Lançar Conta a Pagar
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabela Analítica de Itens Deste Tosador -->
+        <div class="rep-table-wrap" *ngIf="rep.items.length > 0">
+          <table class="rep-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Pet / Tutor</th>
+                <th>Serviço</th>
+                <th>Modo de Execução</th>
+                <th>Valor do Serviço</th>
+                <th>Taxa</th>
+                <th>Comissão</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of rep.items">
+                <td>{{ formatDateShort(item.date) }}</td>
+                <td>
+                  <strong>{{ item.petName }}</strong>
+                  <span class="sub-tutor">({{ item.customerName }})</span>
+                </td>
+                <td>{{ item.serviceName }}</td>
+                <td>
+                  <span class="mode-badge solo" *ngIf="!item.isPair">
+                    <i class="fas fa-user"></i> Solo (100% da comissão)
+                  </span>
+                  <span class="mode-badge duo" *ngIf="item.isPair">
+                    <i class="fas fa-user-friends"></i> Dupla com {{ item.partnerGroomerName }} (Rateio 50%)
+                  </span>
+                </td>
+                <td>R$ {{ formatPrice(item.servicePrice) }}</td>
+                <td>{{ item.commissionRate }}%</td>
+                <td>
+                  <strong class="comm-amount">R$ {{ formatPrice(item.commissionAmount) }}</strong>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="rep-empty" *ngIf="rep.items.length === 0">
+          <p>Nenhum atendimento registrado para {{ rep.groomerName }} neste período.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Cadastro / Edição de Tosador (HU-18) -->
+  <div class="modal-backdrop" *ngIf="showGroomerModal" (click)="closeGroomerModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="title-with-icon">
+          <i class="fas fa-user-plus text-primary"></i>
+          <div>
+            <h3>{{ editingGroomerId ? 'Editar Tosador' : 'Novo Profissional Tosador' }}</h3>
+            <p>Cadastre os profissionais de Banho & Tosa para rateio automático de 15%</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close" (click)="closeGroomerModal()"><i class="fas fa-times"></i></button>
+      </div>
+
+      <form [formGroup]="groomerForm" (ngSubmit)="saveGroomer()">
+        <div class="form-group">
+          <label for="groomer-name">Nome Completo do Profissional *</label>
+          <input type="text" id="groomer-name" formControlName="name" placeholder="Ex: Carlos Silva (Tosador)">
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="groomer-phone">Telefone / WhatsApp *</label>
+            <input type="text" id="groomer-phone" formControlName="phone" placeholder="(61) 99999-8888">
+          </div>
+          <div class="form-group">
+            <label for="groomer-rate">Comissão Individual Padrão (%) *</label>
+            <input type="number" id="groomer-rate" formControlName="commissionRate" min="1" max="100" step="0.5">
+            <small class="hint-rate"><i class="fas fa-info-circle"></i> Padrão do pet shop: 15% (quando em dupla, o rateio calcula 7,5% para cada).</small>
+          </div>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="custom-checkbox">
+            <input type="checkbox" formControlName="active">
+            <span class="checkmark"></span>
+            <span>Profissional Ativo (Disponível para seleção no Check-in da Fila)</span>
+          </label>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeGroomerModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="groomerForm.invalid">
+            <i class="fas fa-save"></i> Salvar Profissional
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
