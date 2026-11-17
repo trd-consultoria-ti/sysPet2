@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -39,6 +39,11 @@ export class AdminGroomersComponent implements OnInit, OnDestroy {
 
   // Lançamento em Contas a Pagar (integração HU-19 + HU-23)
   payingGroomerId: number | null = null;
+
+  @HostListener('window:keydown.escape')
+  handleEscape(): void {
+    if (this.showGroomerModal) this.closeGroomerModal();
+  }
 
   constructor(
     private groomerService: GroomerService,

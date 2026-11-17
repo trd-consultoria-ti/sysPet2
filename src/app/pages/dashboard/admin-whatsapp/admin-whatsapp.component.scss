@@ -5,6 +5,17 @@
   color: #333;
 
   .wa-header {
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: flex-start !important;
+      gap: 0.75rem;
+
+      .d-flex.align-items-center.gap-3 {
+        flex-wrap: wrap;
+        width: 100%;
+      }
+    }
+
     .header-logo {
       width: 48px;
       height: 48px;
@@ -86,6 +97,12 @@
     }
   }
 
+  .btn-back-mobile {
+    display: none;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
   // Layout
   .chat-layout {
     display: grid;
@@ -97,6 +114,37 @@
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+
+    @media (max-width: 900px) {
+      grid-template-columns: 280px 1fr;
+      height: 650px;
+    }
+
+    @media (max-width: 768px) {
+      display: flex;
+      flex-direction: column;
+      height: auto;
+      min-height: 580px;
+
+      .btn-back-mobile {
+        display: inline-flex;
+      }
+
+      .mobile-hidden {
+        display: none !important;
+      }
+
+      .conversations-column {
+        width: 100%;
+        max-height: 550px;
+        border-right: none;
+      }
+
+      .chat-column {
+        width: 100%;
+        min-height: 550px;
+      }
+    }
   }
 
   // Left Column: Conversations
@@ -476,7 +524,23 @@
   // MODAL QR CODE EVOLUTION API (COMERCIAL / SAAS)
   // =========================================================================
   .modal-qr-dialog {
+    width: 95%;
     max-width: 580px;
+    margin: 1.5rem auto;
+
+    @media (max-width: 480px) {
+      width: 96%;
+      margin: 0.5rem auto;
+      
+      .qr-modal-body {
+        padding: 1rem !important;
+      }
+
+      .qr-image-wrapper .qr-image {
+        width: 190px !important;
+        height: 190px !important;
+      }
+    }
 
     .qr-modal-body {
       padding: 1.5rem;

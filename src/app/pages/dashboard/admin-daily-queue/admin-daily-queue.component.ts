@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -108,6 +108,16 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
 
   // Pacotes Mensais & Créditos (HU-25)
   activePackageForPet: PetPackage | null = null;
+
+  @HostListener('window:keydown.escape')
+  handleEscape(): void {
+    if (this.showModal) this.closeModal();
+    if (this.showTosaValidationModal) this.closeTosaValidationModal();
+    if (this.showCapacityModal) this.closeCapacityModal();
+    if (this.showCashModal) this.closeCashModal();
+    if (this.showQuickRegionModal) this.closeQuickRegionModal();
+    if (this.showTaxiWaModal) this.closeTaxiWaModal();
+  }
 
   private sub: Subscription = new Subscription();
 

@@ -137,8 +137,9 @@
     <input type="text"
            class="form-control"
            placeholder="Pesquisar tela, módulo ou funcionalidade neste mapa (ex: medicamentos, tosa, caixa, comissão)..."
+           aria-label="Pesquisar tela, módulo ou funcionalidade no mapa do sistema"
            [(ngModel)]="searchFilter">
-    <button *ngIf="searchFilter" class="btn-clear" (click)="searchFilter = ''">✕</button>
+    <button *ngIf="searchFilter" class="btn-clear" (click)="searchFilter = ''" aria-label="Limpar pesquisa do mapa">✕</button>
   </div>
 
   <!-- Seções do Mapa -->

@@ -65,8 +65,8 @@
     <div class="search-bar-wrap">
       <div class="search-box">
         <i class="fas fa-search"></i>
-        <input type="text" placeholder="Buscar por pet, tutor ou plano..." [(ngModel)]="search">
-        <button class="clear-btn" *ngIf="search" (click)="search = ''"><i class="fas fa-times"></i></button>
+        <input type="text" placeholder="Buscar por pet, tutor ou plano..." [(ngModel)]="search" aria-label="Buscar pacotes por pet, tutor ou plano">
+        <button class="clear-btn" *ngIf="search" (click)="search = ''" aria-label="Limpar campo de pesquisa"><i class="fas fa-times"></i></button>
       </div>
     </div>
 
@@ -79,14 +79,14 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Pet & Tutor</th>
-            <th>Plano Contratado</th>
-            <th>Saldo Banhos</th>
-            <th>Saldo Tosas</th>
-            <th>Validade</th>
-            <th>Valor</th>
-            <th>Status</th>
-            <th>Ações Rápidas</th>
+            <th scope="col">Pet & Tutor</th>
+            <th scope="col">Plano Contratado</th>
+            <th scope="col">Saldo Banhos</th>
+            <th scope="col">Saldo Tosas</th>
+            <th scope="col">Validade</th>
+            <th scope="col">Valor</th>
+            <th scope="col">Status</th>
+            <th scope="col">Ações Rápidas</th>
           </tr>
         </thead>
         <tbody>
@@ -144,6 +144,7 @@
                 class="btn btn-sm btn-outline-info"
                 [disabled]="pkg.usedBaths >= pkg.totalBaths || pkg.status !== 'ativo'"
                 (click)="consumeCredit(pkg, 'bath')"
+                [attr.aria-label]="'Debitar 1 Banho do pacote de ' + pkg.petName"
                 title="Debitar 1 Banho">
                 <i class="fas fa-shower"></i> -1 Banho
               </button>
@@ -152,6 +153,7 @@
                 class="btn btn-sm btn-outline-warning"
                 [disabled]="pkg.totalGrooms === 0 || pkg.usedGrooms >= pkg.totalGrooms || pkg.status !== 'ativo'"
                 (click)="consumeCredit(pkg, 'groom')"
+                [attr.aria-label]="'Debitar 1 Tosa do pacote de ' + pkg.petName"
                 title="Debitar 1 Tosa">
                 <i class="fas fa-scissors"></i> -1 Tosa
               </button>
@@ -159,6 +161,7 @@
                 type="button"
                 class="btn btn-sm btn-outline-danger"
                 (click)="deletePackage(pkg)"
+                [attr.aria-label]="'Excluir pacote de ' + pkg.petName"
                 title="Excluir Pacote">
                 <i class="fas fa-trash-alt"></i>
               </button>

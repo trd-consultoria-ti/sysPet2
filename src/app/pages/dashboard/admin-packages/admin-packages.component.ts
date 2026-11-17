@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -23,6 +23,11 @@ export class AdminPackagesComponent implements OnInit, OnDestroy {
   toastType: 'success' | 'info' | 'warning' = 'info';
 
   search = '';
+
+  @HostListener('window:keydown.escape')
+  handleEscape(): void {
+    if (this.activeTab === 'sell') this.activeTab = 'active';
+  }
 
   constructor(
     private packageService: PackageService,

@@ -173,8 +173,6 @@ async function getCustomersWithPets(userId = null) {
 
 // ---------- session tokens (HMAC) ----------
 
-const fs = require('fs');
-
 // Secret de sessão: env SESSION_SECRET tem prioridade; senão usa/cria arquivo local
 // persistido (server/.session-secret, gitignored) — nunca hardcoded no código.
 const SECRET_FILE = path.join(__dirname, '.session-secret');

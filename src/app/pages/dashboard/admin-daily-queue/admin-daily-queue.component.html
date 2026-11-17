@@ -334,6 +334,12 @@
       </button>
     </div>
 
+    <div class="empty-list-state" *ngIf="filteredItems.length === 0">
+      <i class="fas fa-inbox fa-3x text-muted mb-2"></i>
+      <h3>Nenhum pet encontrado neste filtro</h3>
+      <p>Não há atendimentos na fila com o status ou filtro selecionado.</p>
+    </div>
+
     <div class="queue-list" *ngIf="filteredItems.length > 0">
       <div class="queue-card" *ngFor="let item of filteredItems" [ngClass]="'status-' + item.status">
         <div class="queue-position">

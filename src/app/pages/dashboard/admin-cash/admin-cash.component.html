@@ -120,16 +120,16 @@
               </div>
 
               <div class="item-qty-controls">
-                <button type="button" class="btn-qty" (click)="updatePdvQty(i, -1)"><i class="fas fa-minus"></i></button>
+                <button type="button" class="btn-qty" (click)="updatePdvQty(i, -1)" [attr.aria-label]="'Diminuir quantidade de ' + item.product.name"><i class="fas fa-minus"></i></button>
                 <span class="qty-display">{{ item.quantity }}</span>
-                <button type="button" class="btn-qty" (click)="updatePdvQty(i, 1)"><i class="fas fa-plus"></i></button>
+                <button type="button" class="btn-qty" (click)="updatePdvQty(i, 1)" [attr.aria-label]="'Aumentar quantidade de ' + item.product.name"><i class="fas fa-plus"></i></button>
               </div>
 
               <div class="item-subtotal">
                 <strong>R$ {{ formatPrice(item.quantity * item.unitPrice) }}</strong>
               </div>
 
-              <button type="button" class="btn-remove-item" (click)="removeFromPdvCart(i)" title="Remover item">
+              <button type="button" class="btn-remove-item" (click)="removeFromPdvCart(i)" [attr.aria-label]="'Remover ' + item.product.name + ' do carrinho'" title="Remover item">
                 <i class="fas fa-times"></i>
               </button>
             </div>
@@ -529,11 +529,11 @@
   <!-- ======================================================== -->
   <!-- MODAL: RECIBO DE VENDA PDV                       -->
   <!-- ======================================================== -->
-  <div class="modal-backdrop" *ngIf="pdvReceiptModal" (click)="closeReceiptModal()">
+  <div class="modal-backdrop" *ngIf="pdvReceiptModal" (click)="closeReceiptModal()" role="dialog" aria-modal="true" aria-labelledby="receiptModalTitle">
     <div class="receipt-modal-box" (click)="$event.stopPropagation()">
       <div class="receipt-header">
         <i class="fas fa-check-circle receipt-icon"></i>
-        <h3>Venda Realizada com Sucesso!</h3>
+        <h3 id="receiptModalTitle">Venda Realizada com Sucesso!</h3>
         <p>Cupom não fiscal de balcão impresso e registrado no caixa.</p>
       </div>
 

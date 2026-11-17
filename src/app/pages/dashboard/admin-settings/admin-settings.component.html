@@ -156,11 +156,11 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Dia da Semana</th>
-              <th>Status do Dia</th>
-              <th>Abertura</th>
-              <th>Fechamento</th>
-              <th>Capacidade Diária (Vagas)</th>
+              <th scope="col">Dia da Semana</th>
+              <th scope="col">Status do Dia</th>
+              <th scope="col">Abertura</th>
+              <th scope="col">Fechamento</th>
+              <th scope="col">Capacidade Diária (Vagas)</th>
             </tr>
           </thead>
           <tbody>
@@ -173,6 +173,7 @@
                   type="button"
                   class="btn-toggle-day"
                   [class.is-open]="day.isOpen"
+                  [attr.aria-label]="(day.isOpen ? 'Fechar expediente de ' : 'Abrir expediente de ') + day.dayName"
                   (click)="toggleDayOpen(i)">
                   <i class="fas" [ngClass]="day.isOpen ? 'fa-door-open' : 'fa-door-closed'"></i>
                   {{ day.isOpen ? 'Aberto' : 'Fechado' }}
@@ -183,6 +184,7 @@
                   type="time"
                   [(ngModel)]="day.openTime"
                   [disabled]="!day.isOpen"
+                  [attr.aria-label]="'Horário de abertura de ' + day.dayName"
                   class="time-input">
               </td>
               <td>
@@ -190,6 +192,7 @@
                   type="time"
                   [(ngModel)]="day.closeTime"
                   [disabled]="!day.isOpen"
+                  [attr.aria-label]="'Horário de fechamento de ' + day.dayName"
                   class="time-input">
               </td>
               <td>
@@ -201,6 +204,7 @@
                     max="150"
                     step="1"
                     [disabled]="!day.isOpen"
+                    [attr.aria-label]="'Capacidade de vagas para ' + day.dayName"
                     class="capacity-input">
                   <span class="vagas-label">vagas / dia</span>
                 </div>

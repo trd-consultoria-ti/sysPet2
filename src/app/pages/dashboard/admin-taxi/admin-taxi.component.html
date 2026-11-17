@@ -331,12 +331,12 @@
   <!-- ========================================== -->
   <!-- MODAL: CRUD DE REGIÃO              -->
   <!-- ========================================== -->
-  <div class="modal-backdrop" *ngIf="showRegionModal">
-    <div class="modal-dialog">
+  <div class="modal-backdrop" *ngIf="showRegionModal" (click)="closeRegionModal()" role="dialog" aria-modal="true" aria-labelledby="taxiRegionModalTitle">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ isEditingRegion ? 'Editar Região de Táxi' : 'Nova Região de Táxi Dog' }}</h2>
-          <button type="button" class="close-btn" (click)="closeRegionModal()">&times;</button>
+          <h2 id="taxiRegionModalTitle">{{ isEditingRegion ? 'Editar Região de Táxi' : 'Nova Região de Táxi Dog' }}</h2>
+          <button type="button" class="close-btn" (click)="closeRegionModal()" aria-label="Fechar janela de região">&times;</button>
         </div>
 
         <form [formGroup]="regionForm" (ngSubmit)="saveRegion()">
@@ -385,18 +385,18 @@
   <!-- ========================================== -->
   <!-- MODAL: AVISO WHATSAPP MOTORISTA    -->
   <!-- ========================================== -->
-  <div class="modal-backdrop" *ngIf="showWaModal && waTargetTrip">
-    <div class="modal-dialog">
+  <div class="modal-backdrop" *ngIf="showWaModal && waTargetTrip" (click)="closeWaModal()" role="dialog" aria-modal="true" aria-labelledby="taxiWaModalTitle">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
       <div class="modal-content">
         <div class="modal-header wa-modal-header">
           <div class="d-flex align-items-center">
             <i class="fab fa-whatsapp fa-2x text-success mr-2"></i>
             <div>
-              <h2 class="mb-0">Aviso: Motorista a Caminho</h2>
+              <h2 class="mb-0" id="taxiWaModalTitle">Aviso: Motorista a Caminho</h2>
               <small class="text-muted">Notificação transacional para o tutor</small>
             </div>
           </div>
-          <button type="button" class="close-btn" (click)="closeWaModal()">&times;</button>
+          <button type="button" class="close-btn" (click)="closeWaModal()" aria-label="Fechar janela de aviso WhatsApp">&times;</button>
         </div>
 
         <div class="modal-body">

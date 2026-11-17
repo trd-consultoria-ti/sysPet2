@@ -466,3 +466,64 @@
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+// Media Queries Responsivas (Mobile & Tablet)
+@media (max-width: 992px) {
+  .taxi-page .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .taxi-page {
+    padding: 1rem;
+
+    .taxi-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+
+      .header-actions {
+        width: 100%;
+        .btn-new-region {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .taxi-tabs {
+      flex-direction: column;
+      width: 100%;
+
+      .tab-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    .modal-dialog {
+      width: 95% !important;
+      margin: 1rem auto;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .actions-group {
+      flex-wrap: wrap;
+      justify-content: flex-start;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .taxi-page {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}

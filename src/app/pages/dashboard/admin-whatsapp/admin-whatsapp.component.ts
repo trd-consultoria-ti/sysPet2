@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { WhatsappService } from '../../../shared/services/whatsapp.service';
@@ -22,6 +22,17 @@ export class AdminWhatsappComponent implements OnInit, OnDestroy {
   conversations: WaConversation[] = [];
   selectedConversation: WaConversation | null = null;
   messages: WaMessage[] = [];
+  mobileView: 'list' | 'chat' = 'list';
+
+  @HostListener('window:keydown.escape')
+  handleEscapeKey(): void {
+    if (this.showQrModal) this.closeQrModal();
+    if (this.showQuoteHelper) this.closeQuoteHelper();
+  }
+
+  backToConversationsList(): void {
+    this.mobileView = 'list';
+  }
 
   // Atendente Ativa
   currentAttendant = 'Recepção (Thaina)';
@@ -221,6 +232,7 @@ export class AdminWhatsappComponent implements OnInit, OnDestroy {
   selectConversation(conv: WaConversation): void {
     this.selectedConversation = conv;
     this.waService.selectConversation(conv);
+    this.mobileView = 'chat';
   }
 
   // --- SUGESTÃO INTELIGENTE (HU-16) ---

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Product } from '../../../shared/models/product.model';
 import { ProductService } from '../../../shared/services/product.service';
@@ -36,6 +36,12 @@ export class InventoryComponent implements OnInit, OnDestroy {
   restockForm: FormGroup;
   selectedProductForRestock: Product | null = null;
   restockSuccessMsg = '';
+
+  @HostListener('window:keydown.escape')
+  handleEscape(): void {
+    if (this.showRestockModal) this.closeRestock();
+    if (this.showCreateForm) this.showCreateForm = false;
+  }
 
   constructor(
     private productService: ProductService,

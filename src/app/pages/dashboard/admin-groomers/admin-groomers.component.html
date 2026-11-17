@@ -40,7 +40,16 @@
   <!-- ABA 1: CADASTRO & GESTÃO DE TOSADORES            -->
   <!-- ======================================================== -->
   <div class="tab-content" *ngIf="activeTab === 'groomers'">
-    <div class="groomers-grid">
+    <div class="empty-state-card" *ngIf="groomers.length === 0">
+      <i class="fas fa-user-friends fa-3x text-muted mb-2"></i>
+      <h3>Nenhum tosador cadastrado</h3>
+      <p>Cadastre a equipe de tosadores para controlar comissões e rateios automaticamente.</p>
+      <button type="button" class="btn btn-primary" (click)="openNewGroomerModal()" aria-label="Cadastrar novo tosador">
+        <i class="fas fa-plus"></i> Novo Tosador
+      </button>
+    </div>
+
+    <div class="groomers-grid" *ngIf="groomers.length > 0">
       <div class="groomer-card" *ngFor="let g of groomers" [class.inactive]="!g.active">
         <div class="card-avatar">
           <i class="fas fa-user-tie"></i>
@@ -66,20 +75,21 @@
         </div>
 
         <div class="card-actions">
-          <button class="btn btn-sm btn-outline-info" (click)="openWhatsAppGroomer(g)" title="WhatsApp">
+          <button class="btn btn-sm btn-outline-info" (click)="openWhatsAppGroomer(g)" [attr.aria-label]="'Abrir conversa de WhatsApp com ' + g.name" title="WhatsApp">
             <i class="fab fa-whatsapp"></i>
           </button>
-          <button class="btn btn-sm btn-outline-primary" (click)="openEditGroomerModal(g)" title="Editar">
+          <button class="btn btn-sm btn-outline-primary" (click)="openEditGroomerModal(g)" [attr.aria-label]="'Editar dados de ' + g.name" title="Editar">
             <i class="fas fa-edit"></i> Editar
           </button>
           <button
             class="btn btn-sm"
             [ngClass]="g.active ? 'btn-outline-warning' : 'btn-outline-success'"
             (click)="toggleActive(g)"
+            [attr.aria-label]="g.active ? 'Desativar ' + g.name + ' da fila' : 'Ativar ' + g.name + ' na fila'"
             [title]="g.active ? 'Desativar da Fila' : 'Ativar na Fila'">
             <i class="fas" [ngClass]="g.active ? 'fa-user-slash' : 'fa-user-check'"></i>
           </button>
-          <button class="btn btn-sm btn-outline-danger" (click)="deleteGroomer(g)" title="Excluir">
+          <button class="btn btn-sm btn-outline-danger" (click)="deleteGroomer(g)" [attr.aria-label]="'Excluir cadastro de ' + g.name" title="Excluir">
             <i class="fas fa-trash-alt"></i>
           </button>
         </div>
@@ -230,17 +240,17 @@
   </div>
 
   <!-- Modal de Cadastro / Edição de Tosador -->
-  <div class="modal-backdrop" *ngIf="showGroomerModal" (click)="closeGroomerModal()">
+  <div class="modal-backdrop" *ngIf="showGroomerModal" (click)="closeGroomerModal()" role="dialog" aria-modal="true" aria-labelledby="groomerModalTitle">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="title-with-icon">
           <i class="fas fa-user-plus text-primary"></i>
           <div>
-            <h3>{{ editingGroomerId ? 'Editar Tosador' : 'Novo Profissional Tosador' }}</h3>
+            <h3 id="groomerModalTitle">{{ editingGroomerId ? 'Editar Tosador' : 'Novo Profissional Tosador' }}</h3>
             <p>Cadastre os profissionais de Banho & Tosa para rateio automático de 15%</p>
           </div>
         </div>
-        <button type="button" class="btn-close" (click)="closeGroomerModal()"><i class="fas fa-times"></i></button>
+        <button type="button" class="btn-close" (click)="closeGroomerModal()" aria-label="Fechar janela modal de tosador"><i class="fas fa-times"></i></button>
       </div>
 
       <form [formGroup]="groomerForm" (ngSubmit)="saveGroomer()">

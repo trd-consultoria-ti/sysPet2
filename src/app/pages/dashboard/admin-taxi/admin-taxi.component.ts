@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -38,6 +38,12 @@ export class AdminTaxiComponent implements OnInit, OnDestroy {
   // Toast feedback
   toastMessage = '';
   toastType: 'success' | 'danger' = 'success';
+
+  @HostListener('window:keydown.escape')
+  handleEscape(): void {
+    if (this.showRegionModal) this.closeRegionModal();
+    if (this.showWaModal) this.closeWaModal();
+  }
 
   readonly statusLabels = TAXI_STATUS_LABELS;
 

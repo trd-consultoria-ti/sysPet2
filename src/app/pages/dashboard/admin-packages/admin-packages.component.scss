@@ -479,3 +479,30 @@
 
   i { color: #cbd5e1; margin-bottom: 0.5rem; }
 }
+
+@media (max-width: 768px) {
+  .admin-packages-container {
+    padding: 1rem;
+  }
+
+  .form-row-2, .form-row-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .packages-kpis {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tab-navigation {
+    flex-direction: column;
+    .tab-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .actions-cell {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+}

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -82,6 +82,14 @@ export class AdminCashComponent implements OnInit, OnDestroy {
 
   // Perfil da Empresa (HU-30)
   businessProfile: BusinessProfile | null = null;
+
+  @HostListener('window:keydown.escape')
+  handleEscape(): void {
+    if (this.pdvReceiptModal) this.closeReceiptModal();
+    if (this.showPayableModal) this.closePayableModal();
+    if (this.showPayModal) this.closePayModal();
+    if (this.showForm) this.showForm = false;
+  }
 
   constructor(
     private fb: FormBuilder,

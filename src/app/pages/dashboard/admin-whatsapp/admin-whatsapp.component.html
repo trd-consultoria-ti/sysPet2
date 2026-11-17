@@ -59,9 +59,9 @@
   </div>
 
   <!-- Layout Principal: 2 Colunas (Lista de Conversas + Chat Box) -->
-  <div class="chat-layout">
+  <div class="chat-layout" [class.mobile-view-chat]="mobileView === 'chat'">
     <!-- Coluna Esquerda: Lista de Conversas -->
-    <div class="conversations-column">
+    <div class="conversations-column" [class.mobile-hidden]="mobileView === 'chat'">
       <div class="conversations-header">
         <h2><i class="fas fa-comments"></i> Conversas Ativas</h2>
         <span class="badge-count">{{ conversations.length }}</span>
@@ -72,6 +72,10 @@
           class="conversation-item"
           *ngFor="let conv of conversations"
           [class.active]="selectedConversation?.id === conv.id"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="'Conversa com ' + conv.customerName + ', última mensagem: ' + conv.lastMessage"
+          (keydown.enter)="selectConversation(conv)"
           (click)="selectConversation(conv)">
           <div class="conv-avatar">
             <i class="fas fa-user-circle"></i>
@@ -94,10 +98,14 @@
     </div>
 
     <!-- Coluna Direita: Janela de Chat e Sugestões Inteligentes -->
-    <div class="chat-column" *ngIf="selectedConversation">
+    <div class="chat-column" *ngIf="selectedConversation" [class.mobile-hidden]="mobileView === 'list'">
       <!-- Chat Header -->
       <div class="chat-header">
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2">
+          <!-- Botão Voltar para Mobile -->
+          <button type="button" class="btn btn-sm btn-outline-secondary btn-back-mobile" (click)="backToConversationsList()" aria-label="Voltar para lista de conversas">
+            <i class="fas fa-arrow-left"></i>
+          </button>
           <div class="chat-avatar"><i class="fas fa-user"></i></div>
           <div>
             <h2 class="chat-customer-name">{{ selectedConversation.customerName }}</h2>
@@ -109,8 +117,8 @@
         </div>
 
         <div class="chat-actions">
-          <button type="button" class="btn btn-sm btn-outline-primary" (click)="openQuoteHelper()">
-            <i class="fas fa-calculator"></i> Cotar Banho / Tosa
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="openQuoteHelper()" aria-label="Abrir assistente de cotação de banho e tosa">
+            <i class="fas fa-calculator"></i> <span class="action-btn-text">Cotar Banho / Tosa</span>
           </button>
         </div>
       </div>
@@ -288,18 +296,18 @@
   <!-- ======================================================== -->
   <!-- MODAL: CONECTAR WHATSAPP VIA QR CODE (SaaS / COMERCIAL) -->
   <!-- ======================================================== -->
-  <div class="modal-backdrop" *ngIf="showQrModal" (click)="closeQrModal()">
+  <div class="modal-backdrop" *ngIf="showQrModal" (click)="closeQrModal()" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
     <div class="modal-dialog modal-qr-dialog" (click)="$event.stopPropagation()">
       <div class="modal-content">
         <div class="modal-header">
           <div class="d-flex align-items-center gap-2">
             <i class="fab fa-whatsapp fa-2x text-success"></i>
             <div>
-              <h2 class="mb-0">Conectar WhatsApp do Pet Shop</h2>
+              <h2 class="mb-0" id="qrModalTitle">Conectar WhatsApp do Pet Shop</h2>
               <small class="text-muted">Pareie o celular comercial do estabelecimento via QR Code</small>
             </div>
           </div>
-          <button type="button" class="close-btn" (click)="closeQrModal()">&times;</button>
+          <button type="button" class="close-btn" (click)="closeQrModal()" aria-label="Fechar janela de conexão QR Code">&times;</button>
         </div>
 
         <div class="modal-body qr-modal-body">
