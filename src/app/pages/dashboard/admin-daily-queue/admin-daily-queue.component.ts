@@ -15,6 +15,8 @@ import { WhatsappService } from '../../../shared/services/whatsapp.service';
 import { TaxiRegion, TaxiTripStatus, TAXI_STATUS_LABELS } from '../../../shared/models/taxi.model';
 import { GroomerService } from '../../../shared/services/groomer.service';
 import { Groomer } from '../../../shared/models/groomer.model';
+import { PackageService } from '../../../shared/services/package.service';
+import { PetPackage } from '../../../shared/models/package.model';
 
 export interface KanbanColumn {
   key: DailyServiceStatus;
@@ -104,6 +106,9 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
   // Tosadores e Rateio de Comissão (HU-18 / HU-19)
   groomers: Groomer[] = [];
 
+  // Pacotes Mensais & Créditos (HU-25)
+  activePackageForPet: PetPackage | null = null;
+
   private sub: Subscription = new Subscription();
 
   constructor(
@@ -113,6 +118,7 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     public taxiService: TaxiService,
     public waService: WhatsappService,
     public groomerService: GroomerService,
+    public packageService: PackageService,
     private fb: FormBuilder,
     private router: Router,
     private cashService: CashService,
@@ -187,7 +193,14 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       taxiOriginAddress: [''],
       taxiTripType: ['ida_e_volta'],
       taxiDriverName: ['Lucas (O Rapaz)'],
-      taxiPrice: [0]
+      taxiPrice: [0],
+      usePackageCredit: [false]
+    });
+
+    // Detecção de Pacote Ativo do Pet (HU-25)
+    this.checkinForm.get('petName')?.valueChanges.subscribe(name => this.checkForActivePackage(name));
+    this.checkinForm.get('customerName')?.valueChanges.subscribe(() => {
+      this.checkForActivePackage(this.checkinForm.get('petName')?.value);
     });
 
     // Recálculo dinâmico da matriz de preços ao alterar serviço, raça ou peso
@@ -232,6 +245,26 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     this.catalogService.getServices().subscribe(services => {
       this.availableServices = services;
     });
+  }
+
+  // Detecção e consumo de pacote mensal (HU-25)
+  checkForActivePackage(petName: string): void {
+    if (!petName || !petName.trim()) {
+      this.activePackageForPet = null;
+      return;
+    }
+    const cust = this.checkinForm.get('customerName')?.value;
+    const pkg = this.packageService.findActivePackageForPet(petName, cust);
+    this.activePackageForPet = pkg || null;
+  }
+
+  onUsePackageCreditToggle(): void {
+    const isUsing = !!this.checkinForm.get('usePackageCredit')?.value;
+    if (isUsing) {
+      this.checkinForm.patchValue({ estimatedPrice: 0 }, { emitEvent: false });
+    } else {
+      this.recalculateQuote();
+    }
   }
 
   // -------------------------------------------------------------
@@ -775,6 +808,7 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     this.isEditing = false;
     this.editingId = null;
     this.selectedExtras = [];
+    this.activePackageForPet = null;
 
     this.checkinForm.reset({
       customerName: '',
@@ -829,6 +863,17 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
     const quote = this.currentQuote || this.pricingService.calculateQuote(val.serviceName, val.petWeightKg, val.petBreed, this.selectedExtras);
     const eta = this.pricingService.estimateReadyTime(new Date(), quote.totalDurationMin, this.stats.waiting);
 
+    // Consumo de Crédito de Pacote Mensal (HU-25)
+    let notesText = val.notes || '';
+    let finalEstimatedPrice = val.estimatedPrice;
+    if (val.usePackageCredit && this.activePackageForPet) {
+      const isTosa = String(val.serviceName).toLowerCase().includes('tosa');
+      const creditType = isTosa && (this.activePackageForPet.totalGrooms > this.activePackageForPet.usedGrooms) ? 'groom' : 'bath';
+      this.packageService.consumeCredit(this.activePackageForPet.id, creditType).subscribe();
+      finalEstimatedPrice = 0;
+      notesText = (notesText ? notesText + ' ' : '') + `[Crédito Débito: ${this.activePackageForPet.packageName} (${creditType === 'groom' ? '1 Tosa' : '1 Banho'})]`;
+    }
+
     const payload: Partial<DailyService> = {
       customerName: val.customerName,
       phone: val.phone,
@@ -838,14 +883,14 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       petSizeTier: quote.sizeTier,
       serviceName: val.serviceName,
       selectedExtras: this.selectedExtras,
-      estimatedPrice: val.estimatedPrice,
+      estimatedPrice: finalEstimatedPrice,
       cageNumber: val.cageNumber,
       groomerId: val.groomerId ? Number(val.groomerId) : undefined,
       groomerName: val.groomerName,
       isGroomerPair: !!val.isGroomerPair,
       secondGroomerId: val.isGroomerPair && val.secondGroomerId ? Number(val.secondGroomerId) : undefined,
       secondGroomerName: val.isGroomerPair ? val.secondGroomerName : undefined,
-      notes: val.notes,
+      notes: notesText,
       tosaNotes: val.tosaNotes,
       healthChecklist,
       requiresValidation: val.requiresValidation,

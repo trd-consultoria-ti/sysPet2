@@ -456,8 +456,8 @@
     <div class="closure-report-sheet">
       <div class="closure-header-sheet">
         <div class="sheet-title">
-          <h2>Animal World Pet Shop — Fechamento Consolidado do Caixa</h2>
-          <p>Relatório diário unificado de Esteira de Banho & Tosa, Vendas PDV e Contas Pagas (HU-24)</p>
+          <h2>{{ businessProfile?.tradeName || 'Animal World Pet Shop' }} — Fechamento Consolidado do Caixa</h2>
+          <p>CNPJ: {{ businessProfile?.cnpj }} • {{ businessProfile?.addressLine }} • Tel: {{ businessProfile?.phone }}</p>
           <span class="closure-date-tag">Competência: {{ formatDateShort(closureDate) }}</span>
         </div>
       </div>
@@ -539,8 +539,10 @@
 
       <div class="receipt-paper" *ngIf="lastSaleReceipt">
         <div class="paper-brand">
-          <h4>ANIMAL WORLD PET SHOP</h4>
-          <p>Riacho Fundo I — QC 3 / Brasília-DF</p>
+          <h4>{{ businessProfile?.tradeName || 'ANIMAL WORLD PET SHOP' }}</h4>
+          <p class="brand-cnpj" *ngIf="businessProfile?.cnpj">CNPJ: {{ businessProfile?.cnpj }}</p>
+          <p>{{ businessProfile?.addressLine || 'Riacho Fundo I — QC 3 / Brasília-DF' }}</p>
+          <p *ngIf="businessProfile?.whatsapp">WhatsApp: {{ businessProfile?.whatsapp }}</p>
           <span class="paper-id">CUPOM BALCÃO: {{ lastSaleReceipt.id }}</span>
           <span class="paper-date">{{ lastSaleReceipt.date }}</span>
         </div>

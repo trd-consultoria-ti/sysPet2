@@ -48,6 +48,15 @@ export class AdminSystemMapComponent implements OnInit {
           permission: 'Recepção, Banhista, Tosador & Admin'
         },
         {
+          title: 'Pacotes Mensais & Créditos',
+          path: '/dashboard/packages',
+          description: 'Gestão de planos de banho e tosa (ex: 4 banhos + 1 tosa), venda de pacotes e abatimento automático na esteira.',
+          icon: 'fas fa-cubes',
+          badge: 'Novo',
+          badgeClass: 'badge-new',
+          permission: 'Recepção & Admin'
+        },
+        {
           title: 'Fila do Dia & Gaiolas',
           path: '/dashboard/daily-queue',
           description: 'Controle de entrada por ordem de chegada no balcão e status de alojamento em gaiolas.',
@@ -173,6 +182,16 @@ export class AdminSystemMapComponent implements OnInit {
           icon: 'fas fa-scissors',
           badge: 'Equipe',
           badgeClass: 'badge-team',
+          permission: 'Somente Administrador',
+          adminOnly: true
+        },
+        {
+          title: 'Configurações da Empresa',
+          path: '/dashboard/settings',
+          description: 'Dados cadastrais da empresa (CNPJ, CRMV, razão social) para documentos e horários/capacidade por dia da semana.',
+          icon: 'fas fa-sliders-h',
+          badge: 'Admin',
+          badgeClass: 'badge-admin',
           permission: 'Somente Administrador',
           adminOnly: true
         },

@@ -13,6 +13,10 @@ import { CustomerService } from '../../../shared/services/customer.service';
 import { MedicationService } from '../../../shared/services/medication.service';
 import { Medication } from '../../../shared/models/medication.model';
 import { CartService } from '../../../shared/services/cart.service';
+import { VaccineService } from '../../../shared/services/vaccine.service';
+import { PetVaccine, COMMON_VACCINES } from '../../../shared/models/vaccine.model';
+import { BusinessProfileService } from '../../../shared/services/business-profile.service';
+import { BusinessProfile } from '../../../shared/models/business-profile.model';
 
 interface PetOption {
   pet: Pet;
@@ -82,6 +86,30 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
   printRx: { consultation: Consultation; prescription: Prescription } | null = null;
   availableMedications: Medication[] = [];
 
+  // Pronto Atendimento / Ordem de Chegada (HU-27)
+  showWalkInModal = false;
+  walkInPetId: number | '' = '';
+  walkInVetId: number | '' = '';
+  walkInReason = '';
+  walkInPriority: 'normal' | 'urgencia' = 'normal';
+
+  // Carteira de Vacinas do Pet (HU-29)
+  showVaccineModal = false;
+  selectedPetForVaccine: { petId: number; petName: string; customerName?: string; breed?: string } | null = null;
+  petVaccines: PetVaccine[] = [];
+  commonVaccineList = COMMON_VACCINES;
+  newVacName = 'V8 / V10 Polivalente Canina';
+  newVacBatch = '';
+  newVacManufacturer = '';
+  newVacAppliedAt = new Date().toISOString().split('T')[0];
+  newVacNextDueAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365).toISOString().split('T')[0];
+  newVacVetName = '';
+  newVacVetCrmv = '';
+  newVacNotes = '';
+
+  // Dados Oficiais da Empresa (HU-30)
+  businessProfile: BusinessProfile | null = null;
+
   constructor(
     private consultationService: ConsultationService,
     private vetService: VetService,
@@ -89,6 +117,8 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     private customerService: CustomerService,
     private medicationService: MedicationService,
     private cartService: CartService,
+    private vaccineService: VaccineService,
+    private businessProfileService: BusinessProfileService,
     private router: Router
   ) {}
 
@@ -115,6 +145,128 @@ export class AdminConsultationsComponent implements OnInit, OnDestroy {
     this.medicationService.list().pipe(takeUntil(this.destroy$)).subscribe(meds => {
       this.availableMedications = meds.filter(m => m.active !== false);
     });
+    this.businessProfileService.getProfile().pipe(takeUntil(this.destroy$)).subscribe(p => {
+      this.businessProfile = p;
+    });
+  }
+
+  // --- Pronto Atendimento / Ordem de Chegada (HU-27) ---
+  openWalkInModal(): void {
+    this.walkInPetId = '';
+    this.walkInVetId = this.activeVets.length ? this.activeVets[0].id : '';
+    this.walkInReason = '';
+    this.walkInPriority = 'normal';
+    this.showWalkInModal = true;
+  }
+
+  closeWalkInModal(): void {
+    this.showWalkInModal = false;
+  }
+
+  submitWalkIn(): void {
+    if (!this.walkInPetId) {
+      alert('Selecione o pet para registrar a chegada presencial.');
+      return;
+    }
+
+    const opt = this.petOptions.find(o => o.pet.id === Number(this.walkInPetId));
+    if (!opt || !opt.pet.id) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const todayWalkIns = this.consultations.filter(c => c.scheduledDate === today && c.isWalkIn);
+    const nextQueueNumber = todayWalkIns.length + 1;
+
+    const payload = {
+      petId: opt.pet.id as number,
+      vetId: this.walkInVetId ? Number(this.walkInVetId) : undefined,
+      scheduledDate: today,
+      scheduledTime: 'Ordem de Chegada',
+      reason: this.walkInReason || 'Consulta Presencial (Pronto Atendimento)',
+      isWalkIn: true,
+      walkInQueueOrder: nextQueueNumber,
+      triagePriority: this.walkInPriority,
+      status: 'agendado' as const
+    };
+
+    this.consultationService.create(payload).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (created) => {
+        this.success = `Chegada presencial registrada! ${opt.pet.name} está na posição #${nextQueueNumber} da fila médica.`;
+        this.closeWalkInModal();
+        setTimeout(() => this.success = '', 4000);
+      },
+      error: err => {
+        this.error = err.error?.error || 'Erro ao registrar chegada presencial.';
+      }
+    });
+  }
+
+  // --- Carteira de Vacinas do Pet (HU-29) ---
+  openVaccineModal(c?: Consultation): void {
+    const targetPetId = c ? c.petId : (this.current ? this.current.petId : (this.petOptions.length ? this.petOptions[0].pet.id : null));
+    const targetPetName = c ? c.petName : (this.current ? this.current.petName : (this.petOptions.length ? this.petOptions[0].pet.name : ''));
+    const targetTutor = c ? c.customerName : (this.current ? this.current.customerName : (this.petOptions.length ? this.petOptions[0].tutorName : ''));
+
+    if (!targetPetName) {
+      alert('Selecione uma consulta ou pet para abrir a carteira de vacinas.');
+      return;
+    }
+
+    this.selectedPetForVaccine = {
+      petId: targetPetId || 1,
+      petName: targetPetName,
+      customerName: targetTutor,
+      breed: c?.petBreed || this.current?.petBreed
+    };
+
+    this.loadPetVaccines(targetPetName, targetPetId || undefined);
+
+    const vet = this.activeVets.length ? this.activeVets[0] : null;
+    this.newVacName = 'V8 / V10 Polivalente Canina';
+    this.newVacBatch = 'LOTE-' + Math.floor(1000 + Math.random() * 9000);
+    this.newVacManufacturer = 'Zoetis';
+    this.newVacAppliedAt = new Date().toISOString().split('T')[0];
+    this.newVacNextDueAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365).toISOString().split('T')[0];
+    this.newVacVetName = c?.vetName || this.current?.vetName || vet?.name || 'Dr(a). Veterinário(a)';
+    this.newVacVetCrmv = c?.vetCrmv || vet?.crmv || 'CRMV-DF';
+    this.newVacNotes = '';
+
+    this.showVaccineModal = true;
+  }
+
+  loadPetVaccines(petName: string, petId?: number): void {
+    this.petVaccines = this.vaccineService.getVaccinesForPet(petName, petId);
+  }
+
+  closeVaccineModal(): void {
+    this.showVaccineModal = false;
+    this.selectedPetForVaccine = null;
+  }
+
+  saveVaccine(): void {
+    if (!this.selectedPetForVaccine) return;
+
+    this.vaccineService.addVaccine({
+      petId: this.selectedPetForVaccine.petId,
+      petName: this.selectedPetForVaccine.petName,
+      customerName: this.selectedPetForVaccine.customerName,
+      vaccineName: this.newVacName,
+      appliedAt: this.newVacAppliedAt,
+      nextDueAt: this.newVacNextDueAt,
+      batch: this.newVacBatch,
+      manufacturer: this.newVacManufacturer,
+      vetName: this.newVacVetName,
+      vetCrmv: this.newVacVetCrmv,
+      consultationId: this.current ? this.current.id : undefined,
+      notes: this.newVacNotes
+    }).pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.loadPetVaccines(this.selectedPetForVaccine!.petName, this.selectedPetForVaccine!.petId);
+      this.success = `Vacina "${this.newVacName}" registrada na carteira de ${this.selectedPetForVaccine!.petName}!`;
+      setTimeout(() => this.success = '', 3500);
+    });
+  }
+
+  printVaccineCard(): void {
+    window.print();
   }
 
   get totalConsultations(): number {

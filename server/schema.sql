@@ -459,4 +459,78 @@ CREATE TABLE IF NOT EXISTS payables (
 CREATE INDEX IF NOT EXISTS idx_payables_due_date ON payables(due_date);
 CREATE INDEX IF NOT EXISTS idx_payables_status ON payables(status);
 
+-- P3: Business Profile (HU-30)
+CREATE TABLE IF NOT EXISTS business_profile (
+  id SERIAL PRIMARY KEY,
+  trade_name TEXT NOT NULL,
+  legal_name TEXT NOT NULL,
+  cnpj TEXT NOT NULL,
+  ie TEXT,
+  address_line TEXT NOT NULL,
+  city TEXT NOT NULL,
+  uf VARCHAR(2) NOT NULL,
+  cep VARCHAR(10) NOT NULL,
+  phone TEXT NOT NULL,
+  whatsapp TEXT NOT NULL,
+  email TEXT NOT NULL,
+  instagram TEXT,
+  website TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- P3: Business Hours (HU-26)
+CREATE TABLE IF NOT EXISTS business_hours (
+  id SERIAL PRIMARY KEY,
+  day_of_week INTEGER NOT NULL UNIQUE,
+  label VARCHAR(20) NOT NULL,
+  is_open BOOLEAN NOT NULL DEFAULT true,
+  open_time VARCHAR(10) NOT NULL DEFAULT '09:00',
+  close_time VARCHAR(10) NOT NULL DEFAULT '18:00',
+  capacity INTEGER NOT NULL DEFAULT 50,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- P3: Pacotes Mensais & Créditos (HU-25)
+CREATE TABLE IF NOT EXISTS packages (
+  id SERIAL PRIMARY KEY,
+  pet_id INTEGER REFERENCES pets(id) ON DELETE SET NULL,
+  pet_name TEXT NOT NULL,
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT,
+  package_name TEXT NOT NULL,
+  total_baths INTEGER NOT NULL DEFAULT 4,
+  used_baths INTEGER NOT NULL DEFAULT 0,
+  total_grooms INTEGER NOT NULL DEFAULT 1,
+  used_grooms INTEGER NOT NULL DEFAULT 0,
+  price NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+  purchase_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  expiration_date DATE NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'ativo' CHECK (status IN ('ativo', 'esgotado', 'expirado')),
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_packages_status ON packages(status);
+
+-- P3: Carteira de Vacinas (HU-29)
+CREATE TABLE IF NOT EXISTS pet_vaccinations (
+  id SERIAL PRIMARY KEY,
+  pet_id INTEGER REFERENCES pets(id) ON DELETE CASCADE,
+  pet_name TEXT NOT NULL,
+  customer_name TEXT,
+  vaccine_name TEXT NOT NULL,
+  applied_at DATE NOT NULL DEFAULT CURRENT_DATE,
+  next_due_at DATE NOT NULL,
+  batch TEXT,
+  manufacturer TEXT,
+  vet_name TEXT,
+  vet_crmv TEXT,
+  consultation_id INTEGER REFERENCES consultations(id) ON DELETE SET NULL,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_vaccinations_pet ON pet_vaccinations(pet_id);
+CREATE INDEX IF NOT EXISTS idx_vaccinations_due ON pet_vaccinations(next_due_at);
+
+
 

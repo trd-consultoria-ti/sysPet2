@@ -11,6 +11,8 @@ import { Payable, PayableCategory, PayableStatus } from '../../../shared/models/
 import { DailyServicesService } from '../../../shared/services/daily-services.service';
 import { DailyService } from '../../../shared/models/daily-service.model';
 import { GroomerService } from '../../../shared/services/groomer.service';
+import { BusinessProfileService } from '../../../shared/services/business-profile.service';
+import { BusinessProfile } from '../../../shared/models/business-profile.model';
 
 export interface PdvCartItem {
   product: Product;
@@ -78,6 +80,9 @@ export class AdminCashComponent implements OnInit, OnDestroy {
   closureDate: string = new Date().toISOString().split('T')[0];
   dailyQueueItems: DailyService[] = [];
 
+  // Perfil da Empresa (HU-30)
+  businessProfile: BusinessProfile | null = null;
+
   constructor(
     private fb: FormBuilder,
     private cashService: CashService,
@@ -85,6 +90,7 @@ export class AdminCashComponent implements OnInit, OnDestroy {
     private payableService: PayableService,
     private dailyService: DailyServicesService,
     private groomerService: GroomerService,
+    public businessProfileService: BusinessProfileService,
     private route: ActivatedRoute
   ) {
     this.movementForm = this.fb.group({
@@ -122,6 +128,11 @@ export class AdminCashComponent implements OnInit, OnDestroy {
     // 4. Esteira para fechamento
     this.dailyService.queue$.pipe(takeUntil(this.destroy$)).subscribe(q => {
       this.dailyQueueItems = q.items || [];
+    });
+
+    // 5. Perfil oficial da empresa (HU-30)
+    this.businessProfileService.getProfile().pipe(takeUntil(this.destroy$)).subscribe(p => {
+      this.businessProfile = p;
     });
 
     // Encaminhamento da Esteira de Delivery

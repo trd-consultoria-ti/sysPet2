@@ -38,6 +38,10 @@ export class ConsultationService {
     scheduledDate: string;
     scheduledTime?: string;
     reason?: string;
+    isWalkIn?: boolean;
+    walkInQueueOrder?: number;
+    triagePriority?: 'normal' | 'urgencia';
+    status?: Consultation['status'];
   }): Observable<Consultation> {
     return this.http.post<Consultation>(this.url, data).pipe(
       tap(created => this.consultationsSubject.next([created, ...this.consultationsSubject.value]))

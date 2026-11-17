@@ -21,6 +21,9 @@ export interface Consultation {
   diagnosis?: string;
   notes?: string;
   prescriptionId?: number;
+  isWalkIn?: boolean;
+  walkInQueueOrder?: number;
+  triagePriority?: 'normal' | 'urgencia';
   createdBy?: number;
   createdAt: string;
   updatedAt?: string;

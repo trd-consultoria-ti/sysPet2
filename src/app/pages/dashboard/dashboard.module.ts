@@ -19,6 +19,8 @@ import { AdminWhatsappComponent } from './admin-whatsapp/admin-whatsapp.componen
 import { AdminMedicationsComponent } from './admin-medications/admin-medications.component';
 import { AdminSystemMapComponent } from './admin-system-map/admin-system-map.component';
 import { AdminGroomersComponent } from './admin-groomers/admin-groomers.component';
+import { AdminPackagesComponent } from './admin-packages/admin-packages.component';
+import { AdminSettingsComponent } from './admin-settings/admin-settings.component';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { SharedModule } from '../../shared/shared.module';
 
@@ -31,6 +33,7 @@ const routes: Routes = [
       { path: 'rotas', component: AdminSystemMapComponent },
       { path: 'customers', loadChildren: () => import('../customers/customers.module').then(m => m.CustomersModule) },
       { path: 'daily-queue', component: AdminDailyQueueComponent },
+      { path: 'packages', component: AdminPackagesComponent },
       { path: 'taxi', component: AdminTaxiComponent },
       { path: 'whatsapp', component: AdminWhatsappComponent },
       { path: 'appointments', component: AdminAppointmentsComponent },
@@ -43,6 +46,7 @@ const routes: Routes = [
       { path: 'services', component: AdminServicesComponent, canActivate: [AdminGuard] },
       { path: 'users', component: AdminUsersComponent, canActivate: [AdminGuard] },
       { path: 'cash', component: AdminCashComponent, canActivate: [AdminGuard] },
+      { path: 'settings', component: AdminSettingsComponent, canActivate: [AdminGuard] },
       { path: 'reports', component: AdminReportsComponent, canActivate: [AdminGuard] }
     ]
   }
@@ -54,6 +58,7 @@ const routes: Routes = [
     DashboardHomeComponent,
     AdminDailyQueueComponent,
     DailyQueueHeaderComponent,
+    AdminPackagesComponent,
     AdminTaxiComponent,
     AdminWhatsappComponent,
     AdminAppointmentsComponent,
@@ -66,6 +71,7 @@ const routes: Routes = [
     AdminConsultationsComponent,
     AdminVetsComponent,
     AdminGroomersComponent,
+    AdminSettingsComponent,
     AdminSystemMapComponent
   ],
   imports: [

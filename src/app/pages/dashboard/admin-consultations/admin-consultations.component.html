@@ -8,8 +8,14 @@
       <button type="button" class="btn btn-outline-secondary btn-sm" *ngIf="step > 1" (click)="backToQueue()">
         <i class="fas fa-arrow-left"></i> Fila do Dia
       </button>
+      <button type="button" class="btn btn-outline-info btn-sm" (click)="openVaccineModal()">
+        <i class="fas fa-syringe"></i> Carteira de Vacinas
+      </button>
+      <button type="button" class="btn btn-warning btn-sm" *ngIf="step === 1" (click)="openWalkInModal()">
+        <i class="fas fa-user-clock"></i> Chegada Presencial (Ordem de Chegada)
+      </button>
       <button type="button" class="btn btn-primary btn-sm" *ngIf="step === 1" (click)="showForm = !showForm">
-        <i class="fas" [ngClass]="showForm ? 'fa-times' : 'fa-plus'"></i> {{ showForm ? 'Fechar' : 'Nova Consulta' }}
+        <i class="fas" [ngClass]="showForm ? 'fa-times' : 'fa-plus'"></i> {{ showForm ? 'Fechar' : 'Nova Consulta Agendada' }}
       </button>
     </div>
   </div>
@@ -157,10 +163,16 @@
             <div class="pet-title-row">
               <h3 class="queue-pet">{{ c.petName }}</h3>
               <span class="queue-breed" *ngIf="c.petBreed">({{ c.petBreed }})</span>
+              <span class="walkin-badge" *ngIf="c.isWalkIn">
+                <i class="fas fa-walking"></i> Chegada #{{ c.walkInQueueOrder }}
+              </span>
+              <span class="priority-urgencia-badge" *ngIf="c.triagePriority === 'urgencia'">
+                🚨 Urgência
+              </span>
             </div>
 
             <div class="chips-row">
-              <span class="info-chip chip-time">
+              <span class="info-chip chip-time" [class.chip-walkin]="c.isWalkIn">
                 <i class="far fa-clock"></i> {{ formatDate(c.scheduledDate) }}<ng-container *ngIf="c.scheduledTime"> às {{ c.scheduledTime }}</ng-container>
               </span>
               <span class="info-chip chip-tutor">
@@ -188,9 +200,18 @@
             {{ statusLabels[c.status] }}
           </span>
 
-          <!-- Ações por status na lista da fila -->
-          <ng-container *ngIf="c.status === 'concluido'">
-            <div class="completed-card-actions">
+          <div class="card-side-actions">
+            <!-- Botão Carteira de Vacinas -->
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-info btn-vac-quick"
+              (click)="openVaccineModal(c); $event.stopPropagation()"
+              title="Abrir carteira de vacinas de {{ c.petName }}">
+              <i class="fas fa-syringe"></i> Vacinas
+            </button>
+
+            <!-- Ações por status na lista da fila -->
+            <ng-container *ngIf="c.status === 'concluido'">
               <button
                 type="button"
                 class="btn btn-sm btn-outline-primary"
@@ -204,25 +225,25 @@
                 title="Direcionar consulta e medicamentos ao carrinho">
                 <i class="fas fa-cart-plus"></i> + Carrinho
               </button>
-            </div>
-          </ng-container>
+            </ng-container>
 
-          <button
-            type="button"
-            class="btn btn-sm action-btn"
-            [ngClass]="{
-              'btn-primary': c.status === 'agendado',
-              'btn-warning': c.status === 'em_atendimento'
-            }"
-            *ngIf="c.status !== 'cancelado' && c.status !== 'concluido'"
-            (click)="select(c)">
-            <ng-container *ngIf="c.status === 'agendado'">
-              <i class="fas fa-stethoscope"></i> Iniciar Atendimento
-            </ng-container>
-            <ng-container *ngIf="c.status === 'em_atendimento'">
-              <i class="fas fa-play"></i> Continuar
-            </ng-container>
-          </button>
+            <button
+              type="button"
+              class="btn btn-sm action-btn"
+              [ngClass]="{
+                'btn-primary': c.status === 'agendado',
+                'btn-warning': c.status === 'em_atendimento'
+              }"
+              *ngIf="c.status !== 'cancelado' && c.status !== 'concluido'"
+              (click)="select(c)">
+              <ng-container *ngIf="c.status === 'agendado'">
+                <i class="fas fa-stethoscope"></i> Iniciar Atendimento
+              </ng-container>
+              <ng-container *ngIf="c.status === 'em_atendimento'">
+                <i class="fas fa-play"></i> Continuar
+              </ng-container>
+            </button>
+          </div>
         </div>
       </article>
     </div>
@@ -306,7 +327,25 @@
           <textarea id="cd-notes" class="form-control" rows="3" [(ngModel)]="editData.notes"></textarea>
         </div>
       </div>
+
+      <!-- Atalho Carteira de Vacinação durante o atendimento (HU-29) -->
+      <div class="vaccine-shortcut-card">
+        <div class="vaccine-shortcut-info">
+          <div class="vac-icon-wrap"><i class="fas fa-syringe"></i></div>
+          <div>
+            <strong>Carteira de Vacinação de {{ current.petName }}</strong>
+            <p>Registre vacinações aplicadas nesta consulta e confira os prazos de reforço.</p>
+          </div>
+        </div>
+        <button type="button" class="btn btn-outline-info btn-sm" (click)="openVaccineModal(current)">
+          <i class="fas fa-folder-open"></i> Abrir Carteira de Vacinas
+        </button>
+      </div>
+
       <div class="step-actions">
+        <button type="button" class="btn btn-outline-info" (click)="openVaccineModal(current)">
+          <i class="fas fa-syringe"></i> Vacinas
+        </button>
         <button type="button" class="btn btn-primary" (click)="conclude()">Concluir atendimento</button>
         <button type="button" class="btn btn-outline-danger" (click)="cancelConsultation()">Cancelar consulta</button>
         <button type="button" class="btn btn-outline-secondary" (click)="step = 2">Voltar</button>
@@ -448,10 +487,13 @@
 <article class="print-slip rx-a4-official" *ngIf="printRx">
   <header class="rx-header-a4">
     <div class="rx-brand-block">
-      <h1>Animal World</h1>
-      <p class="subtitle">Clínica Veterinária Integrada</p>
-      <p class="legal-info">CRMV-SP Jurídico: 98765-J · CNPJ: 12.345.678/0001-90</p>
-      <p class="legal-info">Rua dos Pets, 123 - Centro · Tel: (11) 4002-8922</p>
+      <h1>{{ businessProfile?.tradeName || 'Animal World' }}</h1>
+      <p class="subtitle">{{ businessProfile?.legalName || 'Animal World Comércio e Serviços Veterinários Ltda' }}</p>
+      <p class="legal-info">CNPJ: {{ businessProfile?.cnpj || '45.123.456/0001-89' }}<ng-container *ngIf="businessProfile?.ie"> · IE: {{ businessProfile?.ie }}</ng-container></p>
+      <p class="legal-info" *ngIf="businessProfile?.addressLine">
+        {{ businessProfile?.addressLine }} · {{ businessProfile?.city }}-{{ businessProfile?.uf }} · Tel: {{ businessProfile?.phone }}
+      </p>
+      <p class="legal-info" *ngIf="!businessProfile?.addressLine">Rua dos Pets, 123 - Centro · Tel: (11) 4002-8922</p>
     </div>
     <div class="rx-doc-block">
       <span class="rx-type-badge">RECEITUÁRIO VETERINÁRIO</span>
@@ -505,6 +547,284 @@
       <div class="sign-line"></div>
       <div class="vet-name">Dr(a). {{ printRx.prescription.vetName || 'Médico(a) Veterinário(a)' }}</div>
       <div class="vet-crmv" *ngIf="printRx.prescription.vetCrmv">CRMV: {{ printRx.prescription.vetCrmv }}</div>
+    </div>
+  </footer>
+</article>
+
+<!-- MODAL CHEGADA PRESENCIAL / PRONTO ATENDIMENTO (HU-27) -->
+<div class="modal-backdrop" *ngIf="showWalkInModal" (click)="closeWalkInModal()">
+  <div class="modal-dialog modal-walkin-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h3><i class="fas fa-user-clock text-warning"></i> Chegada Presencial (Pronto Atendimento)</h3>
+          <p class="modal-subtitle">Atendimento por ordem de chegada no consultório com triagem rápida</p>
+        </div>
+        <button type="button" class="close-btn" (click)="closeWalkInModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="walkin-pet">Paciente (Pet) *</label>
+          <select id="walkin-pet" class="form-control" [(ngModel)]="walkInPetId" required>
+            <option value="" disabled>Selecione o pet que acabou de chegar...</option>
+            <option *ngFor="let opt of petOptions; trackBy: trackByPet" [value]="opt.pet.id">
+              {{ opt.pet.name }} ({{ opt.pet.breed || opt.pet.type || 'Pet' }}) — Tutor: {{ opt.tutorName }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="walkin-vet">Veterinário de Plantão</label>
+            <select id="walkin-vet" class="form-control" [(ngModel)]="walkInVetId">
+              <option value="">Qualquer veterinário disponível</option>
+              <option *ngFor="let vet of activeVets; trackBy: trackById" [value]="vet.id">
+                {{ vet.name }}<ng-container *ngIf="vet.specialty"> ({{ vet.specialty }})</ng-container>
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="walkin-priority">Prioridade de Triagem *</label>
+            <select id="walkin-priority" class="form-control" [(ngModel)]="walkInPriority">
+              <option value="normal">🟢 Normal (Ordem de chegada)</option>
+              <option value="urgencia">🚨 URGÊNCIA MÉDICA (Prioridade na fila)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="walkin-reason">Queixa Principal / Motivo da Chegada</label>
+          <textarea id="walkin-reason" class="form-control" rows="2" [(ngModel)]="walkInReason"
+                    placeholder="Ex.: Animal prostrado, vômito frequente, corte na pata, etc."></textarea>
+        </div>
+
+        <div class="walkin-tip-box" [class.tip-urgent]="walkInPriority === 'urgencia'">
+          <i class="fas" [ngClass]="walkInPriority === 'urgencia' ? 'fa-exclamation-triangle text-danger' : 'fa-info-circle text-info'"></i>
+          <div *ngIf="walkInPriority === 'normal'">
+            <strong>Ordem de Chegada:</strong> O pet entrará com número sequencial na fila médica do dia e será chamado por ordem de chegada.
+          </div>
+          <div *ngIf="walkInPriority === 'urgencia'">
+            <strong>Triagem de Urgência:</strong> Marcado com destaque visual imediato no topo da fila médica para avaliação prioritária do veterinário.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" (click)="closeWalkInModal()">Cancelar</button>
+        <button type="button" class="btn btn-warning" (click)="submitWalkIn()" [disabled]="!walkInPetId">
+          <i class="fas fa-check"></i> Inserir na Fila Presencial
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CARTEIRA DE VACINAÇÃO DO PET (HU-29 & HU-30) -->
+<div class="modal-backdrop" *ngIf="showVaccineModal" (click)="closeVaccineModal()">
+  <div class="modal-dialog modal-vaccine-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="vac-header-info">
+          <div class="vac-badge"><i class="fas fa-passport"></i></div>
+          <div>
+            <h3>Carteira Oficial de Vacinação</h3>
+            <p class="modal-subtitle">
+              <strong>{{ selectedPetForVaccine?.petName }}</strong>
+              <ng-container *ngIf="selectedPetForVaccine?.breed"> ({{ selectedPetForVaccine?.breed }})</ng-container>
+              · Tutor(a): {{ selectedPetForVaccine?.customerName || 'Não informado' }}
+            </p>
+          </div>
+        </div>
+        <div class="vac-header-actions">
+          <button type="button" class="btn btn-outline-primary btn-sm" (click)="printVaccineCard()">
+            <i class="fas fa-print"></i> Imprimir Carteirinha
+          </button>
+          <button type="button" class="close-btn" (click)="closeVaccineModal()">&times;</button>
+        </div>
+      </div>
+
+      <div class="modal-body vaccine-modal-body">
+        <!-- Histórico de Vacinas Cadastradas -->
+        <div class="vaccines-history-section">
+          <div class="section-title-row">
+            <h4><i class="fas fa-shield-alt text-teal"></i> Vacinas Aplicadas & Próximos Reforços</h4>
+            <span class="count-badge">{{ petVaccines.length }} registro(s)</span>
+          </div>
+
+          <div class="empty-vac" *ngIf="petVaccines.length === 0">
+            <i class="fas fa-syringe empty-icon"></i>
+            <p>Nenhuma vacina registrada para {{ selectedPetForVaccine?.petName }} ainda.</p>
+            <span class="text-muted">Utilize o formulário abaixo para registrar a primeira aplicação.</span>
+          </div>
+
+          <div class="vaccine-cards-grid" *ngIf="petVaccines.length > 0">
+            <div class="vaccine-card-item" *ngFor="let v of petVaccines; trackBy: trackById" [ngClass]="'vac-status-' + v.status">
+              <div class="vac-item-head">
+                <div class="vac-name-block">
+                  <h5>{{ v.vaccineName }}</h5>
+                  <span class="vac-fab" *ngIf="v.manufacturer">{{ v.manufacturer }} · Lote: {{ v.batch }}</span>
+                </div>
+                <span class="vac-status-pill" [ngClass]="'pill-' + v.status">
+                  <i class="fas" [ngClass]="{
+                    'fa-check-circle': v.status === 'em_dia',
+                    'fa-clock': v.status === 'vencendo',
+                    'fa-exclamation-circle': v.status === 'vencida'
+                  }"></i>
+                  <ng-container *ngIf="v.status === 'em_dia'">Em Dia</ng-container>
+                  <ng-container *ngIf="v.status === 'vencendo'">Reforço Próximo</ng-container>
+                  <ng-container *ngIf="v.status === 'vencida'">Vencida</ng-container>
+                </span>
+              </div>
+
+              <div class="vac-item-dates">
+                <div>
+                  <span class="lbl">Aplicação:</span>
+                  <strong>{{ formatDate(v.appliedAt) }}</strong>
+                </div>
+                <div>
+                  <span class="lbl">Próximo Reforço:</span>
+                  <strong [class.text-danger]="v.status === 'vencida'" [class.text-amber]="v.status === 'vencendo'">
+                    {{ formatDate(v.nextDueAt) }}
+                  </strong>
+                </div>
+                <div *ngIf="v.vetName">
+                  <span class="lbl">Veterinário(a):</span>
+                  <span>{{ v.vetName }} <small *ngIf="v.vetCrmv">({{ v.vetCrmv }})</small></span>
+                </div>
+              </div>
+
+              <div class="vac-item-notes" *ngIf="v.notes">
+                <em>Obs: {{ v.notes }}</em>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulário para Nova Aplicação -->
+        <div class="new-vaccine-box">
+          <h4><i class="fas fa-plus-circle text-primary"></i> Registrar Nova Aplicação de Vacina</h4>
+          <div class="new-vac-grid">
+            <div class="form-group vac-name-fg">
+              <label for="vac-name">Nome da Vacina *</label>
+              <input id="vac-name" type="text" class="form-control" [(ngModel)]="newVacName" list="common-vac-list" placeholder="Selecione ou digite...">
+              <datalist id="common-vac-list">
+                <option *ngFor="let name of commonVaccineList" [value]="name">{{ name }}</option>
+              </datalist>
+            </div>
+
+            <div class="form-group">
+              <label for="vac-batch">Lote *</label>
+              <input id="vac-batch" type="text" class="form-control" [(ngModel)]="newVacBatch" placeholder="Ex.: L-84920">
+            </div>
+
+            <div class="form-group">
+              <label for="vac-fab">Fabricante / Laboratório</label>
+              <input id="vac-fab" type="text" class="form-control" [(ngModel)]="newVacManufacturer" placeholder="Ex.: Zoetis, MSD, Boehringer">
+            </div>
+
+            <div class="form-group">
+              <label for="vac-app-date">Data de Aplicação *</label>
+              <input id="vac-app-date" type="date" class="form-control" [(ngModel)]="newVacAppliedAt">
+            </div>
+
+            <div class="form-group">
+              <label for="vac-due-date">Próximo Reforço (Vencimento) *</label>
+              <input id="vac-due-date" type="date" class="form-control" [(ngModel)]="newVacNextDueAt">
+            </div>
+
+            <div class="form-group">
+              <label for="vac-vet">Veterinário(a) Aplicador(a)</label>
+              <input id="vac-vet" type="text" class="form-control" [(ngModel)]="newVacVetName" placeholder="Nome do médico">
+            </div>
+
+            <div class="form-group">
+              <label for="vac-crmv">CRMV Veterinário</label>
+              <input id="vac-crmv" type="text" class="form-control" [(ngModel)]="newVacVetCrmv" placeholder="CRMV / UF">
+            </div>
+
+            <div class="form-group vac-notes-fg">
+              <label for="vac-notes">Observações</label>
+              <input id="vac-notes" type="text" class="form-control" [(ngModel)]="newVacNotes" placeholder="Ex.: Reação ausente, dose anual">
+            </div>
+          </div>
+
+          <div class="new-vac-actions">
+            <button type="button" class="btn btn-primary" (click)="saveVaccine()" [disabled]="!newVacName || !newVacBatch || !newVacAppliedAt || !newVacNextDueAt">
+              <i class="fas fa-check"></i> Registrar na Carteira de Vacinas
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" (click)="closeVaccineModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VERSÃO IMPRESSA DA CARTEIRA DE VACINAÇÃO (A4 COM CABEÇALHO OFICIAL HU-30) -->
+<article class="print-slip vac-print-official" *ngIf="showVaccineModal && selectedPetForVaccine">
+  <header class="rx-header-a4">
+    <div class="rx-brand-block">
+      <h1>{{ businessProfile?.tradeName || 'Animal World' }}</h1>
+      <p class="subtitle">{{ businessProfile?.legalName || 'Animal World Comércio e Serviços Veterinários Ltda' }}</p>
+      <p class="legal-info">CNPJ: {{ businessProfile?.cnpj || '45.123.456/0001-89' }}<ng-container *ngIf="businessProfile?.ie"> · IE: {{ businessProfile?.ie }}</ng-container></p>
+      <p class="legal-info" *ngIf="businessProfile?.addressLine">
+        {{ businessProfile?.addressLine }} · {{ businessProfile?.city }}-{{ businessProfile?.uf }} · Tel: {{ businessProfile?.phone }}
+      </p>
+      <p class="legal-info" *ngIf="!businessProfile?.addressLine">Rua dos Pets, 123 - Centro · Tel: (11) 4002-8922</p>
+    </div>
+    <div class="rx-doc-block">
+      <span class="rx-type-badge">CARTEIRA OFICIAL DE VACINAÇÃO</span>
+      <div class="rx-format-notice">CONTROLE SANITÁRIO ANIMAL</div>
+      <div class="rx-date">Emissão: {{ formatDate(queueDate) }}</div>
+    </div>
+  </header>
+
+  <section class="rx-patient-a4">
+    <h2>Dados Cadastrais do Animal</h2>
+    <div class="patient-grid">
+      <div><span class="label">Animal (Pet):</span> <strong>{{ selectedPetForVaccine.petName }}</strong></div>
+      <div *ngIf="selectedPetForVaccine.breed"><span class="label">Raça:</span> {{ selectedPetForVaccine.breed }}</div>
+      <div><span class="label">Tutor(a) Responsável:</span> {{ selectedPetForVaccine.customerName || 'Não informado' }}</div>
+    </div>
+  </section>
+
+  <section class="rx-items-a4">
+    <h2>Histórico de Imunização e Vacinas</h2>
+    <table class="vac-print-table">
+      <thead>
+        <tr>
+          <th>Vacina</th>
+          <th>Fabricante / Lote</th>
+          <th>Data Aplicação</th>
+          <th>Próximo Reforço</th>
+          <th>Veterinário(a) / CRMV</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let v of petVaccines">
+          <td><strong>{{ v.vaccineName }}</strong></td>
+          <td>{{ v.manufacturer || '—' }} ({{ v.batch }})</td>
+          <td>{{ formatDate(v.appliedAt) }}</td>
+          <td><strong>{{ formatDate(v.nextDueAt) }}</strong></td>
+          <td>{{ v.vetName || '—' }} <small *ngIf="v.vetCrmv">({{ v.vetCrmv }})</small></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer class="rx-footer-a4">
+    <div class="rx-validity">
+      <p>Manter a carteira em dia assegura a saúde e o bem-estar do pet.</p>
+      <p>Documento oficial emitido por {{ businessProfile?.tradeName || 'Animal World' }}.</p>
+    </div>
+    <div class="rx-signature-box">
+      <div class="sign-line"></div>
+      <div class="vet-name">Carimbo e Assinatura do Médico Veterinário</div>
     </div>
   </footer>
 </article>

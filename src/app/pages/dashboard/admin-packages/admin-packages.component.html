@@ -1,0 +1,277 @@
+<div class="admin-page">
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Pacotes Mensais & Créditos</h1>
+      <p class="subtitle">Planos recorrentes de banho e tosa com débito automático de créditos por atendimento (HU-25)</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary" (click)="activeTab = 'sell'">
+        <i class="fas fa-plus"></i> + Vender Novo Pacote
+      </button>
+    </div>
+  </div>
+
+  <div class="toast-alert" *ngIf="toastMessage" [ngClass]="'toast-' + toastType">
+    <i class="fas fa-check-circle" *ngIf="toastType === 'success'"></i>
+    <i class="fas fa-info-circle" *ngIf="toastType === 'info'"></i>
+    <i class="fas fa-exclamation-triangle" *ngIf="toastType === 'warning'"></i>
+    <span>{{ toastMessage }}</span>
+  </div>
+
+  <!-- KPIs de Receita Recorrente -->
+  <div class="packages-kpis">
+    <div class="kpi-card">
+      <div class="kpi-icon icon-teal"><i class="fas fa-box-archive"></i></div>
+      <div class="kpi-info">
+        <span class="label">Pacotes Ativos</span>
+        <strong class="value">{{ activePackagesCount }}</strong>
+        <span class="sub">Pets com saldo disponível</span>
+      </div>
+    </div>
+
+    <div class="kpi-card highlight-card">
+      <div class="kpi-icon icon-green"><i class="fas fa-hand-holding-dollar"></i></div>
+      <div class="kpi-info">
+        <span class="label">Receita Recorrente</span>
+        <strong class="value text-success">R$ {{ formatPrice(totalRecurringRevenue) }}</strong>
+        <span class="sub">Faturamento mensal fixo</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon icon-blue"><i class="fas fa-shower"></i></div>
+      <div class="kpi-info">
+        <span class="label">Créditos de Banhos</span>
+        <strong class="value">{{ totalAvailableBaths }} disponíveis</strong>
+        <span class="sub">A serem consumidos na esteira</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Abas de Navegação -->
+  <div class="tab-navigation">
+    <button class="tab-btn" [class.active]="activeTab === 'active'" (click)="activeTab = 'active'">
+      <i class="fas fa-list-check"></i> Pacotes em Andamento ({{ packages.length }})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'sell'" (click)="activeTab = 'sell'">
+      <i class="fas fa-cart-plus"></i> Vender / Ativar Novo Pacote
+    </button>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- ABA 1: PACOTES ATIVOS (HU-25)                            -->
+  <!-- ======================================================== -->
+  <div class="tab-content" *ngIf="activeTab === 'active'">
+    <div class="search-bar-wrap">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Buscar por pet, tutor ou plano..." [(ngModel)]="search">
+        <button class="clear-btn" *ngIf="search" (click)="search = ''"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredPackages.length === 0">
+      <i class="fas fa-box-open fa-3x"></i>
+      <p>Nenhum pacote encontrado.</p>
+    </div>
+
+    <div class="table-container" *ngIf="filteredPackages.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Pet & Tutor</th>
+            <th>Plano Contratado</th>
+            <th>Saldo Banhos</th>
+            <th>Saldo Tosas</th>
+            <th>Validade</th>
+            <th>Valor</th>
+            <th>Status</th>
+            <th>Ações Rápidas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let pkg of filteredPackages" [class.row-expiring]="isExpiringSoon(pkg.expirationDate)">
+            <td>
+              <div class="pet-tutor-cell">
+                <strong><i class="fas fa-paw"></i> {{ pkg.petName }}</strong>
+                <span class="tutor-name">{{ pkg.customerName }}</span>
+                <span class="tutor-phone" *ngIf="pkg.customerPhone">{{ pkg.customerPhone }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="pkg-plan-info">
+                <strong>{{ pkg.packageName }}</strong>
+                <span class="pkg-notes" *ngIf="pkg.notes">{{ pkg.notes }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="credit-pill" [class.empty]="pkg.usedBaths >= pkg.totalBaths">
+                <i class="fas fa-shower"></i>
+                <span>{{ pkg.totalBaths - pkg.usedBaths }} restantes</span>
+                <small>({{ pkg.usedBaths }}/{{ pkg.totalBaths }} feitos)</small>
+              </div>
+            </td>
+            <td>
+              <div class="credit-pill tosa-pill" [class.empty]="pkg.usedGrooms >= pkg.totalGrooms" *ngIf="pkg.totalGrooms > 0">
+                <i class="fas fa-scissors"></i>
+                <span>{{ pkg.totalGrooms - pkg.usedGrooms }} restante</span>
+                <small>({{ pkg.usedGrooms }}/{{ pkg.totalGrooms }} feitas)</small>
+              </div>
+              <span *ngIf="pkg.totalGrooms === 0" class="text-muted">—</span>
+            </td>
+            <td>
+              <div class="validity-info">
+                <span>{{ formatDateShort(pkg.expirationDate) }}</span>
+                <span class="badge-expiring" *ngIf="isExpiringSoon(pkg.expirationDate) && pkg.status === 'ativo'">
+                  Expira em breve!
+                </span>
+                <span class="badge-expired" *ngIf="isExpired(pkg.expirationDate)">
+                  Expirado
+                </span>
+              </div>
+            </td>
+            <td>
+              <strong>R$ {{ formatPrice(pkg.price) }}</strong>
+            </td>
+            <td>
+              <span class="status-badge" [ngClass]="pkg.status">
+                {{ pkg.status === 'ativo' ? 'Ativo' : (pkg.status === 'esgotado' ? 'Esgotado' : 'Expirado') }}
+              </span>
+            </td>
+            <td class="actions-cell">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-info"
+                [disabled]="pkg.usedBaths >= pkg.totalBaths || pkg.status !== 'ativo'"
+                (click)="consumeCredit(pkg, 'bath')"
+                title="Debitar 1 Banho">
+                <i class="fas fa-shower"></i> -1 Banho
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-warning"
+                [disabled]="pkg.totalGrooms === 0 || pkg.usedGrooms >= pkg.totalGrooms || pkg.status !== 'ativo'"
+                (click)="consumeCredit(pkg, 'groom')"
+                title="Debitar 1 Tosa">
+                <i class="fas fa-scissors"></i> -1 Tosa
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                (click)="deletePackage(pkg)"
+                title="Excluir Pacote">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- ABA 2: VENDER NOVO PACOTE (HU-25)                        -->
+  <!-- ======================================================== -->
+  <div class="tab-content" *ngIf="activeTab === 'sell'">
+    <div class="sell-package-layout">
+
+      <!-- Presets de Pacotes -->
+      <div class="presets-col">
+        <h3><i class="fas fa-tags"></i> Escolha o Modelo de Plano</h3>
+        <div class="preset-cards">
+          <div
+            class="preset-card"
+            *ngFor="let p of presets"
+            [class.selected]="sellForm.get('presetId')?.value === p.id"
+            (click)="sellForm.patchValue({ presetId: p.id })">
+            <div class="preset-header">
+              <h4>{{ p.name }}</h4>
+              <strong class="preset-price">R$ {{ formatPrice(p.price) }}</strong>
+            </div>
+            <p class="preset-desc">{{ p.description }}</p>
+            <div class="preset-badges">
+              <span class="badge"><i class="fas fa-shower"></i> {{ p.baths }} Banhos</span>
+              <span class="badge" *ngIf="p.grooms"><i class="fas fa-scissors"></i> {{ p.grooms }} Tosa</span>
+              <span class="badge badge-cal"><i class="fas fa-calendar-alt"></i> Validade {{ p.validityDays }} dias</span>
+            </div>
+            <span class="preset-breeds"><i class="fas fa-info-circle"></i> {{ p.eligibleBreedsSummary }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulário de Venda / Ativação -->
+      <div class="form-col">
+        <form [formGroup]="sellForm" (ngSubmit)="submitSell()" class="sell-card">
+          <h3><i class="fas fa-user-check"></i> Dados do Pet & Tutor</h3>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="pet-name">Nome do Pet *</label>
+              <input type="text" id="pet-name" formControlName="petName" placeholder="Ex: Mel, Thor, Nina">
+            </div>
+            <div class="form-group">
+              <label for="tutor-name">Nome do Tutor *</label>
+              <input type="text" id="tutor-name" formControlName="customerName" placeholder="Ex: Fernanda Lima">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="tutor-phone">WhatsApp do Tutor</label>
+              <input type="text" id="tutor-phone" formControlName="customerPhone" placeholder="(61) 98888-7777">
+            </div>
+            <div class="form-group">
+              <label for="expiry-date">Validade do Pacote *</label>
+              <input type="date" id="expiry-date" formControlName="expirationDate">
+            </div>
+          </div>
+
+          <div class="form-row-3">
+            <div class="form-group">
+              <label for="baths-count">Total Banhos *</label>
+              <input type="number" id="baths-count" formControlName="totalBaths" min="1" step="1">
+            </div>
+            <div class="form-group">
+              <label for="grooms-count">Total Tosas *</label>
+              <input type="number" id="grooms-count" formControlName="totalGrooms" min="0" step="1">
+            </div>
+            <div class="form-group">
+              <label for="pkg-price">Valor Total (R$) *</label>
+              <input type="number" id="pkg-price" formControlName="price" min="0" step="1.00">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="pay-method">Forma de Pagamento</label>
+              <select id="pay-method" formControlName="paymentMethod">
+                <option value="pix">Pix (Recomendado)</option>
+                <option value="dinheiro">Dinheiro</option>
+                <option value="cartao_debito">Cartão de Débito</option>
+                <option value="cartao_credito">Cartão de Crédito</option>
+              </select>
+            </div>
+            <div class="form-group checkbox-align">
+              <label class="custom-checkbox">
+                <input type="checkbox" formControlName="registerInCash">
+                <span class="checkmark"></span>
+                <span>Lançar Entrada no Caixa Automaticamente</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="notes">Observações do Pacote</label>
+            <input type="text" id="notes" formControlName="notes" placeholder="Ex: Banhos sempre aos sábados de manhã">
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-block" [disabled]="sellForm.invalid">
+              <i class="fas fa-check-circle"></i> Confirmar Venda & Ativar Pacote
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -35,6 +35,11 @@
           </a>
         </li>
         <li class="sidebar-item">
+          <a (click)="navigate('/dashboard/packages')">
+            <i class="fas fa-cubes" aria-hidden="true"></i> Pacotes Mensais & Créditos
+          </a>
+        </li>
+        <li class="sidebar-item">
           <a (click)="navigate('/dashboard/taxi')">
             <i class="fas fa-car-side" aria-hidden="true"></i> Táxi Dog (Corridas & Regiões)
           </a>
@@ -146,6 +151,11 @@
         <li class="sidebar-item" *ngIf="isAdmin">
           <a (click)="navigate('/dashboard/groomers')">
             <i class="fas fa-scissors" aria-hidden="true"></i> Tosadores & Comissões
+          </a>
+        </li>
+        <li class="sidebar-item" *ngIf="isAdmin">
+          <a (click)="navigate('/dashboard/settings')">
+            <i class="fas fa-sliders-h" aria-hidden="true"></i> Configurações da Empresa
           </a>
         </li>
         <li class="sidebar-item">

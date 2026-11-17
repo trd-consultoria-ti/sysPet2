@@ -25,6 +25,10 @@ interface DbState {
   taxiTrips: any[];
   groomers: any[];
   payables: any[];
+  businessProfile?: any;
+  packages?: any[];
+  vaccines?: any[];
+  businessHours?: any[];
 }
 
 function getInitialDbState(): DbState {
@@ -1296,10 +1300,97 @@ export class DemoBackendInterceptor implements HttpInterceptor {
       }
       return of(new HttpResponse({ status: 404, body: { error: 'Conta a pagar não encontrada' } }));
     }
-    // Payables: DELETE /api/payables/:id
-    if (path.startsWith('/api/payables/') && method === 'DELETE') {
+    // Business Profile (HU-30): GET & PUT /api/business-profile
+    if (path === '/api/business-profile' && method === 'GET') {
+      return of(new HttpResponse({
+        status: 200,
+        body: db.businessProfile || {
+          tradeName: 'Animal World Pet Shop & Clínica Veterinária',
+          legalName: 'Animal World Comércio e Serviços Veterinários Ltda',
+          cnpj: '45.123.456/0001-89',
+          ie: '07.999.888/001-20',
+          addressLine: 'QC 3 Conjunto 1 Lote 5 — Riacho Fundo I',
+          city: 'Brasília',
+          uf: 'DF',
+          cep: '71805-403',
+          phone: '(61) 3399-1234',
+          whatsapp: '(61) 98888-7777',
+          email: 'contato@animalworldpet.com.br',
+          instagram: '@animalworldpetshop'
+        }
+      })).pipe(delay(20));
+    }
+    if (path === '/api/business-profile' && method === 'PUT') {
+      db.businessProfile = { ...db.businessProfile, ...req.body };
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 200, body: db.businessProfile })).pipe(delay(20));
+    }
+
+    // Business Hours (HU-26): GET & PUT /api/business-hours
+    if (path === '/api/business-hours' && method === 'GET') {
+      return of(new HttpResponse({ status: 200, body: db.businessHours || [] })).pipe(delay(20));
+    }
+    if (path === '/api/business-hours' && method === 'PUT') {
+      db.businessHours = req.body;
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 200, body: db.businessHours })).pipe(delay(20));
+    }
+
+    // Packages (HU-25): GET /api/packages
+    if (path === '/api/packages' && method === 'GET') {
+      return of(new HttpResponse({ status: 200, body: db.packages || [] })).pipe(delay(20));
+    }
+    // Packages: POST /api/packages
+    if (path === '/api/packages' && method === 'POST') {
+      const newPkg = {
+        ...req.body,
+        id: (db.packages && db.packages.length) ? Math.max(...db.packages.map(p => p.id)) + 1 : 1,
+        createdAt: new Date().toISOString()
+      };
+      db.packages = db.packages || [];
+      db.packages.unshift(newPkg);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 201, body: newPkg })).pipe(delay(20));
+    }
+    // Packages: PUT /api/packages/:id
+    if (path.startsWith('/api/packages/') && method === 'PUT') {
       const id = +path.split('/')[3];
-      db.payables = (db.payables || []).filter(p => p.id !== id);
+      const pkg = (db.packages || []).find(p => p.id === id);
+      if (pkg) {
+        Object.assign(pkg, req.body, { id });
+        this.saveDb(db);
+        return of(new HttpResponse({ status: 200, body: pkg })).pipe(delay(20));
+      }
+      return of(new HttpResponse({ status: 404, body: { error: 'Pacote não encontrado' } }));
+    }
+    // Packages: DELETE /api/packages/:id
+    if (path.startsWith('/api/packages/') && method === 'DELETE') {
+      const id = +path.split('/')[3];
+      db.packages = (db.packages || []).filter(p => p.id !== id);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 200, body: { success: true } })).pipe(delay(20));
+    }
+
+    // Vaccines (HU-29): GET /api/vaccines
+    if (path === '/api/vaccines' && method === 'GET') {
+      return of(new HttpResponse({ status: 200, body: db.vaccines || [] })).pipe(delay(20));
+    }
+    // Vaccines: POST /api/vaccines
+    if (path === '/api/vaccines' && method === 'POST') {
+      const newVac = {
+        ...req.body,
+        id: (db.vaccines && db.vaccines.length) ? Math.max(...db.vaccines.map(v => v.id)) + 1 : 1,
+        createdAt: new Date().toISOString()
+      };
+      db.vaccines = db.vaccines || [];
+      db.vaccines.unshift(newVac);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 201, body: newVac })).pipe(delay(20));
+    }
+    // Vaccines: DELETE /api/vaccines/:id
+    if (path.startsWith('/api/vaccines/') && method === 'DELETE') {
+      const id = +path.split('/')[3];
+      db.vaccines = (db.vaccines || []).filter(v => v.id !== id);
       this.saveDb(db);
       return of(new HttpResponse({ status: 200, body: { success: true } })).pipe(delay(20));
     }

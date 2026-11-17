@@ -474,6 +474,26 @@
               </div>
             </div>
 
+            <!-- Banner de Pacote Mensal Ativo do Pet (HU-25) -->
+            <div class="active-package-banner" *ngIf="activePackageForPet">
+              <div class="pkg-banner-icon"><i class="fas fa-gift"></i></div>
+              <div class="pkg-banner-content">
+                <div class="pkg-title-line">
+                  <strong><i class="fas fa-box-archive"></i> Pacote Mensal Ativo: {{ activePackageForPet.packageName }}</strong>
+                </div>
+                <p class="pkg-balance-line">
+                  Saldo Restante:
+                  <strong>{{ activePackageForPet.totalBaths - activePackageForPet.usedBaths }} banho(s)</strong>
+                  <span *ngIf="activePackageForPet.totalGrooms"> e <strong>{{ activePackageForPet.totalGrooms - activePackageForPet.usedGrooms }} tosa(s)</strong></span>
+                  (Válido até {{ activePackageForPet.expirationDate }})
+                </p>
+                <label class="package-credit-checkbox">
+                  <input type="checkbox" formControlName="usePackageCredit" (change)="onUsePackageCreditToggle()">
+                  <span><i class="fas fa-check"></i> Consumir crédito do pacote neste atendimento (Preço = <strong>R$ 0,00</strong>)</span>
+                </label>
+              </div>
+            </div>
+
             <!-- Procedimento & Matriz de Preço (HU-08 / HU-09) -->
             <div class="form-row">
               <div class="form-group col-6">
