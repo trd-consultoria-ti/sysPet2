@@ -1,0 +1,22 @@
+#!/bin/sh
+# Pre-commit hook: Bloqueia commits diretos na branch 'main' e 'master'
+
+branch="$(git symbolic-ref --short -q HEAD 2>/dev/null || echo '')"
+
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo ""
+  echo "❌ [BLOQUEIO DE SEGURANÇA - POLÍTICA DE BRANCHES]"
+  echo "------------------------------------------------------------------------"
+  echo "ERRO: Commits diretos na branch '$branch' estão estritamente PROIBIDOS!"
+  echo ""
+  echo "Para continuar o desenvolvimento, utilize uma branch de trabalho:"
+  echo "   git checkout -b feat/sua-feature   (ou fix/seu-ajuste)"
+  echo "   git commit -m \"sua mensagem\""
+  echo "   git push -u origin feat/sua-feature"
+  echo "   Abra um Pull Request para revisão antes do merge na main."
+  echo "------------------------------------------------------------------------"
+  echo ""
+  exit 1
+fi
+
+exit 0

@@ -1,0 +1,19 @@
+#!/bin/sh
+# Pre-merge-commit hook: Bloqueia merges diretos locais na branch 'main' e 'master'
+
+branch="$(git symbolic-ref --short -q HEAD 2>/dev/null || echo '')"
+
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo ""
+  echo "❌ [BLOQUEIO DE SEGURANÇA - POLÍTICA DE BRANCHES]"
+  echo "------------------------------------------------------------------------"
+  echo "ERRO: Merges locais diretos na branch '$branch' estão estritamente PROIBIDOS!"
+  echo ""
+  echo "Todo merge na 'main' deve ser realizado exclusivamente via Pull Request no GitHub"
+  echo "após aprovação de QA e verificação de testes automatizados."
+  echo "------------------------------------------------------------------------"
+  echo ""
+  exit 1
+fi
+
+exit 0

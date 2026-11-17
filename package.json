@@ -9,7 +9,8 @@
     "watch": "node --openssl-legacy-provider ./node_modules/@angular/cli/bin/ng build --watch --configuration development",
     "test": "node --openssl-legacy-provider ./node_modules/@angular/cli/bin/ng test",
     "db:up": "docker compose up -d db",
-    "api": "node server/index.js"
+    "api": "node server/index.js",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "private": true,
   "dependencies": {

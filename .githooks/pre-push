@@ -1,0 +1,25 @@
+#!/bin/sh
+# Pre-push hook: Bloqueia push direto para 'main' e 'master'
+
+remote="$1"
+url="$2"
+
+while read local_ref local_sha remote_ref remote_sha
+do
+  if [ "$remote_ref" = "refs/heads/main" ] || [ "$remote_ref" = "refs/heads/master" ]; then
+    echo ""
+    echo "❌ [BLOQUEIO DE SEGURANÇA - POLÍTICA DE BRANCHES]"
+    echo "------------------------------------------------------------------------"
+    echo "ERRO: Push direto para a branch remota 'main' está estritamente PROIBIDO!"
+    echo ""
+    echo "Fluxo Homologado:"
+    echo "   1. Envie suas alterações para sua branch de trabalho: git push origin <sua-branch>"
+    echo "   2. Abra um Pull Request contra a branch 'main' no GitHub"
+    echo "   3. O merge deve ser feito exclusivamente via interface do GitHub pós-revisão."
+    echo "------------------------------------------------------------------------"
+    echo ""
+    exit 1
+  fi
+done
+
+exit 0
