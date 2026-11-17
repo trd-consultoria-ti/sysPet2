@@ -21,7 +21,7 @@
   <!-- Fluxo Operacional Recomendado do Pet Shop (Card Informativo) -->
   <div class="workflow-banner">
     <div class="workflow-title">
-      <i class="fas fa-route"></i> Fluxo de Atendimento Operacional do Pet Shop
+      <i class="fas fa-route"></i> Fluxo de Atendimento Operacional — Banho & Tosa (Esteira Delivery)
     </div>
     <div class="workflow-steps">
       <div class="step-card" (click)="navigate('/dashboard/daily-queue')">
@@ -74,6 +74,58 @@
         <div class="step-content">
           <strong>Frente de Caixa (PDV)</strong>
           <span>Cobrança, Pix/Cartão & Liberação</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fluxo Clínico e Veterinário (Consultório & Prontuário) -->
+  <div class="workflow-banner clinical-banner">
+    <div class="workflow-title">
+      <i class="fas fa-stethoscope"></i> Fluxo Clínico & Veterinário — Consultório e Atendimento Presencial
+    </div>
+    <div class="workflow-steps">
+      <div class="step-card" (click)="navigate('/dashboard/consultations')">
+        <span class="step-num">1</span>
+        <div class="step-content">
+          <strong>Triagem & Chegada</strong>
+          <span>Fila presencial, peso (kg) e queixa</span>
+        </div>
+      </div>
+      <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+
+      <div class="step-card" (click)="navigate('/dashboard/consultations')">
+        <span class="step-num">2</span>
+        <div class="step-content">
+          <strong>Anamnese & Exame</strong>
+          <span>Exame físico, temperatura e sinais vitais</span>
+        </div>
+      </div>
+      <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+
+      <div class="step-card" (click)="navigate('/dashboard/consultations')">
+        <span class="step-num">3</span>
+        <div class="step-content">
+          <strong>Conduta & Vacinas</strong>
+          <span>Diagnóstico e Carteira de Vacinas</span>
+        </div>
+      </div>
+      <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+
+      <div class="step-card" (click)="navigate('/dashboard/consultations')">
+        <span class="step-num">4</span>
+        <div class="step-content">
+          <strong>Receita Médica A4</strong>
+          <span>Prescrição oficial e farmácia</span>
+        </div>
+      </div>
+      <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+
+      <div class="step-card" (click)="navigate('/dashboard/cash')">
+        <span class="step-num">5</span>
+        <div class="step-content">
+          <strong>Finalização & PDV</strong>
+          <span>Receituário PDF, WhatsApp & Cobrança</span>
         </div>
       </div>
     </div>

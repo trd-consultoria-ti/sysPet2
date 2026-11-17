@@ -17,7 +17,7 @@ const STORAGE_EVOLUTION_CONFIG_KEY = 'syspet_evolution_config_v1';
 
 const DEFAULT_EVOLUTION_CONFIG: EvolutionConfig = {
   apiUrl: 'http://127.0.0.1:8080',
-  apiKey: 'job-hunter-evolution-2026',
+  apiKey: 'syspet-evolution-key-2026',
   instanceName: 'syspet-oficial' // Instância limpa e isolada para o software comercial
 };
 

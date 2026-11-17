@@ -72,6 +72,28 @@
   margin-bottom: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
+  &.clinical-banner {
+    border-left: 4px solid #2563eb;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+
+    .workflow-title {
+      i {
+        color: #2563eb;
+      }
+    }
+
+    .workflow-steps .step-card {
+      &:hover {
+        background: #eff6ff;
+        border-color: #3b82f6;
+      }
+
+      .step-num {
+        background: #2563eb;
+      }
+    }
+  }
+
   .workflow-title {
     font-size: 0.875rem;
     font-weight: 700;

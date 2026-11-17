@@ -1,7 +1,27 @@
+const fs = require('fs');
+const path = require('path');
+
+// Carrega variáveis locais de server/.env ou .env na raiz (se existirem) sem sobrescrever o ambiente
+for (const envFile of [path.resolve(__dirname, '.env'), path.resolve(__dirname, '..', '.env')]) {
+  if (fs.existsSync(envFile)) {
+    try {
+      const content = fs.readFileSync(envFile, 'utf-8');
+      for (const line of content.split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+          const idx = trimmed.indexOf('=');
+          const k = trimmed.slice(0, idx).trim();
+          const v = trimmed.slice(idx + 1).trim();
+          if (process.env[k] === undefined) process.env[k] = v;
+        }
+      }
+    } catch (_) {}
+  }
+}
+
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
-const path = require('path');
 const helmet = require('helmet');
 const bcrypt = require('bcryptjs');
 const { Pool } = require('pg');
@@ -2409,7 +2429,7 @@ app.get('/api/prescriptions/:id/pdf', requireAuth, async (req, res) => {
 // ---------- WhatsApp / Evolution API proxy ----------
 
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://127.0.0.1:8080';
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || 'job-hunter-evolution-2026';
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || 'syspet-evolution-key-2026';
 const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'syspet-oficial';
 
 async function evolutionFetch(endpoint, options = {}) {
