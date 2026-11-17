@@ -1,0 +1,424 @@
+<div class="taxi-page container-fluid py-4">
+  <!-- Toast -->
+  <div class="toast-notification" *ngIf="toastMessage" [ngClass]="toastType">
+    <span>{{ toastMessage }}</span>
+  </div>
+
+  <!-- Header -->
+  <div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="page-title"><i class="fas fa-car-side header-icon"></i> Táxi Dog — Gestão de Regiões & Corridas</h1>
+      <p class="page-subtitle text-muted">Controle de transporte vinculado ao banho e tosa, regiões tarifadas e avisos ao tutor</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-primary" (click)="openNewRegionModal()">
+        <i class="fas fa-plus"></i> Nova Região
+      </button>
+    </div>
+  </div>
+
+  <!-- Metric Badges -->
+  <div class="stats-grid mb-4">
+    <div class="stat-card" [class.active-filter]="selectedStatusFilter === 'todas'" (click)="selectedStatusFilter = 'todas'">
+      <div class="stat-icon"><i class="fas fa-route"></i></div>
+      <div class="stat-content">
+        <span class="stat-label">Total Corridas</span>
+        <strong class="stat-value">{{ stats.total }}</strong>
+      </div>
+    </div>
+    <div class="stat-card stat-seeking" [class.active-filter]="selectedStatusFilter === 'a_caminho_buscar'" (click)="selectedStatusFilter = 'a_caminho_buscar'">
+      <div class="stat-icon"><i class="fas fa-car-side"></i></div>
+      <div class="stat-content">
+        <span class="stat-label">A Buscar</span>
+        <strong class="stat-value">{{ stats.seeking }}</strong>
+      </div>
+    </div>
+    <div class="stat-card stat-store" [class.active-filter]="selectedStatusFilter === 'pet_na_loja'" (click)="selectedStatusFilter = 'pet_na_loja'">
+      <div class="stat-icon"><i class="fas fa-store"></i></div>
+      <div class="stat-content">
+        <span class="stat-label">Pet na Loja</span>
+        <strong class="stat-value">{{ stats.atStore }}</strong>
+      </div>
+    </div>
+    <div class="stat-card stat-returning" [class.active-filter]="selectedStatusFilter === 'a_caminho_devolver'" (click)="selectedStatusFilter = 'a_caminho_devolver'">
+      <div class="stat-icon"><i class="fas fa-undo"></i></div>
+      <div class="stat-content">
+        <span class="stat-label">A Devolver</span>
+        <strong class="stat-value">{{ stats.returning }}</strong>
+      </div>
+    </div>
+    <div class="stat-card stat-done" [class.active-filter]="selectedStatusFilter === 'concluida'" (click)="selectedStatusFilter = 'concluida'">
+      <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-content">
+        <span class="stat-label">Concluídas</span>
+        <strong class="stat-value">{{ stats.done }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="taxi-tabs mb-4">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'corridas'"
+      (click)="activeTab = 'corridas'">
+      <i class="fas fa-clipboard-list"></i> Corridas do Dia ({{ filteredTrips.length }})
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'regioes'"
+      (click)="activeTab = 'regioes'">
+      <i class="fas fa-map-marked-alt"></i> Tabela de Regiões & Preços ({{ regions.length }})
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'cotador'"
+      (click)="activeTab = 'cotador'">
+      <i class="fas fa-calculator"></i> Simulador de Cotação por Endereço
+    </button>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 1: CORRIDAS DO DIA (HU-13 & HU-15)    -->
+  <!-- ========================================== -->
+  <div class="tab-pane" *ngIf="activeTab === 'corridas'">
+    <div class="card panel-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h2 class="panel-title">
+          <i class="fas fa-tasks text-primary"></i> Corridas de Táxi Dog
+          <span class="badge badge-filter" *ngIf="selectedStatusFilter !== 'todas'">Filtrando por: {{ selectedStatusFilter }}</span>
+        </h2>
+        <span class="text-muted small">Motorista principal: Lucas (O Rapaz)</span>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive" *ngIf="filteredTrips.length > 0">
+          <table class="table table-hover taxi-table mb-0">
+            <thead>
+              <tr>
+                <th>Pet & Tutor</th>
+                <th>Endereço & Região</th>
+                <th>Trajeto</th>
+                <th>Tarifa</th>
+                <th>Motorista</th>
+                <th>Status Atual</th>
+                <th class="text-right">Ações & Avisos</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let trip of filteredTrips" [class.trip-done]="trip.status === 'concluida'">
+                <td>
+                  <div class="pet-cell">
+                    <strong>🐾 {{ trip.petName }}</strong>
+                    <span class="tutor-text">{{ trip.customerName }}</span>
+                    <small class="phone-text" *ngIf="trip.customerPhone">{{ trip.customerPhone }}</small>
+                  </div>
+                </td>
+                <td>
+                  <div class="address-cell">
+                    <span class="address-line"><i class="fas fa-map-marker-alt text-danger"></i> {{ trip.originAddress }}</span>
+                    <span class="badge-region">{{ trip.regionName }}</span>
+                    <small class="notes-line" *ngIf="trip.notes"><i class="far fa-sticky-note"></i> {{ trip.notes }}</small>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge-trip-type" [ngClass]="'type-' + trip.tripType">
+                    {{ trip.tripType === 'ida_e_volta' ? 'Ida e Volta' : (trip.tripType === 'somente_ida' ? 'Somente Buscar' : 'Somente Devolver') }}
+                  </span>
+                </td>
+                <td>
+                  <strong class="price-text">R$ {{ formatPrice(trip.price) }}</strong>
+                </td>
+                <td>
+                  <span class="driver-name"><i class="fas fa-user-circle"></i> {{ trip.driverName || 'Lucas' }}</span>
+                </td>
+                <td>
+                  <span class="status-pill" [ngClass]="'status-' + trip.status">
+                    <i class="fas" [ngClass]="statusLabels[trip.status]?.icon || 'fa-car'"></i>
+                    {{ statusLabels[trip.status]?.label }}
+                  </span>
+                </td>
+                <td class="text-right">
+                  <div class="actions-group">
+                    <!-- Avanço de Status (HU-13) -->
+                    <button
+                      *ngIf="trip.status === 'a_caminho_buscar'"
+                      type="button"
+                      class="btn btn-sm btn-outline-info"
+                      (click)="updateTripStatus(trip, 'pet_na_loja')"
+                      title="Confirmar chegada do pet na loja">
+                      <i class="fas fa-store"></i> Pet na Loja
+                    </button>
+
+                    <button
+                      *ngIf="trip.status === 'pet_na_loja'"
+                      type="button"
+                      class="btn btn-sm btn-outline-warning"
+                      (click)="updateTripStatus(trip, 'a_caminho_devolver')"
+                      title="Motorista saiu para devolver o pet">
+                      <i class="fas fa-car-side"></i> A Caminho Devolver ➔
+                    </button>
+
+                    <button
+                      *ngIf="trip.status === 'a_caminho_devolver'"
+                      type="button"
+                      class="btn btn-sm btn-success"
+                      (click)="updateTripStatus(trip, 'concluida')"
+                      title="Finalizar corrida">
+                      <i class="fas fa-check"></i> Concluir
+                    </button>
+
+                    <!-- Botão WhatsApp Aviso Motorista (HU-15) -->
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-whatsapp"
+                      (click)="openWaNoticeModal(trip, trip.status)"
+                      title="Enviar aviso de WhatsApp pro tutor">
+                      <i class="fab fa-whatsapp"></i> Aviso
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="empty-state p-5 text-center" *ngIf="filteredTrips.length === 0">
+          <i class="fas fa-car fa-3x text-muted mb-3"></i>
+          <h4>Nenhuma corrida de táxi encontrada</h4>
+          <p class="text-muted">As corridas são geradas automaticamente ao marcar "Incluir Táxi Dog" no check-in da esteira.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 2: TABELA DE REGIÕES CRUD (HU-12)      -->
+  <!-- ========================================== -->
+  <div class="tab-pane" *ngIf="activeTab === 'regioes'">
+    <div class="card panel-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="panel-title"><i class="fas fa-map-marked-alt text-primary"></i> Regiões Tarifadas do Táxi Dog</h2>
+          <small class="text-muted">A atendente pode editar valores e bairros sem precisar de programador</small>
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" (click)="openNewRegionModal()">
+          <i class="fas fa-plus"></i> Cadastrar Região
+        </button>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover regions-table mb-0">
+            <thead>
+              <tr>
+                <th>Região / Bairro</th>
+                <th>Palavras-chave / Aliases (Busca Inteligente)</th>
+                <th>Tarifa Táxi</th>
+                <th>Status</th>
+                <th>Observações</th>
+                <th class="text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let reg of regions" [class.inactive-row]="!reg.active">
+                <td>
+                  <strong>{{ reg.name }}</strong>
+                </td>
+                <td>
+                  <div class="aliases-wrap">
+                    <span class="alias-pill" *ngFor="let al of reg.aliases">{{ al }}</span>
+                    <span class="text-muted small" *ngIf="!reg.aliases || reg.aliases.length === 0">Sem apelidos</span>
+                  </div>
+                </td>
+                <td>
+                  <strong class="region-price">R$ {{ formatPrice(reg.price) }}</strong>
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="reg.active ? 'badge-success' : 'badge-secondary'">
+                    {{ reg.active ? 'Ativa' : 'Inativa' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-muted small">{{ reg.notes || '—' }}</span>
+                </td>
+                <td class="text-right">
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-xs btn-outline-primary" (click)="openEditRegionModal(reg)" title="Editar preço/nome">
+                      <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button type="button" class="btn btn-xs btn-outline-secondary" (click)="toggleRegionActive(reg)" title="Ativar/desativar">
+                      <i class="fas" [ngClass]="reg.active ? 'fa-eye-slash' : 'fa-eye'"></i>
+                    </button>
+                    <button type="button" class="btn btn-xs btn-outline-danger" (click)="deleteRegion(reg)" title="Excluir região">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 3: SIMULADOR / TESTADOR DE COTAÇÃO    -->
+  <!-- ========================================== -->
+  <div class="tab-pane" *ngIf="activeTab === 'cotador'">
+    <div class="card panel-card">
+      <div class="card-header">
+        <h2 class="panel-title"><i class="fas fa-calculator text-primary"></i> Testador de Endereço & Busca Inteligente</h2>
+        <small class="text-muted">Digite o endereço ou condomínio enviado pelo cliente no WhatsApp para ver qual região o sistema reconhece</small>
+      </div>
+      <div class="card-body">
+        <div class="row align-items-center mb-4">
+          <div class="col-md-8">
+            <label>Endereço Completo ou Bairro do Cliente</label>
+            <div class="input-group">
+              <input
+                type="text"
+                class="form-control form-control-lg"
+                [(ngModel)]="testAddressQuery"
+                (keyup.enter)="testAddress()"
+                placeholder="Ex: Condomínio Park Way Quadra 4, Recanto das Emas QD 300, QC 3 Riacho...">
+              <button class="btn btn-primary" type="button" (click)="testAddress()">
+                <i class="fas fa-search"></i> Localizar Região
+              </button>
+              <button class="btn btn-outline-secondary" type="button" (click)="clearTest()" *ngIf="testAddressQuery">
+                Limpar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resultado do Teste -->
+        <div class="match-result-box" *ngIf="matchSearched">
+          <div class="alert alert-success match-success" *ngIf="matchedRegion">
+            <div class="d-flex align-items-center">
+              <div class="match-icon mr-3"><i class="fas fa-check-circle fa-2x text-success"></i></div>
+              <div>
+                <h4 class="mb-1">Região Identificada: <strong>{{ matchedRegion.name }}</strong></h4>
+                <p class="mb-0 text-muted">Tarifa de Táxi Dog: <strong>R$ {{ formatPrice(matchedRegion.price) }}</strong></p>
+                <small class="text-secondary" *ngIf="matchedRegion.notes">{{ matchedRegion.notes }}</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-warning match-not-found" *ngIf="!matchedRegion">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning mr-3"></i>
+                <div>
+                  <h4 class="mb-1">Região sem preço cadastrado!</h4>
+                  <p class="mb-0">Nenhuma região correspondeu aos termos pesquisados. O sistema avisa a atendente para cadastrar a região em vez de chutar o valor.</p>
+                </div>
+              </div>
+              <button type="button" class="btn btn-warning" (click)="openNewRegionModal()">
+                <i class="fas fa-plus"></i> Cadastrar Região Agora
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CRUD DE REGIÃO (HU-12)              -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" *ngIf="showRegionModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>{{ isEditingRegion ? 'Editar Região de Táxi' : 'Nova Região de Táxi Dog' }}</h2>
+          <button type="button" class="close-btn" (click)="closeRegionModal()">&times;</button>
+        </div>
+
+        <form [formGroup]="regionForm" (ngSubmit)="saveRegion()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Nome da Região / Bairro *</label>
+              <input type="text" formControlName="name" class="form-control" placeholder="Ex: Riacho Fundo QC3, Condomínios SMPW">
+            </div>
+
+            <div class="form-group">
+              <label>Tarifa Táxi Dog (R$) *</label>
+              <input type="number" step="1" formControlName="price" class="form-control price-input" placeholder="Ex: 20">
+              <small class="text-muted">Valor cobrado pela corrida (soma no orçamento do banho/tosa)</small>
+            </div>
+
+            <div class="form-group">
+              <label>Palavras-chave / Apelidos para Busca (separados por vírgula)</label>
+              <input type="text" formControlName="aliases" class="form-control" placeholder="Ex: qc3, qc 3, riacho, condomínio, smpw, park way">
+              <small class="text-muted">Ajuda o sistema a encontrar a região quando o cliente manda o endereço incompleto</small>
+            </div>
+
+            <div class="form-group">
+              <label>Observações / Ponto de Referência</label>
+              <textarea formControlName="notes" rows="2" class="form-control" placeholder="Ex: Portaria 24h, acesso pela DF-475"></textarea>
+            </div>
+
+            <div class="form-check mt-3">
+              <label class="form-check-label">
+                <input type="checkbox" formControlName="active" class="form-check-input">
+                <span>Região ativa para cotação e check-in</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeRegionModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="regionForm.invalid">
+              <i class="fas fa-check"></i> {{ isEditingRegion ? 'Salvar Região' : 'Cadastrar Região' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: AVISO WHATSAPP MOTORISTA (HU-15)    -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" *ngIf="showWaModal && waTargetTrip">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header wa-modal-header">
+          <div class="d-flex align-items-center">
+            <i class="fab fa-whatsapp fa-2x text-success mr-2"></i>
+            <div>
+              <h2 class="mb-0">Aviso: Motorista a Caminho (HU-15)</h2>
+              <small class="text-muted">Notificação transacional para o tutor</small>
+            </div>
+          </div>
+          <button type="button" class="close-btn" (click)="closeWaModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="wa-recipient-box mb-3">
+            <span><strong>Destinatário:</strong> {{ waTargetTrip.customerName }}</span>
+            <span class="phone-badge">{{ waTargetTrip.customerPhone || 'Sem telefone' }}</span>
+          </div>
+
+          <div class="form-group">
+            <label>Mensagem Formatada (Pronta para Envio):</label>
+            <textarea [(ngModel)]="waMessageText" rows="5" class="form-control wa-textarea"></textarea>
+            <small class="text-muted">Você pode revisar e editar o texto livremente antes de abrir o WhatsApp.</small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeWaModal()">Fechar</button>
+          <button type="button" class="btn btn-success" (click)="sendWaMessage()">
+            <i class="fab fa-whatsapp"></i> Abrir no WhatsApp Web ➔
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

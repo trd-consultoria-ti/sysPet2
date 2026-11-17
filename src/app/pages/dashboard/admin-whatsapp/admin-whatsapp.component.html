@@ -1,0 +1,260 @@
+<div class="whatsapp-page container-fluid py-3">
+  <!-- Toast -->
+  <div class="toast-notification" *ngIf="toastMessage" [ngClass]="toastType">
+    <span>{{ toastMessage }}</span>
+  </div>
+
+  <!-- Header & Status Evolution API -->
+  <div class="wa-header d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-3">
+      <div class="header-logo"><i class="fab fa-whatsapp"></i></div>
+      <div>
+        <h1 class="page-title">Central de Atendimento WhatsApp</h1>
+        <p class="page-subtitle text-muted">Sugestões inteligentes de resposta com precificação automática e gestão de conversas</p>
+      </div>
+    </div>
+
+    <div class="header-tools d-flex align-items-center gap-3">
+      <!-- Status da Evolution API -->
+      <div class="api-status-badge" [class.connected]="evolutionConnected">
+        <span class="status-indicator"></span>
+        <span>Evolution API: <strong>{{ evolutionInstance }}</strong> (Ativa)</span>
+      </div>
+
+      <!-- Atendente Atual -->
+      <div class="attendant-selector">
+        <label><i class="fas fa-headset"></i> Atendente:</label>
+        <select class="form-select form-select-sm" [(ngModel)]="currentAttendant">
+          <option *ngFor="let att of attendants" [value]="att">{{ att }}</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layout Principal: 2 Colunas (Lista de Conversas + Chat Box) -->
+  <div class="chat-layout">
+    <!-- Coluna Esquerda: Lista de Conversas -->
+    <div class="conversations-column">
+      <div class="conversations-header">
+        <h2><i class="fas fa-comments"></i> Conversas Ativas</h2>
+        <span class="badge-count">{{ conversations.length }}</span>
+      </div>
+
+      <div class="conversations-list">
+        <div
+          class="conversation-item"
+          *ngFor="let conv of conversations"
+          [class.active]="selectedConversation?.id === conv.id"
+          (click)="selectConversation(conv)">
+          <div class="conv-avatar">
+            <i class="fas fa-user-circle"></i>
+          </div>
+          <div class="conv-content">
+            <div class="conv-top">
+              <strong class="customer-name">{{ conv.customerName }}</strong>
+              <span class="conv-time">{{ formatTime(conv.lastMessageAt) }}</span>
+            </div>
+            <div class="conv-pet" *ngIf="conv.petName">
+              <small><i class="fas fa-paw"></i> {{ conv.petName }}</small>
+            </div>
+            <p class="conv-last-msg">{{ conv.lastMessage }}</p>
+          </div>
+          <div class="conv-badge" *ngIf="conv.unreadCount > 0">
+            {{ conv.unreadCount }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coluna Direita: Janela de Chat e Sugestões Inteligentes -->
+    <div class="chat-column" *ngIf="selectedConversation">
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <div class="d-flex align-items-center gap-3">
+          <div class="chat-avatar"><i class="fas fa-user"></i></div>
+          <div>
+            <h2 class="chat-customer-name">{{ selectedConversation.customerName }}</h2>
+            <div class="chat-customer-meta">
+              <span>{{ selectedConversation.customerPhone }}</span>
+              <span *ngIf="selectedConversation.petName"> · Pet: <strong>{{ selectedConversation.petName }}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-actions">
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="openQuoteHelper()">
+            <i class="fas fa-calculator"></i> Cotar Banho / Tosa
+          </button>
+        </div>
+      </div>
+
+      <!-- Banner de Sugestão de Resposta Inteligente (HU-16) -->
+      <div class="smart-suggestion-banner" *ngIf="selectedConversation.suggestedReply">
+        <div class="suggestion-left">
+          <div class="suggestion-icon"><i class="fas fa-magic"></i></div>
+          <div class="suggestion-text">
+            <span class="suggestion-title">
+              Sugestão de Resposta Rápida ({{ selectedConversation.suggestedIntent === 'cotacao' ? 'Cotação Automática' : 'Atendimento' }}):
+            </span>
+            <p class="suggestion-body">{{ selectedConversation.suggestedReply }}</p>
+          </div>
+        </div>
+        <div class="suggestion-actions">
+          <button type="button" class="btn btn-sm btn-success" (click)="applySuggestedReply()">
+            <i class="fas fa-check"></i> Usar Sugestão
+          </button>
+        </div>
+      </div>
+
+      <!-- Área de Mensagens -->
+      <div class="messages-container">
+        <div
+          class="message-bubble"
+          *ngFor="let msg of messages"
+          [class.outgoing]="msg.fromMe"
+          [class.incoming]="!msg.fromMe">
+          <div class="bubble-header" *ngIf="msg.fromMe && msg.attendantName">
+            <small class="attendant-tag"><i class="fas fa-user-check"></i> {{ msg.attendantName }}</small>
+          </div>
+          <div class="bubble-body">
+            {{ msg.body }}
+          </div>
+          <div class="bubble-footer">
+            <span class="bubble-time">{{ formatTime(msg.timestamp) }}</span>
+            <i class="fas fa-check-double text-primary" *ngIf="msg.fromMe"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer: Input e Ações de Envio -->
+      <div class="chat-footer">
+        <div class="quick-helpers-strip mb-2">
+          <span class="helper-label"><i class="fas fa-bolt"></i> Ações Rápidas:</span>
+          <button type="button" class="btn btn-xs btn-outline-secondary" (click)="openQuoteHelper()">
+            🐾 Cotar Preço + Extras
+          </button>
+          <button type="button" class="btn btn-xs btn-outline-secondary" (click)="messageInput = 'Olá! Qual o seu endereço completo e condomínio para cotarmos o Táxi Dog?'">
+            🚗 Solicitar Endereço Táxi
+          </button>
+          <button type="button" class="btn btn-xs btn-outline-secondary" (click)="messageInput = 'Olá! O atendimento está a todo vapor, seu pet já está quase pronto!'">
+            ⏳ Previsão de Saída
+          </button>
+        </div>
+
+        <div class="input-area">
+          <textarea
+            [(ngModel)]="messageInput"
+            class="form-control chat-textarea"
+            rows="3"
+            placeholder="Digite a resposta para o cliente ou use uma sugestão inteligente acima... (Nada é enviado sem sua aprovação)"></textarea>
+
+          <div class="input-buttons mt-2 d-flex justify-content-between align-items-center">
+            <span class="text-muted small">
+              <i class="fas fa-shield-alt"></i> Resposta revisada por <strong>{{ currentAttendant }}</strong>
+            </span>
+            <div class="btn-group">
+              <button
+                type="button"
+                class="btn btn-outline-success"
+                [disabled]="!messageInput.trim()"
+                (click)="openInWhatsAppWeb()">
+                <i class="fab fa-whatsapp"></i> Abrir WhatsApp Web
+              </button>
+              <button
+                type="button"
+                class="btn btn-success"
+                [disabled]="!messageInput.trim()"
+                (click)="sendMessage()">
+                <i class="fas fa-paper-plane"></i> Enviar no Chat
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: ASSISTENTE DE COTAÇÃO RÁPIDA (HU-16 & HU-08/09)   -->
+  <!-- ======================================================== -->
+  <div class="modal-backdrop" *ngIf="showQuoteHelper">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h2 class="mb-0"><i class="fas fa-calculator text-primary"></i> Gerador de Cotação Inteligente (HU-16)</h2>
+            <small class="text-muted">Calcula preço exato por porte, raça, extras e táxi dog</small>
+          </div>
+          <button type="button" class="close-btn" (click)="closeQuoteHelper()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-4 form-group">
+              <label>Nome do Pet</label>
+              <input type="text" [(ngModel)]="quotePetName" class="form-control">
+            </div>
+            <div class="col-md-4 form-group">
+              <label>Raça</label>
+              <input type="text" [(ngModel)]="quoteBreed" class="form-control" placeholder="Ex: Golden, Spitz, SRD">
+            </div>
+            <div class="col-md-4 form-group">
+              <label>Peso Aprox. (kg)</label>
+              <input type="number" [(ngModel)]="quoteWeightKg" class="form-control" min="1" max="80">
+            </div>
+          </div>
+
+          <div class="row mt-2">
+            <div class="col-md-6 form-group">
+              <label>Procedimento</label>
+              <select [(ngModel)]="quoteService" class="form-control">
+                <option value="Banho Completo">Banho Completo</option>
+                <option value="Tosa Higiênica">Tosa Higiênica</option>
+                <option value="Tosa Geral">Tosa Geral</option>
+                <option value="Tosa Baby">Tosa Baby</option>
+                <option value="Tosa da Raça">Tosa da Raça</option>
+                <option value="Hidratação">Hidratação</option>
+              </select>
+            </div>
+
+            <div class="col-md-6 form-group">
+              <label>Região do Táxi Dog</label>
+              <div class="input-group">
+                <div class="input-group-text">
+                  <input type="checkbox" [(ngModel)]="quoteIncludeTaxi">
+                </div>
+                <input
+                  type="text"
+                  [(ngModel)]="quoteTaxiRegion"
+                  [disabled]="!quoteIncludeTaxi"
+                  class="form-control"
+                  placeholder="Ex: Condomínios SMPW, QC3...">
+              </div>
+            </div>
+          </div>
+
+          <!-- Extras -->
+          <div class="extras-section mt-3">
+            <label class="form-label font-weight-bold">Extras Adicionais:</label>
+            <div class="extras-chips">
+              <span
+                class="extra-chip"
+                *ngFor="let ex of pricingService.availableExtras"
+                [class.selected]="isExtraSelectedInHelper(ex.id)"
+                (click)="toggleExtraInHelper(ex.id)">
+                {{ ex.name }} (+R$ {{ ex.price }})
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeQuoteHelper()">Cancelar</button>
+          <button type="button" class="btn btn-primary" (click)="generateAndInsertQuote()">
+            <i class="fas fa-magic"></i> Gerar Texto de Cotação
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

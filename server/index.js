@@ -1183,6 +1183,176 @@ app.delete('/api/medications/:id', requireAuth, requireStaff, async (req, res) =
   }
 });
 
+// ---------- taxi dog (HU-12, HU-13, HU-15) ----------
+
+app.get('/api/taxi/regions', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM taxi_regions ORDER BY price ASC, name ASC');
+    res.json(rows.map(r => ({
+      id: String(r.id),
+      name: r.name,
+      aliases: r.aliases || [],
+      price: num(r.price),
+      active: !!r.active,
+      notes: r.notes || '',
+      createdAt: r.created_at,
+      updatedAt: r.updated_at
+    })));
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar regiões de táxi' });
+  }
+});
+
+app.post('/api/taxi/regions', requireAuth, requireStaff, async (req, res) => {
+  const { name, aliases, price, active, notes } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Nome da região é obrigatório' });
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO taxi_regions (name, aliases, price, active, notes)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [name.trim(), aliases || [], num(price) || 0, active !== false, notes || '']
+    );
+    const r = rows[0];
+    audit('taxi_regions', r.id, 'create', { name: r.name, price: r.price }, null, req.user.id);
+    res.status(201).json({
+      id: String(r.id),
+      name: r.name,
+      aliases: r.aliases || [],
+      price: num(r.price),
+      active: !!r.active,
+      notes: r.notes || ''
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao cadastrar região de táxi' });
+  }
+});
+
+app.put('/api/taxi/regions/:id', requireAuth, requireStaff, async (req, res) => {
+  const { name, aliases, price, active, notes } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE taxi_regions SET
+         name = COALESCE($1, name),
+         aliases = COALESCE($2, aliases),
+         price = CASE WHEN $3::numeric IS NOT NULL THEN $3 ELSE price END,
+         active = CASE WHEN $4::boolean IS NOT NULL THEN $4 ELSE active END,
+         notes = COALESCE($5, notes),
+         updated_at = NOW()
+       WHERE id = $6 RETURNING *`,
+      [name, aliases, price !== undefined ? num(price) : null, active !== undefined ? !!active : null, notes, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Região não encontrada' });
+    const r = rows[0];
+    audit('taxi_regions', r.id, 'update', { name: r.name, price: r.price }, null, req.user.id);
+    res.json({
+      id: String(r.id),
+      name: r.name,
+      aliases: r.aliases || [],
+      price: num(r.price),
+      active: !!r.active,
+      notes: r.notes || ''
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao atualizar região de táxi' });
+  }
+});
+
+app.delete('/api/taxi/regions/:id', requireAuth, requireStaff, async (req, res) => {
+  try {
+    const { rows } = await pool.query('DELETE FROM taxi_regions WHERE id = $1 RETURNING *', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'Região não encontrada' });
+    audit('taxi_regions', req.params.id, 'delete', { name: rows[0].name }, null, req.user.id);
+    res.status(200).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao excluir região' });
+  }
+});
+
+app.get('/api/taxi/trips', requireAuth, requireStaff, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM taxi_trips ORDER BY created_at DESC');
+    res.json(rows.map(t => ({
+      id: String(t.id),
+      checkinId: t.checkin_id ? String(t.checkin_id) : undefined,
+      petId: t.pet_id,
+      petName: t.pet_name,
+      customerName: t.customer_name,
+      customerPhone: t.customer_phone,
+      tripType: t.trip_type,
+      originAddress: t.origin_address,
+      regionId: t.region_id ? String(t.region_id) : '',
+      regionName: t.region_name,
+      price: num(t.price),
+      driverName: t.driver_name,
+      status: t.status,
+      notes: t.notes || '',
+      createdAt: t.created_at,
+      updatedAt: t.updated_at
+    })));
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar corridas de táxi' });
+  }
+});
+
+app.post('/api/taxi/trips', requireAuth, requireStaff, async (req, res) => {
+  const { checkinId, petId, petName, customerName, customerPhone, tripType, originAddress, regionId, regionName, price, driverName, status, notes } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO taxi_trips (checkin_id, pet_id, pet_name, customer_name, customer_phone, trip_type, origin_address, region_id, region_name, price, driver_name, status, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+      [checkinId ? parseInt(checkinId) : null, petId || null, petName, customerName, customerPhone || '', tripType || 'ida_e_volta', originAddress, regionId ? parseInt(regionId) : null, regionName || '', num(price) || 0, driverName || 'Lucas (O Rapaz)', status || 'a_caminho_buscar', notes || '']
+    );
+    const t = rows[0];
+    res.status(201).json({
+      id: String(t.id),
+      checkinId: t.checkin_id ? String(t.checkin_id) : undefined,
+      petId: t.pet_id,
+      petName: t.pet_name,
+      customerName: t.customer_name,
+      customerPhone: t.customer_phone,
+      tripType: t.trip_type,
+      originAddress: t.origin_address,
+      regionId: t.region_id ? String(t.region_id) : '',
+      regionName: t.region_name,
+      price: num(t.price),
+      driverName: t.driver_name,
+      status: t.status,
+      notes: t.notes || '',
+      createdAt: t.created_at
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao registrar corrida' });
+  }
+});
+
+app.patch('/api/taxi/trips/:id/status', requireAuth, requireStaff, async (req, res) => {
+  const { status } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE taxi_trips SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      [status, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Corrida não encontrada' });
+    const t = rows[0];
+    res.json({
+      id: String(t.id),
+      status: t.status,
+      updatedAt: t.updated_at
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao atualizar status da corrida' });
+  }
+});
+
+app.delete('/api/taxi/trips/:id', requireAuth, requireStaff, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM taxi_trips WHERE id = $1', [req.params.id]);
+    res.status(200).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao excluir corrida' });
+  }
+});
+
 // ---------- orders ----------
 
 app.get('/api/orders', requireAuth, async (req, res) => {

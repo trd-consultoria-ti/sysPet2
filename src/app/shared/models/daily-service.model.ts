@@ -46,6 +46,14 @@ export interface DailyService {
   paid?: boolean;
   paidAt?: string | null;
   paymentMethod?: string | null;
+  hasTaxi?: boolean;
+  taxiTripId?: string;
+  taxiPrice?: number;
+  taxiRegionId?: string;
+  taxiRegionName?: string;
+  taxiStatus?: 'a_caminho_buscar' | 'pet_na_loja' | 'a_caminho_devolver' | 'concluida';
+  taxiDriverName?: string;
+  taxiOriginAddress?: string;
   createdAt?: string;
 }
 

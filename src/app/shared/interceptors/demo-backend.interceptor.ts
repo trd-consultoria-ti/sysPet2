@@ -21,6 +21,8 @@ interface DbState {
   audit: any[];
   dailyServices: any[];
   medications: any[];
+  taxiRegions: any[];
+  taxiTrips: any[];
 }
 
 function getInitialDbState(): DbState {
@@ -162,14 +164,14 @@ function getInitialDbState(): DbState {
       },
       {
         id: 4,
-        name: 'Taxi Dog',
-        price: 49.9,
-        rating: 4.6,
-        reviews: 89,
+        name: 'Taxi Dog (Por Região)',
+        price: 10.0,
+        rating: 4.9,
+        reviews: 124,
         image: 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1586&q=80',
         category: 'Taxi Dog',
-        duration: 'Variável',
-        description: 'Transporte seguro e confortável para seu pet para qualquer lugar da cidade.'
+        duration: 'Por Região',
+        description: 'Transporte pet com motorista dedicado vinculado a Banho e Tosa (tarifa por região a partir de R$ 10,00).'
       },
       {
         id: 5,
@@ -570,6 +572,34 @@ function getInitialDbState(): DbState {
         requiresPrescription: false,
         active: true
       }
+    ],
+    taxiRegions: [
+      { id: 'reg-qc3', name: 'Riacho Fundo QC3', aliases: ['qc3', 'qc 3', 'riacho fundo', 'riacho fundo 1'], price: 10.0, active: true, notes: 'Bairro local da loja' },
+      { id: 'reg-cond', name: 'Condomínios Riacho Fundo / SMPW', aliases: ['condominio', 'condomínio', 'condominios', 'smpw', 'park way'], price: 20.0, active: true, notes: 'Faixa R$15 a R$30 (padrão R$20)' },
+      { id: 'reg-recanto', name: 'Recanto das Emas', aliases: ['recanto', 'recanto das emas', 'qd', 'quadra'], price: 20.0, active: true, notes: 'Região vizinha' },
+      { id: 'reg-ponte-alta', name: 'Ponte Alta Norte', aliases: ['ponte alta', 'ponte alta norte', 'gama'], price: 20.0, active: true, notes: 'Acesso rápido' },
+      { id: 'reg-bandeirante', name: 'Núcleo Bandeirante', aliases: ['bandeirante', 'nucleo bandeirante', 'núcleo bandeirante', 'divineia'], price: 15.0, active: true, notes: 'Proximidade Riacho Fundo' },
+      { id: 'reg-aguas-claras', name: 'Águas Claras / Arniqueiras', aliases: ['aguas claras', 'águas claras', 'arniqueiras', 'areal'], price: 30.0, active: true, notes: 'Região expandida' }
+    ],
+    taxiTrips: [
+      {
+        id: 'trip-101',
+        checkinId: '2',
+        petId: 3,
+        petName: 'Luna',
+        customerName: 'João Santos',
+        customerPhone: '+55 61 98123-4567',
+        tripType: 'ida_e_volta',
+        originAddress: 'Condomínio Park Way Quadra 4 Conjunto 2 Casa 12',
+        regionId: 'reg-cond',
+        regionName: 'Condomínios Riacho Fundo / SMPW',
+        price: 20.0,
+        driverName: 'Lucas (O Rapaz)',
+        status: 'pet_na_loja',
+        notes: 'Portaria liberada no nome do Lucas',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
     ]
   };
 }
@@ -595,6 +625,14 @@ export class DemoBackendInterceptor implements HttpInterceptor {
         }
         if (!parsed.medications || !parsed.medications.length) {
           parsed.medications = getInitialDbState().medications;
+          this.saveDb(parsed);
+        }
+        if (!parsed.taxiRegions || !parsed.taxiRegions.length) {
+          parsed.taxiRegions = getInitialDbState().taxiRegions;
+          this.saveDb(parsed);
+        }
+        if (!parsed.taxiTrips) {
+          parsed.taxiTrips = getInitialDbState().taxiTrips;
           this.saveDb(parsed);
         }
         return parsed;
@@ -1018,6 +1056,94 @@ export class DemoBackendInterceptor implements HttpInterceptor {
       db.medications = (db.medications || []).filter(m => m.id !== id);
       this.saveDb(db);
       return of(new HttpResponse({ status: 200, body: { success: true } })).pipe(delay(30));
+    }
+
+    // Taxi Regions (HU-12): GET /api/taxi/regions
+    if (path === '/api/taxi/regions' && method === 'GET') {
+      return of(new HttpResponse({ status: 200, body: db.taxiRegions || [] })).pipe(delay(20));
+    }
+    // Taxi Regions: POST /api/taxi/regions
+    if (path === '/api/taxi/regions' && method === 'POST') {
+      const newReg = {
+        id: req.body.id || 'reg-' + Date.now(),
+        name: req.body.name,
+        aliases: req.body.aliases || [],
+        price: Number(req.body.price) || 0,
+        active: req.body.active !== false,
+        notes: req.body.notes || '',
+        createdAt: new Date().toISOString()
+      };
+      db.taxiRegions = db.taxiRegions || [];
+      db.taxiRegions.push(newReg);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 201, body: newReg })).pipe(delay(20));
+    }
+    // Taxi Regions: PUT /api/taxi/regions/:id
+    if (path.startsWith('/api/taxi/regions/') && method === 'PUT') {
+      const id = path.split('/')[4];
+      const reg = (db.taxiRegions || []).find(r => r.id === id);
+      if (reg) {
+        Object.assign(reg, req.body, { id, updatedAt: new Date().toISOString() });
+        this.saveDb(db);
+        return of(new HttpResponse({ status: 200, body: reg })).pipe(delay(20));
+      }
+      return of(new HttpResponse({ status: 404, body: { error: 'Região não encontrada' } }));
+    }
+    // Taxi Regions: DELETE /api/taxi/regions/:id
+    if (path.startsWith('/api/taxi/regions/') && method === 'DELETE') {
+      const id = path.split('/')[4];
+      db.taxiRegions = (db.taxiRegions || []).filter(r => r.id !== id);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 200, body: { success: true } })).pipe(delay(20));
+    }
+
+    // Taxi Trips (HU-13 & HU-15): GET /api/taxi/trips
+    if (path === '/api/taxi/trips' && method === 'GET') {
+      return of(new HttpResponse({ status: 200, body: db.taxiTrips || [] })).pipe(delay(20));
+    }
+    // Taxi Trips: POST /api/taxi/trips
+    if (path === '/api/taxi/trips' && method === 'POST') {
+      const newTrip = {
+        id: req.body.id || 'trip-' + Date.now(),
+        checkinId: req.body.checkinId,
+        petId: req.body.petId,
+        petName: req.body.petName,
+        customerName: req.body.customerName,
+        customerPhone: req.body.customerPhone || '',
+        tripType: req.body.tripType || 'ida_e_volta',
+        originAddress: req.body.originAddress,
+        regionId: req.body.regionId,
+        regionName: req.body.regionName,
+        price: Number(req.body.price) || 0,
+        driverName: req.body.driverName || 'Lucas (O Rapaz)',
+        status: req.body.status || 'a_caminho_buscar',
+        notes: req.body.notes || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      db.taxiTrips = db.taxiTrips || [];
+      db.taxiTrips.unshift(newTrip);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 201, body: newTrip })).pipe(delay(20));
+    }
+    // Taxi Trips: PATCH /api/taxi/trips/:id/status
+    if (path.includes('/status') && path.startsWith('/api/taxi/trips/') && method === 'PATCH') {
+      const id = path.split('/')[4];
+      const trip = (db.taxiTrips || []).find(t => t.id === id);
+      if (trip) {
+        trip.status = req.body.status;
+        trip.updatedAt = new Date().toISOString();
+        this.saveDb(db);
+        return of(new HttpResponse({ status: 200, body: trip })).pipe(delay(20));
+      }
+      return of(new HttpResponse({ status: 404, body: { error: 'Corrida não encontrada' } }));
+    }
+    // Taxi Trips: DELETE /api/taxi/trips/:id
+    if (path.startsWith('/api/taxi/trips/') && method === 'DELETE') {
+      const id = path.split('/')[4];
+      db.taxiTrips = (db.taxiTrips || []).filter(t => t.id !== id);
+      this.saveDb(db);
+      return of(new HttpResponse({ status: 200, body: { success: true } })).pipe(delay(20));
     }
 
     // 9. Orders: /api/orders

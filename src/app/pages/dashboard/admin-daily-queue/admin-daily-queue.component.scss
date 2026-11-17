@@ -1278,3 +1278,109 @@
   }
 }
 
+/* Táxi Dog Integrado (HU-12, HU-13, HU-15) */
+.card-taxi-block {
+  background: #f0fdfc;
+  border: 1px solid #99f6e4;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  .taxi-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .taxi-pill-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #0f766e;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .taxi-state-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+
+      &.state-a_caminho_buscar { background: #eff6ff; color: #1d4ed8; }
+      &.state-pet_na_loja { background: #fef3c7; color: #b45309; }
+      &.state-a_caminho_devolver { background: #f3e8ff; color: #7e22ce; }
+      &.state-concluida { background: #dcfce7; color: #15803d; }
+    }
+  }
+
+  .taxi-driver-info {
+    font-size: 0.72rem;
+    color: #475569;
+  }
+
+  .taxi-block-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.25rem;
+
+    .btn-taxi-wa {
+      background: #25d366;
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      padding: 2px 6px;
+      border-radius: 4px;
+
+      &:hover { background: #1ebd5a; }
+    }
+  }
+}
+
+.taxi-checkin-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.5rem;
+
+  .taxi-checkin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .taxi-switch-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      margin: 0;
+
+      .taxi-switch-title {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #1e293b;
+      }
+    }
+
+    .badge-taxi-status {
+      background: #e6fffa;
+      color: #0f766e;
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+  }
+
+  .taxi-form-fields {
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px dashed #cbd5e1;
+  }
+}
+
+

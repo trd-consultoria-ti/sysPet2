@@ -353,3 +353,54 @@ CREATE TABLE IF NOT EXISTS medications (
 
 CREATE INDEX IF NOT EXISTS idx_medications_name ON medications(name);
 CREATE INDEX IF NOT EXISTS idx_medications_category ON medications(category);
+
+-- Táxi Dog: Regiões com preço e Corridas vinculadas (HU-12, HU-13, HU-15)
+CREATE TABLE IF NOT EXISTS taxi_regions (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  aliases TEXT[] DEFAULT '{}',
+  price NUMERIC(10,2) NOT NULL DEFAULT 0,
+  active BOOLEAN DEFAULT TRUE,
+  notes TEXT DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS taxi_trips (
+  id SERIAL PRIMARY KEY,
+  checkin_id INTEGER REFERENCES daily_services(id) ON DELETE SET NULL,
+  pet_id INTEGER REFERENCES pets(id) ON DELETE SET NULL,
+  customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+  pet_name TEXT NOT NULL,
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT,
+  trip_type VARCHAR(30) NOT NULL DEFAULT 'ida_e_volta',
+  origin_address TEXT NOT NULL,
+  region_id INTEGER REFERENCES taxi_regions(id) ON DELETE SET NULL,
+  region_name TEXT NOT NULL,
+  price NUMERIC(10,2) NOT NULL DEFAULT 0,
+  driver_name TEXT NOT NULL DEFAULT 'Lucas',
+  status VARCHAR(30) NOT NULL DEFAULT 'a_caminho_buscar',
+  notes TEXT DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_taxi_trips_status ON taxi_trips(status);
+CREATE INDEX IF NOT EXISTS idx_taxi_trips_checkin ON taxi_trips(checkin_id);
+
+-- Atendimento WhatsApp & Mensagens (HU-16, HU-17)
+CREATE TABLE IF NOT EXISTS wa_messages (
+  id SERIAL PRIMARY KEY,
+  remote_jid TEXT NOT NULL,
+  customer_name TEXT,
+  customer_phone TEXT,
+  from_me BOOLEAN NOT NULL DEFAULT FALSE,
+  body TEXT NOT NULL,
+  media_url TEXT,
+  status VARCHAR(20) DEFAULT 'delivered',
+  attendant_name TEXT DEFAULT 'Recepção',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_wa_messages_jid ON wa_messages(remote_jid);
+

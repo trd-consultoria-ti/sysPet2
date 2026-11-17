@@ -10,6 +10,9 @@ import { CashService } from '../../../shared/services/cash.service';
 import { CartService } from '../../../shared/services/cart.service';
 import { PricingService, PricingQuote, ExtraServiceOption, BusinessDayConfig } from '../../../shared/services/pricing.service';
 import { getPetSizeTier, getPetSizeLabel } from '../../../shared/models/pet.model';
+import { TaxiService } from '../../../shared/services/taxi.service';
+import { WhatsappService } from '../../../shared/services/whatsapp.service';
+import { TaxiRegion, TaxiTripStatus, TAXI_STATUS_LABELS } from '../../../shared/models/taxi.model';
 
 export interface KanbanColumn {
   key: DailyServiceStatus;
@@ -86,12 +89,24 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
   selectedPaymentMethod: 'pix' | 'cartao_credito' | 'cartao_debito' | 'dinheiro' = 'pix';
   isProcessingPayment: boolean = false;
 
+  // Táxi Dog Integrado (HU-12, HU-13, HU-15)
+  taxiRegions: TaxiRegion[] = [];
+  regionSearchText = '';
+  regionNotFoundAlert = false;
+  showQuickRegionModal = false;
+  quickRegionForm!: FormGroup;
+  showTaxiWaModal = false;
+  taxiWaTargetItem: DailyService | null = null;
+  taxiWaMessageText = '';
+
   private sub: Subscription = new Subscription();
 
   constructor(
     private dailyService: DailyServicesService,
     private catalogService: ServiceCatalogService,
     public pricingService: PricingService,
+    public taxiService: TaxiService,
+    public waService: WhatsappService,
     private fb: FormBuilder,
     private router: Router,
     private cashService: CashService,
@@ -105,7 +120,9 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
 
     this.initForm();
     this.initTosaValidationForm();
+    this.initQuickRegionForm();
     this.loadCatalog();
+    this.loadTaxiRegions();
 
     this.sub.add(
       this.dailyService.queue$.subscribe(res => {
@@ -152,13 +169,21 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       health_malaise: [false],
       health_obs: [''],
       requiresValidation: [false],
-      validationConfirmed: [true]
+      validationConfirmed: [true],
+      hasTaxi: [false],
+      taxiRegionId: [''],
+      taxiRegionName: [''],
+      taxiOriginAddress: [''],
+      taxiTripType: ['ida_e_volta'],
+      taxiDriverName: ['Lucas (O Rapaz)'],
+      taxiPrice: [0]
     });
 
     // Recálculo dinâmico da matriz de preços ao alterar serviço, raça ou peso
     this.checkinForm.get('serviceName')?.valueChanges.subscribe(() => this.recalculateQuote());
     this.checkinForm.get('petBreed')?.valueChanges.subscribe(() => this.recalculateQuote());
     this.checkinForm.get('petWeightKg')?.valueChanges.subscribe(() => this.recalculateQuote());
+    this.checkinForm.get('hasTaxi')?.valueChanges.subscribe(() => this.recalculateQuote());
   }
 
   private initTosaValidationForm(): void {
@@ -176,12 +201,15 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
   }
 
   // -------------------------------------------------------------
-  // Precificação Automática & Cotação (HU-08 / HU-09 / HU-07)
+  // Precificação Automática & Cotação (HU-08 / HU-09 / HU-07 / HU-12 / HU-13)
   // -------------------------------------------------------------
   recalculateQuote(): void {
     const sName = this.checkinForm.get('serviceName')?.value || 'Banho Completo';
     const breed = this.checkinForm.get('petBreed')?.value || '';
     const weight = this.checkinForm.get('petWeightKg')?.value || null;
+    const hasTaxi = !!this.checkinForm.get('hasTaxi')?.value;
+    const taxiPrice = hasTaxi ? Number(this.checkinForm.get('taxiPrice')?.value || 0) : 0;
+    const taxiRegionName = hasTaxi ? (this.checkinForm.get('taxiRegionName')?.value || '') : '';
 
     const isTosa = String(sName).toLowerCase().includes('tosa');
     if (isTosa) {
@@ -191,11 +219,180 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       }, { emitEvent: false });
     }
 
-    this.currentQuote = this.pricingService.calculateQuote(sName, weight, breed, this.selectedExtras);
+    this.currentQuote = this.pricingService.calculateQuote(
+      sName,
+      weight,
+      breed,
+      this.selectedExtras,
+      taxiPrice,
+      taxiRegionName
+    );
 
     this.checkinForm.patchValue({
       estimatedPrice: this.currentQuote.totalPrice
     }, { emitEvent: false });
+  }
+
+  // --- TÁXI DOG HELPERS (HU-12, HU-13, HU-15) ---
+  loadTaxiRegions(): void {
+    this.taxiService.getRegions().subscribe(regs => {
+      this.taxiRegions = regs;
+    });
+  }
+
+  initQuickRegionForm(): void {
+    this.quickRegionForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(3)]],
+      price: [20, [Validators.required, Validators.min(0)]],
+      aliases: [''],
+      notes: ['']
+    });
+  }
+
+  onTaxiToggled(): void {
+    const hasTaxi = this.checkinForm.get('hasTaxi')?.value;
+    if (hasTaxi && !this.checkinForm.get('taxiRegionId')?.value && this.taxiRegions.length > 0) {
+      const first = this.taxiRegions[0];
+      this.checkinForm.patchValue({
+        taxiRegionId: first.id,
+        taxiRegionName: first.name,
+        taxiPrice: first.price
+      });
+    } else if (!hasTaxi) {
+      this.checkinForm.patchValue({
+        taxiPrice: 0,
+        taxiRegionId: '',
+        taxiRegionName: ''
+      });
+    }
+    this.recalculateQuote();
+  }
+
+  onTaxiRegionChanged(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const regId = select.value;
+    const found = this.taxiRegions.find(r => r.id === regId);
+    if (found) {
+      this.checkinForm.patchValue({
+        taxiRegionName: found.name,
+        taxiPrice: found.price
+      });
+      this.regionNotFoundAlert = false;
+    } else {
+      this.checkinForm.patchValue({
+        taxiRegionName: '',
+        taxiPrice: 0
+      });
+    }
+    this.recalculateQuote();
+  }
+
+  searchRegionByText(): void {
+    if (!this.regionSearchText || !this.regionSearchText.trim()) {
+      this.regionNotFoundAlert = false;
+      return;
+    }
+    const match = this.taxiService.findRegionByQuery(this.regionSearchText);
+    if (match) {
+      this.checkinForm.patchValue({
+        taxiRegionId: match.id,
+        taxiRegionName: match.name,
+        taxiPrice: match.price
+      });
+      this.regionNotFoundAlert = false;
+      this.recalculateQuote();
+    } else {
+      this.regionNotFoundAlert = true;
+    }
+  }
+
+  openQuickRegionModal(): void {
+    this.quickRegionForm.reset({
+      name: this.regionSearchText || '',
+      price: 20,
+      aliases: this.regionSearchText || '',
+      notes: ''
+    });
+    this.showQuickRegionModal = true;
+  }
+
+  closeQuickRegionModal(): void {
+    this.showQuickRegionModal = false;
+  }
+
+  saveQuickRegion(): void {
+    if (this.quickRegionForm.invalid) return;
+    const val = this.quickRegionForm.value;
+    const aliases = (val.aliases || '').split(',').map((a: string) => a.trim()).filter((a: string) => a.length > 0);
+    this.taxiService.addRegion({
+      name: val.name,
+      price: Number(val.price),
+      aliases,
+      notes: val.notes,
+      active: true
+    }).subscribe(created => {
+      this.taxiRegions.push(created);
+      this.checkinForm.patchValue({
+        taxiRegionId: created.id,
+        taxiRegionName: created.name,
+        taxiPrice: created.price
+      });
+      this.regionNotFoundAlert = false;
+      this.closeQuickRegionModal();
+      this.recalculateQuote();
+      this.showToast(`Região ${created.name} cadastrada e aplicada!`, 'success');
+    });
+  }
+
+  getTaxiStatusLabel(status?: string): string {
+    if (!status) return 'Aguardando';
+    const s = status as TaxiTripStatus;
+    return TAXI_STATUS_LABELS[s]?.label || status;
+  }
+
+  advanceTaxiStatus(item: DailyService, newStatus: TaxiTripStatus): void {
+    item.taxiStatus = newStatus;
+    if (item.taxiTripId) {
+      this.taxiService.updateTripStatus(item.taxiTripId, newStatus).subscribe();
+    }
+    this.dailyService.updateDetails(item.id, { taxiStatus: newStatus }).subscribe(() => {
+      this.showToast(`Status do Táxi para ${item.petName}: ${this.getTaxiStatusLabel(newStatus)}`, 'success');
+      if (newStatus === 'a_caminho_buscar' || newStatus === 'a_caminho_devolver') {
+        this.openTaxiWhatsAppModal(item);
+      }
+    });
+  }
+
+  openTaxiWhatsAppModal(item: DailyService): void {
+    this.taxiWaTargetItem = item;
+    if (item.taxiStatus === 'a_caminho_devolver') {
+      this.taxiWaMessageText = this.waService.buildDriverReturningMessage(
+        item.customerName,
+        item.petName,
+        item.taxiDriverName || 'Lucas (O Rapaz)'
+      );
+    } else {
+      this.taxiWaMessageText = this.waService.buildDriverSeekingMessage(
+        item.customerName,
+        item.petName,
+        item.taxiDriverName || 'Lucas (O Rapaz)',
+        item.taxiOriginAddress || ''
+      );
+    }
+    this.showTaxiWaModal = true;
+  }
+
+  closeTaxiWaModal(): void {
+    this.showTaxiWaModal = false;
+    this.taxiWaTargetItem = null;
+    this.taxiWaMessageText = '';
+  }
+
+  sendTaxiWaMessage(): void {
+    if (!this.taxiWaTargetItem) return;
+    this.waService.openWhatsAppDirect(this.taxiWaTargetItem.phone || '', this.taxiWaMessageText);
+    this.showToast('WhatsApp aberto para envio do aviso!', 'success');
+    this.closeTaxiWaModal();
   }
 
   toggleExtra(extraId: string): void {
@@ -612,7 +809,14 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       requiresValidation: val.requiresValidation,
       validationConfirmed: val.validationConfirmed,
       estimatedReadyAt: eta.formattedTime,
-      date: this.currentDate
+      date: this.currentDate,
+      hasTaxi: !!val.hasTaxi,
+      taxiPrice: val.hasTaxi ? Number(val.taxiPrice || 0) : 0,
+      taxiRegionId: val.hasTaxi ? val.taxiRegionId : undefined,
+      taxiRegionName: val.hasTaxi ? val.taxiRegionName : undefined,
+      taxiDriverName: val.hasTaxi ? val.taxiDriverName : undefined,
+      taxiOriginAddress: val.hasTaxi ? val.taxiOriginAddress : undefined,
+      taxiStatus: val.hasTaxi ? 'a_caminho_buscar' : undefined
     };
 
     if (this.isEditing && this.editingId) {
@@ -627,6 +831,26 @@ export class AdminDailyQueueComponent implements OnInit, OnDestroy {
       this.dailyService.addCheckin(payload).subscribe({
         next: (created) => {
           this.showToast(`Pet ${created.petName} entrou na fila! Posição: #${created.queueOrder} (Saída estimada: ~${eta.formattedTime})`, 'success');
+
+          // Vincula Corrida de Táxi Dog (HU-13)
+          if (val.hasTaxi) {
+            this.taxiService.createTrip({
+              checkinId: String(created.id),
+              petName: created.petName,
+              customerName: created.customerName,
+              customerPhone: created.phone,
+              originAddress: val.taxiOriginAddress,
+              regionId: val.taxiRegionId,
+              regionName: val.taxiRegionName,
+              price: Number(val.taxiPrice || 0),
+              driverName: val.taxiDriverName || 'Lucas (O Rapaz)',
+              status: 'a_caminho_buscar',
+              tripType: val.taxiTripType || 'ida_e_volta'
+            }).subscribe(trip => {
+              this.dailyService.updateDetails(created.id, { taxiTripId: trip.id }).subscribe();
+            });
+          }
+
           this.closeModal();
         },
         error: (err) => {

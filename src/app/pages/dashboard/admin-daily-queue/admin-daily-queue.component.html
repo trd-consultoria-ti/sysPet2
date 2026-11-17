@@ -178,6 +178,54 @@
             <i class="far fa-comment-alt"></i> {{ item.notes }}
           </p>
 
+          <!-- Controle & Status de Táxi Dog (HU-13 & HU-15) -->
+          <div class="card-taxi-block" *ngIf="item.hasTaxi">
+            <div class="taxi-block-header">
+              <span class="taxi-pill-tag">
+                <i class="fas fa-car-side"></i> Táxi: {{ item.taxiRegionName || 'Bairro' }}
+              </span>
+              <span class="taxi-state-badge" [ngClass]="'state-' + (item.taxiStatus || 'a_caminho_buscar')">
+                {{ getTaxiStatusLabel(item.taxiStatus) }}
+              </span>
+            </div>
+            <div class="taxi-driver-info" *ngIf="item.taxiDriverName">
+              <small><i class="fas fa-user-circle"></i> Motorista: {{ item.taxiDriverName }}</small>
+            </div>
+            <div class="taxi-block-actions">
+              <button
+                *ngIf="item.taxiStatus === 'a_caminho_buscar' || !item.taxiStatus"
+                type="button"
+                class="btn btn-xs btn-outline-info"
+                (click)="advanceTaxiStatus(item, 'pet_na_loja')"
+                title="Confirmar chegada do pet">
+                <i class="fas fa-store"></i> Pet Chegou
+              </button>
+              <button
+                *ngIf="item.taxiStatus === 'pet_na_loja' && (item.status === 'pronto' || item.status === 'entregue')"
+                type="button"
+                class="btn btn-xs btn-outline-warning"
+                (click)="advanceTaxiStatus(item, 'a_caminho_devolver')"
+                title="Avisar que motorista está a caminho de devolver">
+                <i class="fas fa-route"></i> Devolver ➔
+              </button>
+              <button
+                *ngIf="item.taxiStatus === 'a_caminho_devolver'"
+                type="button"
+                class="btn btn-xs btn-success"
+                (click)="advanceTaxiStatus(item, 'concluida')"
+                title="Concluir corrida">
+                <i class="fas fa-check"></i> Concluída
+              </button>
+              <button
+                type="button"
+                class="btn btn-xs btn-taxi-wa"
+                (click)="openTaxiWhatsAppModal(item)"
+                title="Avisar tutor no WhatsApp (HU-15)">
+                <i class="fab fa-whatsapp"></i> Aviso
+              </button>
+            </div>
+          </div>
+
           <!-- Ação Rápida de Esteira -->
           <div class="card-advance-strip">
             <!-- Botão de Voltar Estágio -->
@@ -473,6 +521,10 @@
                   <span>+ {{ ex.name }}</span>
                   <strong>+ R$ {{ formatPrice(ex.price) }}</strong>
                 </div>
+                <div class="quote-line" *ngIf="currentQuote.taxiPrice">
+                  <span>+ Táxi Dog ({{ currentQuote.taxiRegionName || 'Região' }})</span>
+                  <strong class="text-primary">+ R$ {{ formatPrice(currentQuote.taxiPrice) }}</strong>
+                </div>
                 <div class="quote-divider"></div>
                 <div class="quote-total-row">
                   <div class="eta-preview">
@@ -481,6 +533,77 @@
                   </div>
                   <div class="total-preview">
                     Total: <strong>R$ {{ formatPrice(currentQuote.totalPrice) }}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Seção de Táxi Dog Vinculado (HU-12 & HU-13) -->
+            <div class="taxi-checkin-section">
+              <div class="taxi-checkin-header">
+                <label class="taxi-switch-label">
+                  <input type="checkbox" formControlName="hasTaxi" (change)="onTaxiToggled()">
+                  <span class="taxi-switch-title"><i class="fas fa-car-side"></i> Incluir Serviço de Táxi Dog (Buscar / Devolver)</span>
+                </label>
+                <span class="badge-taxi-status" *ngIf="checkinForm.get('hasTaxi')?.value">Táxi Vinculado</span>
+              </div>
+
+              <div class="taxi-form-fields" *ngIf="checkinForm.get('hasTaxi')?.value">
+                <div class="form-row">
+                  <div class="form-group col-6">
+                    <label>Região / Bairro de Atendimento (HU-12) *</label>
+                    <div class="input-group">
+                      <select class="form-control" formControlName="taxiRegionId" (change)="onTaxiRegionChanged($event)">
+                        <option value="">Selecione uma região...</option>
+                        <option *ngFor="let reg of taxiRegions" [value]="reg.id">
+                          {{ reg.name }} — R$ {{ formatPrice(reg.price) }}
+                        </option>
+                      </select>
+                      <button type="button" class="btn btn-outline-primary btn-sm" (click)="openQuickRegionModal()" title="Cadastrar nova região">
+                        <i class="fas fa-plus"></i>
+                      </button>
+                    </div>
+
+                    <!-- Busca Rápida por Digitação / Endereço (HU-12) -->
+                    <div class="region-search-bar mt-1">
+                      <input
+                        type="text"
+                        [(ngModel)]="regionSearchText"
+                        [ngModelOptions]="{standalone: true}"
+                        (input)="searchRegionByText()"
+                        class="form-control form-control-sm"
+                        placeholder="🔍 Digite quadra ou condomínio (ex: QS 3, Park Way, Recanto...)">
+                    </div>
+
+                    <!-- Aviso Região Não Cadastrada (HU-12) -->
+                    <div class="alert alert-warning py-1 px-2 mt-1 mb-0 small" *ngIf="regionNotFoundAlert">
+                      <i class="fas fa-exclamation-triangle"></i> Região sem preço cadastrado!
+                      <button type="button" class="btn btn-xs btn-link p-0 ml-1" (click)="openQuickRegionModal()">Cadastrar Região</button>
+                    </div>
+                  </div>
+
+                  <div class="form-group col-6">
+                    <label>Endereço de Origem (Condomínio / Bloco / Portaria) *</label>
+                    <input type="text" formControlName="taxiOriginAddress" class="form-control" placeholder="Ex: SMPW Q 4 Conj 2 - Portaria">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-4">
+                    <label>Trajeto</label>
+                    <select class="form-control" formControlName="taxiTripType">
+                      <option value="ida_e_volta">Ida e Volta</option>
+                      <option value="somente_ida">Somente Ida (Buscar)</option>
+                      <option value="somente_volta">Somente Volta (Devolver)</option>
+                    </select>
+                  </div>
+                  <div class="form-group col-4">
+                    <label>Motorista</label>
+                    <input type="text" formControlName="taxiDriverName" class="form-control" placeholder="Lucas (O Rapaz)">
+                  </div>
+                  <div class="form-group col-4">
+                    <label>Taxa Táxi (R$)</label>
+                    <input type="number" formControlName="taxiPrice" class="form-control text-primary font-weight-bold" readonly>
                   </div>
                 </div>
               </div>
@@ -792,6 +915,91 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" (click)="closeCashModal()">
             Concluir Depois (Manter Pendente no Caixa)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 7. MODAL DE CADASTRO RÁPIDO DE REGIÃO TÁXI (HU-12)       -->
+  <!-- ======================================================== -->
+  <div class="modal-backdrop" *ngIf="showQuickRegionModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-map-marker-alt text-primary"></i> Cadastrar Nova Região de Táxi Dog</h2>
+          <button type="button" class="close-btn" (click)="closeQuickRegionModal()">&times;</button>
+        </div>
+
+        <form [formGroup]="quickRegionForm" (ngSubmit)="saveQuickRegion()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Nome do Bairro / Condomínio / Região *</label>
+              <input type="text" formControlName="name" class="form-control" placeholder="Ex: Arniqueiras, SMPW Q 5">
+            </div>
+
+            <div class="form-group">
+              <label>Tarifa do Táxi (R$) *</label>
+              <input type="number" step="1" formControlName="price" class="form-control price-input" placeholder="Ex: 20">
+            </div>
+
+            <div class="form-group">
+              <label>Palavras-chave para Busca Automática (separadas por vírgula)</label>
+              <input type="text" formControlName="aliases" class="form-control" placeholder="Ex: arniqueiras, q5, condomínio">
+            </div>
+
+            <div class="form-group">
+              <label>Observações</label>
+              <input type="text" formControlName="notes" class="form-control" placeholder="Ex: Acesso pela marginal">
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeQuickRegionModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="quickRegionForm.invalid">
+              <i class="fas fa-check"></i> Salvar e Aplicar no Check-in
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 8. MODAL DE AVISO WHATSAPP MOTORISTA A CAMINHO (HU-15)    -->
+  <!-- ======================================================== -->
+  <div class="modal-backdrop" *ngIf="showTaxiWaModal && taxiWaTargetItem">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header wa-modal-header">
+          <div class="d-flex align-items-center">
+            <i class="fab fa-whatsapp fa-2x text-success mr-2"></i>
+            <div>
+              <h2 class="mb-0">Aviso Táxi Dog: Motorista a Caminho (HU-15)</h2>
+              <small class="text-muted">Notificação pré-formatada para o tutor</small>
+            </div>
+          </div>
+          <button type="button" class="close-btn" (click)="closeTaxiWaModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="wa-recipient-box mb-3">
+            <span><strong>Destinatário:</strong> {{ taxiWaTargetItem.customerName }} (Pet: {{ taxiWaTargetItem.petName }})</span>
+            <span class="phone-badge">{{ taxiWaTargetItem.phone || 'Sem telefone' }}</span>
+          </div>
+
+          <div class="form-group">
+            <label>Mensagem a Enviar:</label>
+            <textarea [(ngModel)]="taxiWaMessageText" rows="5" class="form-control wa-textarea"></textarea>
+            <small class="text-muted">Você pode ajustar a mensagem antes de abrir no WhatsApp Web.</small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeTaxiWaModal()">Fechar</button>
+          <button type="button" class="btn btn-success" (click)="sendTaxiWaMessage()">
+            <i class="fab fa-whatsapp"></i> Abrir no WhatsApp Web ➔
           </button>
         </div>
       </div>

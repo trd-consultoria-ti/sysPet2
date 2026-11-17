@@ -14,6 +14,8 @@ import { AdminConsultationsComponent } from './admin-consultations/admin-consult
 import { AdminVetsComponent } from './admin-vets/admin-vets.component';
 import { AdminDailyQueueComponent } from './admin-daily-queue/admin-daily-queue.component';
 import { DailyQueueHeaderComponent } from './admin-daily-queue/daily-queue-header/daily-queue-header.component';
+import { AdminTaxiComponent } from './admin-taxi/admin-taxi.component';
+import { AdminWhatsappComponent } from './admin-whatsapp/admin-whatsapp.component';
 import { AdminMedicationsComponent } from './admin-medications/admin-medications.component';
 import { AdminSystemMapComponent } from './admin-system-map/admin-system-map.component';
 import { AdminGuard } from '../../shared/guards/admin.guard';
@@ -28,6 +30,8 @@ const routes: Routes = [
       { path: 'rotas', component: AdminSystemMapComponent },
       { path: 'customers', loadChildren: () => import('../customers/customers.module').then(m => m.CustomersModule) },
       { path: 'daily-queue', component: AdminDailyQueueComponent },
+      { path: 'taxi', component: AdminTaxiComponent },
+      { path: 'whatsapp', component: AdminWhatsappComponent },
       { path: 'appointments', component: AdminAppointmentsComponent },
       { path: 'consultations', component: AdminConsultationsComponent },
       { path: 'vets', component: AdminVetsComponent },
@@ -48,6 +52,8 @@ const routes: Routes = [
     DashboardHomeComponent,
     AdminDailyQueueComponent,
     DailyQueueHeaderComponent,
+    AdminTaxiComponent,
+    AdminWhatsappComponent,
     AdminAppointmentsComponent,
     InventoryComponent,
     AdminMedicationsComponent,

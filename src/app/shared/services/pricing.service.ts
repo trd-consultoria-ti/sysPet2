@@ -20,6 +20,8 @@ export interface PricingQuote {
   baseDurationMin: number;
   extras: { id: string; name: string; price: number; durationMin: number }[];
   extrasTotal: number;
+  taxiPrice?: number;
+  taxiRegionName?: string;
   totalDurationMin: number;
   totalPrice: number;
 }
@@ -136,7 +138,9 @@ export class PricingService {
     serviceName: string,
     weightKg?: number | null,
     breed?: string | null,
-    selectedExtraIds: string[] = []
+    selectedExtraIds: string[] = [],
+    taxiPrice = 0,
+    taxiRegionName = ''
   ): PricingQuote {
     const sizeTier = getPetSizeTier(weightKg);
     const sizeLabel = getPetSizeLabel(sizeTier);
@@ -206,8 +210,10 @@ export class PricingService {
       baseDurationMin,
       extras: chosenExtras,
       extrasTotal,
+      taxiPrice: taxiPrice > 0 ? taxiPrice : undefined,
+      taxiRegionName: taxiPrice > 0 ? taxiRegionName : undefined,
       totalDurationMin: baseDurationMin + extrasDuration,
-      totalPrice: basePrice + extrasTotal
+      totalPrice: basePrice + extrasTotal + (taxiPrice || 0)
     };
   }
 
