@@ -1,0 +1,3 @@
+# Garante que os hooks do Git sempre mantenham quebras de linha padrão Unix (LF)
+.githooks/* text eol=lf
+*.sh text eol=lf
