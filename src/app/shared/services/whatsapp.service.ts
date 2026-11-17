@@ -1,11 +1,25 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, of } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
-import { WaConversation, WaMessage, QuickSuggestionTemplate } from '../models/whatsapp.model';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
+import { tap, catchError, map, switchMap } from 'rxjs/operators';
+import {
+  WaConversation,
+  WaMessage,
+  QuickSuggestionTemplate,
+  EvolutionConfig,
+  EvolutionConnectionState,
+  EvolutionQrCodeResponse
+} from '../models/whatsapp.model';
 
 const STORAGE_CONVERSATIONS_KEY = 'syspet_wa_conversations_v1';
 const STORAGE_MESSAGES_KEY = 'syspet_wa_messages_v1';
+const STORAGE_EVOLUTION_CONFIG_KEY = 'syspet_evolution_config_v1';
+
+const DEFAULT_EVOLUTION_CONFIG: EvolutionConfig = {
+  apiUrl: 'http://127.0.0.1:8080',
+  apiKey: 'job-hunter-evolution-2026',
+  instanceName: 'syspet-oficial' // Instância limpa e isolada para o software comercial
+};
 
 const DEFAULT_CONVERSATIONS: WaConversation[] = [
   {
@@ -152,8 +166,126 @@ export class WhatsappService {
     return this.activeMessages$.asObservable();
   }
 
+  // =========================================================================
+  // EVOLUTION API: CONFIGURAÇÕES & QR CODE EM TEMPO REAL
+  // =========================================================================
+
+  getConfig(): EvolutionConfig {
+    try {
+      const stored = localStorage.getItem(STORAGE_EVOLUTION_CONFIG_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return { ...DEFAULT_EVOLUTION_CONFIG };
+  }
+
+  saveConfig(config: EvolutionConfig): void {
+    try {
+      localStorage.setItem(STORAGE_EVOLUTION_CONFIG_KEY, JSON.stringify(config));
+    } catch {}
+  }
+
+  private getAuthHeaders(apiKey?: string): HttpHeaders {
+    const key = apiKey || this.getConfig().apiKey;
+    return new HttpHeaders({
+      'apikey': key,
+      'Content-Type': 'application/json'
+    });
+  }
+
   /**
-   * Envia mensagem (HU-17 + Evolution API)
+   * Consulta o estado atual da conexão na Evolution API
+   */
+  checkConnectionState(): Observable<EvolutionConnectionState> {
+    const cfg = this.getConfig();
+    const url = `${cfg.apiUrl}/instance/connectionState/${encodeURIComponent(cfg.instanceName)}`;
+
+    return this.http.get<any>(url, { headers: this.getAuthHeaders(cfg.apiKey) }).pipe(
+      map(res => {
+        const state = res?.instance?.state || 'close';
+        return {
+          connected: state === 'open',
+          state: state as 'open' | 'connecting' | 'close',
+          instanceName: cfg.instanceName,
+          ownerJid: res?.instance?.ownerJid,
+          profileName: res?.instance?.profileName,
+          profilePicUrl: res?.instance?.profilePicUrl
+        };
+      }),
+      catchError(err => {
+        return of({
+          connected: false,
+          state: (err.status === 404 ? 'close' : 'offline') as any,
+          instanceName: cfg.instanceName
+        });
+      })
+    );
+  }
+
+  /**
+   * Obtém ou gera o QR Code na Evolution API para o dono da pet shop escanear
+   */
+  getOrGenerateQrCode(): Observable<EvolutionQrCodeResponse> {
+    const cfg = this.getConfig();
+    const connectUrl = `${cfg.apiUrl}/instance/connect/${encodeURIComponent(cfg.instanceName)}`;
+
+    return this.http.get<EvolutionQrCodeResponse>(connectUrl, { headers: this.getAuthHeaders(cfg.apiKey) }).pipe(
+      catchError(err => {
+        // Se a instância limpa ainda não existir (404), cria atomicamente
+        if (err.status === 404) {
+          const createUrl = `${cfg.apiUrl}/instance/create`;
+          const body = {
+            instanceName: cfg.instanceName,
+            qrcode: true,
+            integration: 'WHATSAPP-BAILEYS'
+          };
+          return this.http.post<any>(createUrl, body, { headers: this.getAuthHeaders(cfg.apiKey) }).pipe(
+            map(createRes => {
+              if (createRes?.qrcode) {
+                return {
+                  base64: createRes.qrcode.base64,
+                  code: createRes.qrcode.code,
+                  pairingCode: createRes.qrcode.pairingCode
+                };
+              }
+              return {};
+            })
+          );
+        }
+        return throwError(err);
+      })
+    );
+  }
+
+  /**
+   * Desconecta o WhatsApp da loja na Evolution API (Logout)
+   */
+  disconnectInstance(): Observable<any> {
+    const cfg = this.getConfig();
+    const url = `${cfg.apiUrl}/instance/logout/${encodeURIComponent(cfg.instanceName)}`;
+    return this.http.delete<any>(url, { headers: this.getAuthHeaders(cfg.apiKey) }).pipe(
+      catchError(() => of({ status: 'logged_out' }))
+    );
+  }
+
+  /**
+   * Envia mensagem de texto via Evolution API para um número real
+   */
+  sendEvolutionMessage(phone: string, text: string): Observable<any> {
+    const cfg = this.getConfig();
+    const cleanPhone = phone.replace(/\D/g, '');
+    const formattedNumber = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
+
+    const url = `${cfg.apiUrl}/message/sendText/${encodeURIComponent(cfg.instanceName)}`;
+    const body = {
+      number: formattedNumber,
+      text: text
+    };
+
+    return this.http.post<any>(url, body, { headers: this.getAuthHeaders(cfg.apiKey) });
+  }
+
+  /**
+   * Envia mensagem: registra no histórico interno e dispara na Evolution API se conectada
    */
   sendMessage(convId: string, text: string, attendantName = 'Recepção'): Observable<WaMessage> {
     const conv = this.conversations$.getValue().find(c => c.id === convId);
@@ -183,6 +315,16 @@ export class WhatsappService {
       conv.lastMessageAt = new Date().toISOString();
       conv.suggestedReply = '';
       this.saveConversations([...this.conversations$.getValue()]);
+
+      // Dispara envio real na Evolution API se houver telefone e API ativa
+      if (conv.customerPhone) {
+        this.sendEvolutionMessage(conv.customerPhone, text).pipe(
+          catchError(err => {
+            console.warn('Evolution API offline ou não conectada. Mensagem mantida no histórico local.', err);
+            return of(null);
+          })
+        ).subscribe();
+      }
     }
 
     return of(newMsg);

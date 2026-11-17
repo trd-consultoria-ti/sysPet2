@@ -471,4 +471,178 @@
       gap: 0.5rem;
     }
   }
+
+  // =========================================================================
+  // MODAL QR CODE EVOLUTION API (COMERCIAL / SAAS)
+  // =========================================================================
+  .modal-qr-dialog {
+    max-width: 580px;
+
+    .qr-modal-body {
+      padding: 1.5rem;
+    }
+
+    .connected-state-card {
+      text-align: center;
+      padding: 2rem 1.5rem;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+
+      .success-icon-wrap {
+        font-size: 3.5rem;
+        margin-bottom: 0.75rem;
+      }
+
+      h3 {
+        color: #14532d;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+      }
+    }
+
+    .instructions-steps {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+
+      .step-line {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.85rem;
+        color: #334155;
+
+        .step-dot {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #2a9d8f;
+          color: #ffffff;
+          font-weight: 700;
+          font-size: 0.75rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+      }
+    }
+
+    .qr-code-box {
+      background: #ffffff;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 280px;
+
+      .qr-loading-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.85rem;
+        color: #64748b;
+        font-size: 0.9rem;
+      }
+
+      .qr-image-wrapper {
+        position: relative;
+        display: inline-block;
+        padding: 0.5rem;
+        background: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+        .qr-image {
+          width: 230px;
+          height: 230px;
+          object-fit: contain;
+          border-radius: 6px;
+        }
+
+        .qr-timer-pill {
+          position: absolute;
+          bottom: 12px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(15, 23, 42, 0.85);
+          color: #ffffff;
+          font-size: 0.75rem;
+          font-weight: 600;
+          padding: 3px 10px;
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          gap: 0.35rem;
+          white-space: nowrap;
+        }
+      }
+    }
+
+    .server-config-accordion {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+
+      .accordion-toggle {
+        background: #f8fafc;
+        padding: 0.65rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+        transition: background 0.15s;
+
+        &:hover {
+          background: #f1f5f9;
+        }
+      }
+
+      .config-fields-panel {
+        padding: 1rem;
+        background: #ffffff;
+        border-top: 1px solid #e2e8f0;
+
+        label {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #334155;
+          margin-bottom: 0.2rem;
+        }
+      }
+    }
+  }
+
+  .api-status-badge.offline {
+    background: #fef2f2;
+    border-color: #fee2e2;
+
+    .status-indicator {
+      background: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+    }
+
+    span {
+      color: #991b1b;
+    }
+  }
+
+  .btn-connect-wa {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 600;
+  }
 }

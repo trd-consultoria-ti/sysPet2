@@ -16,10 +16,37 @@
 
     <div class="header-tools d-flex align-items-center gap-3">
       <!-- Status da Evolution API -->
-      <div class="api-status-badge" [class.connected]="evolutionConnected">
+      <div class="api-status-badge" [class.connected]="connectionState.connected" [class.offline]="connectionState.state === 'offline'">
         <span class="status-indicator"></span>
-        <span>Evolution API: <strong>{{ evolutionInstance }}</strong> (Ativa)</span>
+        <span *ngIf="connectionState.connected">
+          WhatsApp: <strong>{{ connectionState.instanceName }}</strong> (Online)
+        </span>
+        <span *ngIf="!connectionState.connected && connectionState.state !== 'offline'">
+          WhatsApp: <strong>Aguardando Leitura de QR Code</strong>
+        </span>
+        <span *ngIf="connectionState.state === 'offline'">
+          WhatsApp: <strong>Servidor Offline</strong>
+        </span>
       </div>
+
+      <!-- Botão de Conectar / QR Code -->
+      <button
+        type="button"
+        class="btn btn-sm btn-connect-wa"
+        [ngClass]="connectionState.connected ? 'btn-outline-success' : 'btn-success'"
+        (click)="openQrModal()">
+        <i class="fas fa-qrcode"></i>
+        <span>{{ connectionState.connected ? 'WhatsApp Conectado' : 'Conectar WhatsApp (QR Code)' }}</span>
+      </button>
+
+      <button
+        *ngIf="connectionState.connected"
+        type="button"
+        class="btn btn-sm btn-outline-danger"
+        (click)="disconnectWhatsapp()"
+        title="Desconectar este aparelho">
+        <i class="fas fa-power-off"></i>
+      </button>
 
       <!-- Atendente Atual -->
       <div class="attendant-selector">
@@ -253,6 +280,126 @@
           <button type="button" class="btn btn-primary" (click)="generateAndInsertQuote()">
             <i class="fas fa-magic"></i> Gerar Texto de Cotação
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: CONECTAR WHATSAPP VIA QR CODE (SaaS / COMERCIAL) -->
+  <!-- ======================================================== -->
+  <div class="modal-backdrop" *ngIf="showQrModal" (click)="closeQrModal()">
+    <div class="modal-dialog modal-qr-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="fab fa-whatsapp fa-2x text-success"></i>
+            <div>
+              <h2 class="mb-0">Conectar WhatsApp do Pet Shop</h2>
+              <small class="text-muted">Pareie o celular comercial do estabelecimento via QR Code</small>
+            </div>
+          </div>
+          <button type="button" class="close-btn" (click)="closeQrModal()">&times;</button>
+        </div>
+
+        <div class="modal-body qr-modal-body">
+          <!-- CASO 1: APARELHO JÁ CONECTADO -->
+          <div class="connected-state-card" *ngIf="connectionState.connected">
+            <div class="success-icon-wrap">
+              <i class="fas fa-check-circle text-success"></i>
+            </div>
+            <h3>WhatsApp Comercial Conectado!</h3>
+            <p class="text-muted">
+              Instância ativa: <strong>{{ connectionState.instanceName }}</strong>
+              <ng-container *ngIf="connectionState.ownerJid"> · Número: <strong>{{ connectionState.ownerJid.split('@')[0] }}</strong></ng-container>
+            </p>
+            <div class="connected-actions mt-3">
+              <button type="button" class="btn btn-outline-danger" (click)="disconnectWhatsapp()">
+                <i class="fas fa-sign-out-alt"></i> Desconectar para Trocar de Aparelho
+              </button>
+            </div>
+          </div>
+
+          <!-- CASO 2: AGUARDANDO LEITURA DO QR CODE -->
+          <div class="qr-connection-flow" *ngIf="!connectionState.connected">
+            <div class="instructions-steps mb-3">
+              <div class="step-line">
+                <span class="step-dot">1</span>
+                <span>Abra o <strong>WhatsApp</strong> no celular comercial do pet shop</span>
+              </div>
+              <div class="step-line">
+                <span class="step-dot">2</span>
+                <span>Toque em <strong>Mais opções</strong> (⋮) ou <strong>Configurações</strong> e selecione <strong>Aparelhos conectados</strong></span>
+              </div>
+              <div class="step-line">
+                <span class="step-dot">3</span>
+                <span>Toque em <strong>Conectar um aparelho</strong> e aponte a câmera para a tela abaixo</span>
+              </div>
+            </div>
+
+            <!-- Card com o QR Code Gerado -->
+            <div class="qr-code-box">
+              <div class="qr-loading-state" *ngIf="qrLoading">
+                <div class="spinner-border text-success" role="status"></div>
+                <span>Gerando QR Code seguro na Evolution API...</span>
+              </div>
+
+              <div class="qr-image-wrapper" *ngIf="!qrLoading && qrCodeBase64">
+                <img [src]="qrCodeBase64" alt="QR Code WhatsApp" class="qr-image">
+                <div class="qr-timer-pill">
+                  <i class="fas fa-stopwatch"></i> Expira em {{ qrSecondsLeft }}s
+                </div>
+              </div>
+
+              <div class="qr-error-state" *ngIf="!qrLoading && !qrCodeBase64">
+                <i class="fas fa-exclamation-circle text-warning fa-3x mb-2"></i>
+                <p class="mb-2">Não foi possível carregar o QR Code no momento.</p>
+                <button type="button" class="btn btn-sm btn-primary" (click)="fetchQrCode()">
+                  <i class="fas fa-redo"></i> Tentar Novamente
+                </button>
+              </div>
+
+              <div class="qr-actions-row mt-3" *ngIf="!qrLoading && qrCodeBase64">
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="fetchQrCode()">
+                  <i class="fas fa-sync-alt"></i> Atualizar QR Code
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Painel Sanfonado: Configurações do Servidor (SaaS / Comercial) -->
+          <div class="server-config-accordion mt-4">
+            <div class="accordion-toggle" (click)="showConfigSettings = !showConfigSettings">
+              <span><i class="fas fa-cog"></i> Configurações do Servidor Evolution API</span>
+              <i class="fas" [ngClass]="showConfigSettings ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </div>
+
+            <div class="config-fields-panel mt-2" *ngIf="showConfigSettings">
+              <div class="form-group mb-2">
+                <label>URL da Evolution API (Servidor Local ou Nuvem)</label>
+                <input type="text" [(ngModel)]="cfgApiUrl" class="form-control form-control-sm" placeholder="http://127.0.0.1:8080 ou https://sua-api.com">
+              </div>
+
+              <div class="form-group mb-2">
+                <label>Chave de API (Global API Key)</label>
+                <input type="text" [(ngModel)]="cfgApiKey" class="form-control form-control-sm" placeholder="Sua chave secreta">
+              </div>
+
+              <div class="form-group mb-3">
+                <label>Nome da Instância Exclusiva (Isolada da Loja)</label>
+                <input type="text" [(ngModel)]="cfgInstanceName" class="form-control form-control-sm" placeholder="syspet-oficial">
+                <small class="text-muted">Cada cliente/loja utiliza uma instância limpa exclusiva sem interferência.</small>
+              </div>
+
+              <button type="button" class="btn btn-sm btn-primary" (click)="saveCustomEvolutionSettings()">
+                <i class="fas fa-save"></i> Salvar & Reconectar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeQrModal()">Fechar</button>
         </div>
       </div>
     </div>

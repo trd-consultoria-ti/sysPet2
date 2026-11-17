@@ -32,3 +32,25 @@ export interface QuickSuggestionTemplate {
   textTemplate: string;
   variables: string[]; // e.g., ['tutor', 'pet', 'motorista', 'preco']
 }
+
+export interface EvolutionConfig {
+  apiUrl: string;
+  apiKey: string;
+  instanceName: string;
+}
+
+export interface EvolutionConnectionState {
+  connected: boolean;
+  state: 'open' | 'connecting' | 'close' | 'offline';
+  instanceName: string;
+  ownerJid?: string;
+  profileName?: string;
+  profilePicUrl?: string;
+}
+
+export interface EvolutionQrCodeResponse {
+  pairingCode?: string;
+  code?: string;
+  base64?: string;
+  count?: number;
+}
