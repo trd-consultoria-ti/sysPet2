@@ -2406,6 +2406,122 @@ app.get('/api/prescriptions/:id/pdf', requireAuth, async (req, res) => {
   doc.end();
 });
 
+// ---------- WhatsApp / Evolution API proxy ----------
+
+const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://127.0.0.1:8080';
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || 'job-hunter-evolution-2026';
+const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'syspet-oficial';
+
+async function evolutionFetch(endpoint, options = {}) {
+  const url = `${EVOLUTION_API_URL}${endpoint}`;
+  const headers = {
+    'apikey': EVOLUTION_API_KEY,
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
+  const response = await fetch(url, { ...options, headers });
+  const data = await response.json().catch(() => ({}));
+  return { status: response.status, data };
+}
+
+// 1. Status da conexão
+app.get('/api/whatsapp/status', async (req, res) => {
+  try {
+    const { status, data } = await evolutionFetch(`/instance/connectionState/${EVOLUTION_INSTANCE}`);
+    if (status >= 200 && status < 300) {
+      const state = data?.instance?.state || 'close';
+      return res.json({ connected: state === 'open', state, instance: EVOLUTION_INSTANCE });
+    }
+    // Se a instância ainda não existe, tenta criar
+    if (status === 404) {
+      await evolutionFetch('/instance/create', {
+        method: 'POST',
+        body: JSON.stringify({
+          instanceName: EVOLUTION_INSTANCE,
+          qrcode: true,
+          integration: 'WHATSAPP-BAILEYS'
+        })
+      });
+      return res.json({ connected: false, state: 'connecting', instance: EVOLUTION_INSTANCE });
+    }
+    return res.json({ connected: false, state: 'close', instance: EVOLUTION_INSTANCE });
+  } catch (err) {
+    return res.json({ connected: false, state: 'offline', error: err.message, instance: EVOLUTION_INSTANCE });
+  }
+});
+
+// 2. Obter QR Code
+app.get('/api/whatsapp/qrcode', async (req, res) => {
+  try {
+    let { status, data } = await evolutionFetch(`/instance/connect/${EVOLUTION_INSTANCE}`);
+    if (status === 404) {
+      // Cria a instância caso ainda não exista
+      await evolutionFetch('/instance/create', {
+        method: 'POST',
+        body: JSON.stringify({
+          instanceName: EVOLUTION_INSTANCE,
+          qrcode: true,
+          integration: 'WHATSAPP-BAILEYS'
+        })
+      });
+      // Tenta conectar novamente
+      const retry = await evolutionFetch(`/instance/connect/${EVOLUTION_INSTANCE}`);
+      status = retry.status;
+      data = retry.data;
+    }
+
+    if (data && (data.base64 || data.code)) {
+      return res.json({
+        pairingCode: data.pairingCode || null,
+        code: data.code || null,
+        base64: data.base64 || null,
+        count: data.count || 1,
+        instance: EVOLUTION_INSTANCE
+      });
+    }
+
+    return res.status(status || 500).json(data || { error: 'Não foi possível gerar QR Code' });
+  } catch (err) {
+    return res.status(503).json({ error: 'Evolution API indisponível', details: err.message });
+  }
+});
+
+// 3. Desconectar / Logout
+app.post('/api/whatsapp/logout', async (req, res) => {
+  try {
+    const { status, data } = await evolutionFetch(`/instance/logout/${EVOLUTION_INSTANCE}`, {
+      method: 'DELETE'
+    });
+    return res.json({ success: status < 400, data });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. Envio de mensagem
+app.post('/api/whatsapp/send', async (req, res) => {
+  const { number, text } = req.body || {};
+  if (!number || !text) {
+    return res.status(400).json({ error: 'Número e texto são obrigatórios' });
+  }
+  const cleanNumber = String(number).replace(/\D/g, '');
+  try {
+    const { status, data } = await evolutionFetch(`/message/sendText/${EVOLUTION_INSTANCE}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        number: cleanNumber,
+        text: String(text).trim()
+      })
+    });
+    if (status >= 200 && status < 300) {
+      return res.json({ success: true, data });
+    }
+    return res.status(status).json({ success: false, error: data });
+  } catch (err) {
+    return res.status(503).json({ success: false, error: err.message });
+  }
+});
+
 // ---------- health & static ----------
 
 app.get('/api/health', async (req, res) => {
@@ -2417,8 +2533,24 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-const docsDir = path.join(__dirname, '..', 'docs');
+const candidateDirs = [
+  process.env.DOCS_DIR,
+  path.join(__dirname, '..', 'docs'),
+  '/docs',
+  path.join(__dirname, 'docs')
+].filter(Boolean);
+const docsDir = candidateDirs.find(d => fs.existsSync(d)) || path.join(__dirname, '..', 'docs');
 app.use(express.static(docsDir));
+
+// Fallback SPA para carregar o frontend em qualquer rota
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  const indexPath = path.join(docsDir, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+  next();
+});
 
 app.use((err, req, res, next) => {
   console.error(err);

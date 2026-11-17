@@ -193,65 +193,82 @@ export class WhatsappService {
   }
 
   /**
-   * Consulta o estado atual da conexão na Evolution API
+   * Consulta o estado atual da conexão na Evolution API (via Backend unificado ou direto)
    */
   checkConnectionState(): Observable<EvolutionConnectionState> {
     const cfg = this.getConfig();
-    const url = `${cfg.apiUrl}/instance/connectionState/${encodeURIComponent(cfg.instanceName)}`;
 
-    return this.http.get<any>(url, { headers: this.getAuthHeaders(cfg.apiKey) }).pipe(
-      map(res => {
-        const state = res?.instance?.state || 'close';
-        return {
-          connected: state === 'open',
-          state: state as 'open' | 'connecting' | 'close',
-          instanceName: cfg.instanceName,
-          ownerJid: res?.instance?.ownerJid,
-          profileName: res?.instance?.profileName,
-          profilePicUrl: res?.instance?.profilePicUrl
-        };
-      }),
-      catchError(err => {
-        return of({
-          connected: false,
-          state: (err.status === 404 ? 'close' : 'offline') as any,
-          instanceName: cfg.instanceName
-        });
+    // 1. Tenta via proxy unificado do backend (/api/whatsapp/status)
+    return this.http.get<any>('/api/whatsapp/status').pipe(
+      map(res => ({
+        connected: res.connected || res.state === 'open',
+        state: (res.state || 'close') as 'open' | 'connecting' | 'close',
+        instanceName: res.instance || cfg.instanceName,
+        profileName: res.profileName
+      })),
+      catchError(() => {
+        // 2. Fallback direto para o endpoint da Evolution API se estiver rodando standalone
+        const url = `${cfg.apiUrl}/instance/connectionState/${encodeURIComponent(cfg.instanceName)}`;
+        return this.http.get<any>(url, { headers: this.getAuthHeaders(cfg.apiKey) }).pipe(
+          map(res => {
+            const state = res?.instance?.state || 'close';
+            return {
+              connected: state === 'open',
+              state: state as 'open' | 'connecting' | 'close',
+              instanceName: cfg.instanceName,
+              ownerJid: res?.instance?.ownerJid,
+              profileName: res?.instance?.profileName,
+              profilePicUrl: res?.instance?.profilePicUrl
+            };
+          }),
+          catchError(err => {
+            return of({
+              connected: false,
+              state: (err.status === 404 ? 'close' : 'offline') as any,
+              instanceName: cfg.instanceName
+            });
+          })
+        );
       })
     );
   }
 
   /**
-   * Obtém ou gera o QR Code na Evolution API para o dono da pet shop escanear
+   * Obtém ou gera o QR Code na Evolution API (via Backend unificado ou direto)
    */
   getOrGenerateQrCode(): Observable<EvolutionQrCodeResponse> {
     const cfg = this.getConfig();
-    const connectUrl = `${cfg.apiUrl}/instance/connect/${encodeURIComponent(cfg.instanceName)}`;
 
-    return this.http.get<EvolutionQrCodeResponse>(connectUrl, { headers: this.getAuthHeaders(cfg.apiKey) }).pipe(
-      catchError(err => {
-        // Se a instância limpa ainda não existir (404), cria atomicamente
-        if (err.status === 404) {
-          const createUrl = `${cfg.apiUrl}/instance/create`;
-          const body = {
-            instanceName: cfg.instanceName,
-            qrcode: true,
-            integration: 'WHATSAPP-BAILEYS'
-          };
-          return this.http.post<any>(createUrl, body, { headers: this.getAuthHeaders(cfg.apiKey) }).pipe(
-            map(createRes => {
-              if (createRes?.qrcode) {
-                return {
-                  base64: createRes.qrcode.base64,
-                  code: createRes.qrcode.code,
-                  pairingCode: createRes.qrcode.pairingCode
-                };
-              }
-              return {};
-            })
-          );
-        }
-        return throwError(err);
+    // 1. Tenta via proxy unificado do backend (/api/whatsapp/qrcode)
+    return this.http.get<EvolutionQrCodeResponse>('/api/whatsapp/qrcode').pipe(
+      catchError(() => {
+        // 2. Fallback direto para o endpoint da Evolution API
+        const connectUrl = `${cfg.apiUrl}/instance/connect/${encodeURIComponent(cfg.instanceName)}`;
+        return this.http.get<EvolutionQrCodeResponse>(connectUrl, { headers: this.getAuthHeaders(cfg.apiKey) }).pipe(
+          catchError(err => {
+            if (err.status === 404) {
+              const createUrl = `${cfg.apiUrl}/instance/create`;
+              const body = {
+                instanceName: cfg.instanceName,
+                qrcode: true,
+                integration: 'WHATSAPP-BAILEYS'
+              };
+              return this.http.post<any>(createUrl, body, { headers: this.getAuthHeaders(cfg.apiKey) }).pipe(
+                map(createRes => {
+                  if (createRes?.qrcode) {
+                    return {
+                      base64: createRes.qrcode.base64,
+                      code: createRes.qrcode.code,
+                      pairingCode: createRes.qrcode.pairingCode
+                    };
+                  }
+                  return {};
+                })
+              );
+            }
+            return throwError(err);
+          })
+        );
       })
     );
   }
@@ -261,8 +278,11 @@ export class WhatsappService {
    */
   disconnectInstance(): Observable<any> {
     const cfg = this.getConfig();
-    const url = `${cfg.apiUrl}/instance/logout/${encodeURIComponent(cfg.instanceName)}`;
-    return this.http.delete<any>(url, { headers: this.getAuthHeaders(cfg.apiKey) }).pipe(
+    return this.http.post<any>('/api/whatsapp/logout', {}).pipe(
+      catchError(() => {
+        const url = `${cfg.apiUrl}/instance/logout/${encodeURIComponent(cfg.instanceName)}`;
+        return this.http.delete<any>(url, { headers: this.getAuthHeaders(cfg.apiKey) });
+      }),
       catchError(() => of({ status: 'logged_out' }))
     );
   }
@@ -275,13 +295,16 @@ export class WhatsappService {
     const cleanPhone = phone.replace(/\D/g, '');
     const formattedNumber = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
 
-    const url = `${cfg.apiUrl}/message/sendText/${encodeURIComponent(cfg.instanceName)}`;
-    const body = {
-      number: formattedNumber,
-      text: text
-    };
-
-    return this.http.post<any>(url, body, { headers: this.getAuthHeaders(cfg.apiKey) });
+    return this.http.post<any>('/api/whatsapp/send', { number: formattedNumber, text }).pipe(
+      catchError(() => {
+        const url = `${cfg.apiUrl}/message/sendText/${encodeURIComponent(cfg.instanceName)}`;
+        const body = {
+          number: formattedNumber,
+          text: text
+        };
+        return this.http.post<any>(url, body, { headers: this.getAuthHeaders(cfg.apiKey) });
+      })
+    );
   }
 
   /**
